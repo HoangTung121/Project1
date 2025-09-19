@@ -37,3 +37,21 @@ Fliply là ứng dụng đọc sách điện tử trên Android, giúp người 
 - **Bảo Mật**: Mã hóa mật khẩu (SHA-256/bcrypt), Firebase Authentication, JWT cho API.
 - **Tương Thích**: Hỗ trợ Android 10 trở lên, tương thích với nhiều kích thước màn hình.
 
+## Công Nghệ Sử Dụng
+- **Frontend**: Android Studio (Java, XML), Figma (thiết kế UI/UX).
+- **Backend**: Node.js (Express.js), Firebase (Realtime Database, Authentication).
+- **Server**: Render (triển khai đám mây, CI/CD).
+- **Quản Lý Mã Nguồn**: GitHub (Git, GitHub Actions).
+- **Kiểm Thử**: Postman (API), Android Studio Emulator, Fiddler, Firebase Performance Monitoring.
+- **Quản Lý Dự Án**: ClickUp, Discord, Messenger.
+- **Tài Liệu & Sơ Đồ**: Microsoft Word, Draw.io.
+
+## Yêu Cầu Hệ Thống
+- **Hệ Điều Hành**: Android 10 trở lên.
+- **Môi Trường Phát Triển**:
+  - Android Studio (phiên bản mới nhất).
+  - Node.js (cho backend).
+  - Tài khoản Firebase (cho Authentication và Firestore).
+- **Phần Cứng**: Tối thiểu 4GB RAM cho phát triển, thiết bị Android hoặc giả lập.
+- **Internet**: Cần kết nối để xác thực, gọi API và triển khai.
+
