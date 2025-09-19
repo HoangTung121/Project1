@@ -121,8 +121,8 @@ Chúng tôi hoan nghênh mọi đóng góp để cải thiện Fliply! Để tha
 ## Thành Viên Nhóm
 | Tên              | Mã Sinh Viên | Vai Trò           |
 |------------------|--------------|-------------------|
-| Bùi Thanh Phú    | 223630702    | Quản Lý Dự Án     |
-| Bùi Đức Anh      | 223630666    | Kiểm Thử          |
+| Bùi Thanh Phú    | 223630702    | Project Management|
+| Bùi Đức Anh      | 223630666    | Tester            |
 | Vũ Tuấn Kiệt     | 223630694    | Backend           |
 | Vũ Quyết Tiến    | 223630716    | Frontend          |
 | Đỗ Hoàng Tùng    | 223630721    | DevOps            |
