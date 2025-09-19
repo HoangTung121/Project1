@@ -85,9 +85,9 @@ Fliply là ứng dụng đọc sách điện tử trên Android, giúp người 
    - Đánh giá ứng dụng qua tính năng trong ứng dụng.
 
 ## Cấu Trúc Dự Án
-fliply/
-├── app/                    # Mã nguồn ứng dụng Android
-│   ├── src/
+fliply/ <br>
+├── app/                    # Mã nguồn ứng dụng Android <br>
+│   ├── src/ <br>
 │   │   ├── main/
 │   │   │   ├── java/       # Mã Java cho logic
 │   │   │   ├── res/        # XML bố cục và tài nguyên
@@ -106,8 +106,6 @@ fliply/
 │   └── specification.docx  # Tài liệu đặc tả
 ├── .gitignore              # Tệp bỏ qua Git
 └── README.md               # Tệp này
-
-<pre> ```bash Cấu Trúc Dự Án fliply/ ├── app/ # Mã nguồn ứng dụng Android │ ├── src/ │ │ ├── main/ │ │ │ ├── java/ # Mã Java cho logic │ │ ├── res/ # XML bố cục và tài nguyên │ │ └── AndroidManifest.xml └── build.gradle # Cấu hình Gradle ``` </pre>
 
 ## Đóng Góp
 Chúng tôi hoan nghênh mọi đóng góp để cải thiện Fliply! Để tham gia:
