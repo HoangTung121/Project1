@@ -55,3 +55,86 @@ Fliply là ứng dụng đọc sách điện tử trên Android, giúp người 
 - **Phần Cứng**: Tối thiểu 4GB RAM cho phát triển, thiết bị Android hoặc giả lập.
 - **Internet**: Cần kết nối để xác thực, gọi API và triển khai.
 
+### Điều Kiện Tiên Quyết
+- Cài đặt [Android Studio](https://developer.android.com/studio).
+- Thiết lập dự án Firebase và kích hoạt Authentication/Firestore.
+- Cài đặt [Node.js](https://nodejs.org/).
+- Cài đặt [Git](https://git-scm.com/).
+- (Tùy chọn) Tài khoản [Render](https://render.com/) để triển khai backend.
+
+## Hướng Dẫn Sử Dụng
+1. **Đăng Ký/Đăng Nhập**:
+   - Mở ứng dụng, đăng ký bằng email/mật khẩu.
+   - Xác minh email bằng OTP từ Firebase.
+   - Đăng nhập để vào giao diện chính.
+
+2. **Duyệt và Đọc Sách**:
+   - Tìm sách bằng thanh tìm kiếm (tiêu đề, tác giả, thể loại).
+   - Thêm sách vào thư viện cá nhân hoặc đọc trực tiếp.
+   - Đánh dấu trang để quay lại sau.
+
+3. **Quản Lý Thư Viện**:
+   - Xem/xóa/thêm sách yêu thích trong phần Thư Viện.
+   - Kiểm tra lịch sử đọc và tiến độ.
+
+4. **Tính Năng Quản Trị** (yêu cầu tài khoản admin):
+   - Đăng nhập để quản lý sách, thể loại, đánh giá.
+   - Sử dụng bảng điều khiển để thêm/chỉnh sửa/xóa nội dung.
+
+5. **Phản Hồi**:
+   - Đánh giá ứng dụng qua tính năng trong ứng dụng.
+
+## Cấu Trúc Dự Án
+fliply/
+├── app/                    # Mã nguồn ứng dụng Android
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/       # Mã Java cho logic
+│   │   │   ├── res/        # XML bố cục và tài nguyên
+│   │   │   └── AndroidManifest.xml
+│   └── build.gradle        # Cấu hình Gradle
+├── backend/                # Mã nguồn backend Node.js
+│   ├── src/
+│   │   ├── routes/         # Tuyến API
+│   │   ├── controllers/    # Logic API
+│   │   └── models/         # Mô hình dữ liệu
+│   ├── .env                # Biến môi trường
+│   └── package.json        # Phụ thuộc Node.js
+├── docs/                   # Tài liệu
+│   ├── postman/            # Bộ sưu tập Postman
+│   ├── diagrams/           # Sơ đồ Draw.io
+│   └── specification.docx  # Tài liệu đặc tả
+├── .gitignore              # Tệp bỏ qua Git
+└── README.md               # Tệp này
+
+## Đóng Góp
+Chúng tôi hoan nghênh mọi đóng góp để cải thiện Fliply! Để tham gia:
+1. Fork kho lưu trữ.
+2. Tạo nhánh mới:
+   ```bash
+   git checkout -b feature/tên-tính-năng
+3. Thực hiện thay đổi và commit:
+   git commit -m "Mô tả thay đổi"
+5. Push lên fork:
+   git push origin feature/tên-tính-năng
+
+## Thành Viên Nhóm
+| Tên              | Mã Sinh Viên | Vai Trò           |
+|------------------|--------------|-------------------|
+| Bùi Thanh Phú    | 223630702    | Quản Lý Dự Án     |
+| Bùi Đức Anh      | 223630666    | Kiểm Thử          |
+| Vũ Tuấn Kiệt     | 223630694    | Backend           |
+| Vũ Quyết Tiến    | 223630716    | Frontend          |
+| Đỗ Hoàng Tùng    | 223630721    | DevOps            |
+
+## Giấy Phép
+Dự án này được cấp phép theo [Giấy phép MIT](LICENSE).
+MIT License
+
+Copyright (c) 2025 Nhóm 8, Trường Đại học Giao thông Vận tải
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
