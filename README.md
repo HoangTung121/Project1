@@ -107,6 +107,8 @@ fliply/
 ├── .gitignore              # Tệp bỏ qua Git
 └── README.md               # Tệp này
 
+<pre> ```bash Cấu Trúc Dự Án fliply/ ├── app/ # Mã nguồn ứng dụng Android │ ├── src/ │ │ ├── main/ │ │ │ ├── java/ # Mã Java cho logic │ │ ├── res/ # XML bố cục và tài nguyên │ │ └── AndroidManifest.xml └── build.gradle # Cấu hình Gradle ``` </pre>
+
 ## Đóng Góp
 Chúng tôi hoan nghênh mọi đóng góp để cải thiện Fliply! Để tham gia:
 1. Fork kho lưu trữ.
@@ -129,12 +131,12 @@ Chúng tôi hoan nghênh mọi đóng góp để cải thiện Fliply! Để tha
 
 ## Giấy Phép
 Dự án này được cấp phép theo [Giấy phép MIT](LICENSE).
-MIT License
+Giấy phép MIT
 
-Copyright (c) 2025 Nhóm 8, Trường Đại học Giao thông Vận tải
+Bản quyền (c) 2025, 
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Được phép miễn phí cho bất kỳ ai nhận được bản sao của phần mềm này và các tài liệu liên quan (gọi là "Phần mềm"), để sử dụng Phần mềm mà không bị hạn chế, bao gồm quyền sử dụng, sao chép, chỉnh sửa, hợp nhất, xuất bản, phân phối, cấp phép phụ, hoặc bán bản sao của Phần mềm, với điều kiện:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+Thông báo bản quyền ở trên và thông báo cấp phép này phải được bao gồm trong tất cả các bản sao hoặc phần đáng kể của Phần mềm.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+PHẦN MỀM ĐƯỢC CUNG CẤP "NGUYÊN VẸN", KHÔNG CÓ BẢO HÀNH NÀO, DÙ RÕ RÀNG HAY NGỤ Ý, BAO GỒM NHƯNG KHÔNG GIỚI HẠN Ở BẢO HÀNH VỀ TÍNH THƯƠNG MẠI, SỰ PHÙ HỢP VỚI MỤC ĐÍCH CỤ THỂ VÀ KHÔNG VI PHẠM. TÁC GIẢ HOẶC CHỦ SỞ HỮU BẢN QUYỀN KHÔNG CHỊU TRÁCH NHIỆM VỀ BẤT KỲ KHIẾU NẠI, THIỆT HẠI HOẶC TRÁCH NHIỆM KHÁC, DÙ TRONG HỢP ĐỒNG, HÀNH VI VI PHẠM HAY CÁC VẤN ĐỀ KHÁC, PHÁT SINH TỪ VIỆC SỬ DỤNG PHẦN MỀM.
