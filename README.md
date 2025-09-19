@@ -85,27 +85,27 @@ Fliply là ứng dụng đọc sách điện tử trên Android, giúp người 
    - Đánh giá ứng dụng qua tính năng trong ứng dụng.
 
 ## Cấu Trúc Dự Án
-fliply/ <br>
-├── app/                    # Mã nguồn ứng dụng Android <br>
-│   ├── src/ <br>
-│   │   ├── main/
-│   │   │   ├── java/       # Mã Java cho logic
-│   │   │   ├── res/        # XML bố cục và tài nguyên
-│   │   │   └── AndroidManifest.xml
-│   └── build.gradle        # Cấu hình Gradle
-├── backend/                # Mã nguồn backend Node.js
-│   ├── src/
-│   │   ├── routes/         # Tuyến API
-│   │   ├── controllers/    # Logic API
-│   │   └── models/         # Mô hình dữ liệu
-│   ├── .env                # Biến môi trường
-│   └── package.json        # Phụ thuộc Node.js
-├── docs/                   # Tài liệu
-│   ├── postman/            # Bộ sưu tập Postman
-│   ├── diagrams/           # Sơ đồ Draw.io
-│   └── specification.docx  # Tài liệu đặc tả
-├── .gitignore              # Tệp bỏ qua Git
-└── README.md               # Tệp này
+fliply/<br>
+├── app/                    # Mã nguồn ứng dụng Android<br>
+│   ├── src/<br>
+│   │   ├── main/<br>
+│   │   │   ├── java/       # Mã Java cho logic<br>
+│   │   │   ├── res/        # XML bố cục và tài nguyên<br>
+│   │   │   └── AndroidManifest.xml<br>
+│   └── build.gradle        # Cấu hình Gradle<br>
+├── backend/                # Mã nguồn backend Node.js<br>
+│   ├── src/<br>
+│   │   ├── routes/         # Tuyến API<br>
+│   │   ├── controllers/    # Logic API<br>
+│   │   └── models/         # Mô hình dữ liệu<br>
+│   ├── .env                # Biến môi trường<br>
+│   └── package.json        # Phụ thuộc Node.js<br>
+├── docs/                   # Tài liệu<br>
+│   ├── postman/            # Bộ sưu tập Postman<br>
+│   ├── diagrams/           # Sơ đồ Draw.io<br>
+│   └── specification.docx  # Tài liệu đặc tả<br>
+├── .gitignore              # Tệp bỏ qua Git<br>
+└── README.md               # Tệp này<br>
 
 ## Đóng Góp
 Chúng tôi hoan nghênh mọi đóng góp để cải thiện Fliply! Để tham gia:
