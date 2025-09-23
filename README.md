@@ -95,10 +95,17 @@ fliply/<br>
 │   └── build.gradle        # Cấu hình Gradle<br>
 ├── backend/                # Mã nguồn backend Node.js<br>
 │   ├── src/<br>
+│   │   └── config/         # Tệp cấu hình<br>
 │   │   ├── routes/         # Tuyến API<br>
 │   │   ├── controllers/    # Logic API<br>
 │   │   └── models/         # Mô hình dữ liệu<br>
-│   ├── .env                # Biến môi trường<br>
+│   │   └── middlewares/     # Middleware tùy chỉnh<br>
+│   │   └── providers/       # Nhà cung cấp dữ liệu<br>
+│   │   └── services/        # Xử lý logic nghiệp vụ<br>
+│   │   └── sockets/         # Trình xử lý Socket.IO<br>
+│   │   └── upload/          # Xử lý tải lên tệp<br>
+│   │   └── utils/           # Hàm tiện ích<br>
+│   │   └── validations/     # Lược đồ kiểm tra dữ liệu đầu vào<br>
 │   └── package.json        # Phụ thuộc Node.js<br>
 ├── docs/                   # Tài liệu<br>
 │   ├── postman/            # Bộ sưu tập Postman<br>
