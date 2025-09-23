@@ -55,7 +55,7 @@ Fliply là ứng dụng đọc sách điện tử trên Android, giúp người 
 - **Phần Cứng**: Tối thiểu 4GB RAM cho phát triển, thiết bị Android hoặc giả lập.
 - **Internet**: Cần kết nối để xác thực, gọi API và triển khai.
 
-### Điều Kiện Tiên Quyết
+## Cài Đặt
 - Cài đặt [Android Studio](https://developer.android.com/studio).
 - Thiết lập dự án Firebase và kích hoạt Authentication/Firestore.
 - Cài đặt [Node.js](https://nodejs.org/).
