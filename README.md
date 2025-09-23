@@ -131,7 +131,7 @@ Chúng tôi hoan nghênh mọi đóng góp để cải thiện Fliply! Để tha
 Dự án này được cấp phép theo [Giấy phép MIT](LICENSE).
 Giấy phép MIT
 
-Bản quyền (c) 2025, Bùi Thanh Phú - 223630702, Bùi Đức Anh - 223630666, Vũ Tuấn Kiệt - 223630694, Vũ Quyết Tiến - 223630716, Đỗ Hoàng Tùng - 223630721, Sinh viên trường Đại học Giao Thông Vận Tải.
+Bản quyền (c) 2025, Bùi Thanh Phú - 223630702, Bùi Đức Anh - 223630666, Vũ Tuấn Kiệt - 223630694, Vũ Quyết Tiến - 223630716, Đỗ Hoàng Tùng - 223630721, Sinh viên trường Đại học Giao Thông Vận Tải - Khoa Công Nghệ Thông Tin - Ngành Khoa Học Máy Tính.
 
 Được phép miễn phí cho bất kỳ ai nhận được bản sao của phần mềm này và các tài liệu liên quan (gọi là "Phần mềm"), để sử dụng Phần mềm mà không bị hạn chế, bao gồm quyền sử dụng, sao chép, chỉnh sửa, hợp nhất, xuất bản, phân phối, cấp phép phụ, hoặc bán bản sao của Phần mềm, với điều kiện:
 
