@@ -21,10 +21,10 @@ public class SignInActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_sign_in);
 
-        //ánh xạ
+        // ánh xạ
         TextView tvSignUp = findViewById(R.id.tv_sign_up);
 
-        //bắt sự kiện và xử lý
+        // bắt sự kiện và xử lý
         tvSignUp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
