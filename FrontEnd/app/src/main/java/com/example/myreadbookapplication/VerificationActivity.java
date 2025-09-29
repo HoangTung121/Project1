@@ -1,10 +1,13 @@
 package com.example.myreadbookapplication;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -42,6 +45,8 @@ public class VerificationActivity extends AppCompatActivity {
     private CountDownTimer countDownTimer;
     private static final long COUNTDOWN_DURATION = 180000; // 3 phút (180000ms)
     private static final long COUNTDOWN_INTERVAL = 1000; // 1 giây
+    private ProgressDialog progressDialog;
+    private Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,13 +54,17 @@ public class VerificationActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_verification);
 
+        // Khởi tạo ProgressDialog
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Processing...");
+        progressDialog.setCancelable(false);
+
         // Lấy email từ Intent hoặc SharedPreferences
         userEmail = getIntent().getStringExtra("email");
         if (userEmail == null) {
             SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
             userEmail = prefs.getString("user_email", "");
         }
-        Log.d(TAG, "User email: " + userEmail);
 
         // Ánh xạ
         btnVerify = findViewById(R.id.btn_verify);
@@ -67,7 +76,8 @@ public class VerificationActivity extends AppCompatActivity {
 
         if (btnVerify == null || ivBackVerification == null || tvResendOtp == null ||
                 etOtp == null || progressBar == null || tvCountdown == null) {
-            Log.e(TAG, "One or more views not found in layout");
+            Toast.makeText(this, "Layout error", Toast.LENGTH_SHORT).show();
+            finish();
             return;
         }
 
@@ -79,7 +89,8 @@ public class VerificationActivity extends AppCompatActivity {
             String otp = etOtp.getText().toString().trim();
             if (otp.length() == 6 && !userEmail.isEmpty()) {
                 hideKeyboard();
-                setLoading(true);
+                progressDialog.setMessage("Verifying OTP...");
+                progressDialog.show();
                 verifyOtp(userEmail, otp);
             } else {
                 etOtp.setError("Please enter 6-digit OTP");
@@ -89,10 +100,11 @@ public class VerificationActivity extends AppCompatActivity {
         // Nút Resend OTP
         tvResendOtp.setOnClickListener(v -> {
             if (!userEmail.isEmpty()) {
-                setLoading(true);
+                progressDialog.setMessage("Resending OTP...");
+                progressDialog.show();
                 resendOtp(userEmail);
             } else {
-                showToast("Email not found");
+                Toast.makeText(this, "Email not found", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -106,7 +118,6 @@ public class VerificationActivity extends AppCompatActivity {
 
     private void startCountdown() {
         if (tvCountdown == null) {
-            Log.e(TAG, "tvCountdown is null, cannot start countdown");
             return;
         }
         tvResendOtp.setEnabled(false); // Vô hiệu hóa nút Resend OTP
@@ -129,12 +140,6 @@ public class VerificationActivity extends AppCompatActivity {
                     tvCountdown.setText("0:00");
                 }
                 tvResendOtp.setEnabled(true); // Kích hoạt lại nút Resend OTP
-                if (!userEmail.isEmpty()) {
-                    setLoading(true);
-                    resendOtp(userEmail); // Tự động gửi lại OTP
-                } else {
-                    showToast("Email not found");
-                }
             }
         }.start();
     }
@@ -160,101 +165,83 @@ public class VerificationActivity extends AppCompatActivity {
         tvResendOtp.setEnabled(!loading && countDownTimer == null);
     }
 
-    private void showToast(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-    }
-
     private void verifyOtp(String email, String otp) {
         VerifyOtpRequest request = new VerifyOtpRequest(email, otp);
-        Log.d(TAG, "Verifying OTP for email: " + email + ", OTP: " + otp);
 
         RetrofitClient.getApiService().verifyOtp(request).enqueue(new Callback<ApiResponse>() {
             @Override
             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                setLoading(false);
-                Log.d(TAG, "Verify OTP response code: " + response.code());
-                if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse apiResponse = response.body();
-                    Log.d(TAG, "Success: " + apiResponse.isSuccess() + ", Message: " + apiResponse.getMessage());
-                    showToast(apiResponse.getMessage());
-                    if (apiResponse.isSuccess()) {
-                        Log.d(TAG, "Navigating to SignInActivity");
-                        startActivity(new Intent(VerificationActivity.this, SignInActivity.class));
-                        finish();
-                    }
-                } else {
-                    String errorMessage = "Verification failed";
-                    try {
-                        if (response.errorBody() != null) {
-                            String errorBody = response.errorBody().string();
-                            Log.e(TAG, "Error body: " + errorBody);
-                            Gson gson = new Gson();
-                            JsonObject errorJson = gson.fromJson(errorBody, JsonObject.class);
-                            String serverMessage = errorJson.get("message").getAsString();
-                            JsonArray errors = errorJson.getAsJsonArray("errors");
-                            if (errors != null && errors.size() > 0) {
-                                serverMessage = errors.get(0).getAsJsonObject().get("message").getAsString();
+                handler.post(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        progressDialog.dismiss();
+                        if (response.isSuccessful() && response.body() != null) {
+                            ApiResponse apiResponse = response.body();
+                            Toast.makeText(VerificationActivity.this, apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                            if (apiResponse.isSuccess()) {
+                                startActivity(new Intent(VerificationActivity.this, SignInActivity.class));
+                                finish();
                             }
-                            errorMessage = serverMessage;
+                        } else {
+                            String errorMessage = "Verification failed";
+                            int statusCode = response.code();
+                            if (statusCode == 400) {
+                                errorMessage = "Invalid OTP";
+                            } else if (statusCode == 500) {
+                                errorMessage = "Server error. Please try again later.";
+                            }
+                            Toast.makeText(VerificationActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                         }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error reading error body", e);
                     }
-                    Log.e(TAG, "Verify OTP error code: " + response.code());
-                    showToast(errorMessage);
-                }
+                });
             }
 
             @Override
             public void onFailure(Call<ApiResponse> call, Throwable t) {
-                setLoading(false);
-                Log.e(TAG, "Verify OTP failure: " + t.getMessage(), t);
-                showToast("Network error: " + t.getMessage());
+                handler.post(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        progressDialog.dismiss();
+                        Toast.makeText(VerificationActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
     }
 
     private void resendOtp(String email) {
         ResendOtpRequest request = new ResendOtpRequest(email);
-        Log.d(TAG, "Resending OTP for email: " + email);
 
         RetrofitClient.getApiService().resendOtp(request).enqueue(new Callback<ApiResponse>() {
             @Override
             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                setLoading(false);
-                Log.d(TAG, "Resend OTP response code: " + response.code());
-                if (response.isSuccessful() && response.body() != null) {
-                    showToast(response.body().getMessage());
-                    // Khởi động lại đồng hồ đếm ngược sau khi gửi lại OTP
-                    startCountdown();
-                } else {
-                    String errorMessage = "Resend failed";
-                    try {
-                        if (response.errorBody() != null) {
-                            String errorBody = response.errorBody().string();
-                            Log.e(TAG, "Error body: " + errorBody);
-                            Gson gson = new Gson();
-                            JsonObject errorJson = gson.fromJson(errorBody, JsonObject.class);
-                            String serverMessage = errorJson.get("message").getAsString();
-                            JsonArray errors = errorJson.getAsJsonArray("errors");
-                            if (errors != null && errors.size() > 0) {
-                                serverMessage = errors.get(0).getAsJsonObject().get("message").getAsString();
+                handler.post(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        progressDialog.dismiss();
+                        if (response.isSuccessful() && response.body() != null) {
+                            Toast.makeText(VerificationActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                            // Khởi động lại đồng hồ đếm ngược sau khi gửi lại OTP
+                            startCountdown();
+                        } else {
+                            String errorMessage = "Resend failed";
+                            int statusCode = response.code();
+                            if (statusCode == 400) {
+                                errorMessage = "Invalid request";
+                            } else if (statusCode == 500) {
+                                errorMessage = "Server error. Please try again later.";
                             }
-                            errorMessage = serverMessage;
+                            Toast.makeText(VerificationActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                         }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error reading error body", e);
                     }
-                    Log.e(TAG, "Resend OTP error code: " + response.code());
-                    showToast(errorMessage);
-                }
+                });
             }
 
             @Override
             public void onFailure(Call<ApiResponse> call, Throwable t) {
-                setLoading(false);
-                Log.e(TAG, "Resend OTP failure: " + t.getMessage(), t);
-                showToast("Network error: " + t.getMessage());
+                handler.post(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        progressDialog.dismiss();
+                        Toast.makeText(VerificationActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
     }
@@ -263,7 +250,10 @@ public class VerificationActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (countDownTimer != null) {
-            countDownTimer.cancel(); // Hủy đồng hồ đếm ngược khi activity bị hủy
+            countDownTimer.cancel();
+        }
+        if (progressDialog != null && progressDialog.isShowing()) {
+            progressDialog.dismiss();
         }
     }
 }
