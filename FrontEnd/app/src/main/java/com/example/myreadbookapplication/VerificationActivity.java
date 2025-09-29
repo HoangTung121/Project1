@@ -43,7 +43,7 @@ public class VerificationActivity extends AppCompatActivity {
     private TextView tvResendOtp;
     private TextView tvCountdown;
     private CountDownTimer countDownTimer;
-    private static final long COUNTDOWN_DURATION = 180000; // 3 phút (180000ms)
+    private static final long COUNTDOWN_DURATION = 90000; // 1p30 (90000ms)
     private static final long COUNTDOWN_INTERVAL = 1000; // 1 giây
     private ProgressDialog progressDialog;
     private Handler handler = new Handler(Looper.getMainLooper());
