@@ -1,0 +1,156 @@
+package com.example.myreadbookapplication;
+
+import static android.content.ContentValues.TAG;
+
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import com.example.myreadbookapplication.model.ApiResponse;
+import com.example.myreadbookapplication.model.SignUpRequest;
+import com.example.myreadbookapplication.network.RetrofitClient;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+public class SignUpActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_sign_up);
+
+        // Anh xạ
+        TextView tvAlreadyHaveAccount = findViewById(R.id.tv_already_have_account);
+        LinearLayout btnSignUp = findViewById(R.id.btn_signup_layout);
+        ImageView imBackIcon = findViewById(R.id.back_icon);
+        EditText edtName = findViewById(R.id.input_name);
+        EditText edtEmail = findViewById(R.id.input_email);
+        EditText edtPhone = findViewById(R.id.input_phone);
+        EditText edtPassword = findViewById(R.id.input_password);
+        EditText edtConfirmPassword = findViewById(R.id.input_confirm_password);
+
+        // bắt sự kiện và xử lý cho text already have an acount, sign in
+        tvAlreadyHaveAccount.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        // bắt sự kiện và xử lý cho button đăng ký
+        btnSignUp.setOnClickListener(v -> {
+
+            // lấy dữ liệu cuả các edit text nhập vào từ người dùng như email, passwword,
+            // ...
+            String fullName = edtName.getText().toString().trim();
+            String email = edtEmail.getText().toString().trim();
+            String phoneNumber = edtPhone.getText().toString().trim();
+            String password = edtPassword.getText().toString().trim();
+            String confirmPassword = edtConfirmPassword.getText().toString().trim();
+
+            // nếu người dùng không nhập đầy đủ thông tin thì thông báo
+            if (fullName.isEmpty() || email.isEmpty() || phoneNumber.isEmpty() || password.isEmpty()
+                    || confirmPassword.isEmpty()) {
+                Toast.makeText(SignUpActivity.this, "You need fill in all of the fields", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // nếu email không đúng định dạng thì thông báo luon
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                Toast.makeText(SignUpActivity.this, "Invalid email format", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // nếu passwword khác confirm passwword thì cũng thông báo
+            if (!confirmPassword.equals(password)) {
+                Toast.makeText(SignUpActivity.this, "Password do not match", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (password.length() < 8) {
+                edtPassword.setError("Password must be >= 8 characters");
+                return;
+            }
+
+            // Disable nút để tránh bấm liên tục
+            btnSignUp.setEnabled(false);
+            Toast.makeText(SignUpActivity.this, "Registering...", Toast.LENGTH_SHORT).show();
+
+            // Tạo request object và gọi API
+            SignUpRequest request = new SignUpRequest(fullName, email, password, confirmPassword, phoneNumber);
+
+            Call<ApiResponse> call = RetrofitClient.getApiService().signUp(request);
+            call.enqueue(new Callback<ApiResponse>() {
+                @Override
+                public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    btnSignUp.setEnabled(true);
+                    if (response.isSuccessful() && response.body() != null) {
+                        ApiResponse apiResponse = response.body();
+                        Toast.makeText(SignUpActivity.this, apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                        if (apiResponse.isSuccess()) {
+                            // Lưu email vào SharedPreferences
+                            SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+                            prefs.edit().putString("user_email", email).apply();
+
+                            // Chuyển sang verification với email
+                            Intent intent = new Intent(SignUpActivity.this, VerificationActivity.class);
+                            intent.putExtra("email", email);
+                            startActivity(intent);
+                        }
+                    } else {
+                        // lỗi HTTP (4xx/5xx)
+                        Log.e(TAG, "Response error code: " + response.code());
+                        String errorMessage = "Registration failed";
+
+                        // Thử đọc error message từ response body
+                        try {
+                            if (response.errorBody() != null) {
+                                String errorBody = response.errorBody().string();
+                                Log.e(TAG, "Error body: " + errorBody);
+                                // Có thể parse JSON để lấy message từ server
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error reading error body", e);
+                        }
+
+                        if (response.code() == 400) {
+                            errorMessage = "Email already exists. Please use a different email.";
+                        } else if (response.code() == 500) {
+                            errorMessage = "Server error. Please try again later.";
+                        }
+                        Toast.makeText(SignUpActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ApiResponse> call, Throwable t) {
+                    btnSignUp.setEnabled(true);
+                    Log.e(TAG, "API failure", t);
+                    Toast.makeText(SignUpActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        // bắt sự kiện và xử lý cho icon back
+        imBackIcon.setOnClickListener(v -> {
+            finish();
+        });
+    }
+}
