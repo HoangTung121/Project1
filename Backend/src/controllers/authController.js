@@ -44,8 +44,28 @@ const resendOTP = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Login user
+ * @param {Object} req - HTTP request
+ * @param {Object} res - HTTP response
+ */
+const login = catchAsync(async (req, res) => {
+  const { email, password } = req.body
+  const result = await authService.login(email, password)
+  res.json({
+    success: true,
+    data: {
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken
+    },
+    message: result.message
+  })
+})
+
 module.exports = {
   register,
   verifyOTP,
-  resendOTP
+  resendOTP,
+  login
 }

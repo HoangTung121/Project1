@@ -29,8 +29,16 @@ const resendOTP = {
   })
 }
 
+const login = {
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required()
+  })
+}
+
 module.exports = {
   register,
   verifyAndActivateUser,
-  resendOTP
+  resendOTP,
+  login
 }
