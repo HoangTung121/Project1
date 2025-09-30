@@ -3,6 +3,7 @@ package com.example.myreadbookapplication;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -22,13 +23,13 @@ public class SignInActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sign_in);
 
         // ánh xạ
-        TextView tvSignUp = findViewById(R.id.tv_sign_up);
+        LinearLayout btnSignIn = findViewById(R.id.btn_sign_in);
 
         // bắt sự kiện và xử lý
-        tvSignUp.setOnClickListener(new View.OnClickListener() {
+        btnSignIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(SignInActivity.this, SignUpActivity.class);
+                Intent intent = new Intent(SignInActivity.this, HomePageActivity.class);
                 startActivity(intent);
             }
         });
