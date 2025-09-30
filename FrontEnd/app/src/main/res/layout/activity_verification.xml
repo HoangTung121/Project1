@@ -106,7 +106,7 @@
                 </RelativeLayout>
 
                 <TextView
-                    android:id="@+id/tv_resend"
+                    android:id="@+id/tv_before_resend"
                     android:textColor="#000000"
                     android:textSize="18sp"
                     android:layout_marginHorizontal="48dp"
@@ -115,14 +115,25 @@
                     android:layout_weight="1"
                     android:layout_gravity="center"
                     android:gravity="center"
-                    android:text="If you didn't receive a code! Resend" />
+                    android:text="If you didn't receive a code!" />
+                <TextView
+                    android:id="@+id/tv_resend"
+                    android:textColor="@android:color/holo_red_light"
+                    android:textSize="18sp"
+                    android:layout_marginHorizontal="48dp"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_weight="1"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:text="Resend" />
                 <!-- Countdown Timer -->
                 <TextView
                     android:id="@+id/tv_countdown"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="60s"
+                    android:text="1:30"
                     android:textSize="16sp"
                     android:textColor="@android:color/holo_red_light"
                     android:layout_marginBottom="16dp"/>
