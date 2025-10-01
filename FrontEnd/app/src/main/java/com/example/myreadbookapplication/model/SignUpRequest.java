@@ -52,7 +52,5 @@ public class SignUpRequest {
         return confirmPassword;
     }
 
-    public void setConfirmPassword(String confirmPassword) {
-        this.confirmPassword = confirmPassword;
-    }
+    public void setConfirmPassword(String confirmPassword) {this.confirmPassword = confirmPassword;}
 }
