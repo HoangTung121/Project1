@@ -1,28 +1,27 @@
 package com.example.myreadbookapplication.model;
 
 public class SignInRequest {
-    private String emailSignIn;
-    private String passwordSignIn;
+    private String email;
+    private String password;
 
-    public SignInRequest(String emailSignIn, String passwordSignIn) {
-        this.emailSignIn = emailSignIn;
-        this.passwordSignIn = passwordSignIn;
+    public SignInRequest(String email, String password) {
+        this.email = email;
+        this.password = password;
     }
 
-    public String getPasswordSignIn() {
-        return passwordSignIn;
+    public String getEmail() {
+        return email;
     }
 
-    public void setPasswordSignIn(String passwordSignIn) {
-        this.passwordSignIn = passwordSignIn;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    public String getEmailSignIn() {
-        return emailSignIn;
+    public String getPassword() {
+        return password;
     }
 
-    public void setEmailSignIn(String emailSignIn) {
-        this.emailSignIn = emailSignIn;
+    public void setPassword(String password) {
+        this.password = password;
     }
-
 }
