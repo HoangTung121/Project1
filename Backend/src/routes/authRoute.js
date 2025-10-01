@@ -23,4 +23,10 @@ router.post(
   authController.resendOTP
 )
 
+router.post(
+  '/login',
+  validate(authValidation.login),
+  authController.login
+)
+
 module.exports = router

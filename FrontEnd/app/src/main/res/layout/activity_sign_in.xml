@@ -53,7 +53,7 @@
                     android:textStyle="bold"/>
 
                 <EditText
-                    android:id="@+id/et_email"
+                    android:id="@+id/et_email_sign_in"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Enter your email"
@@ -85,7 +85,7 @@
                     android:textStyle="bold"/>
 
                 <EditText
-                    android:id="@+id/et_password"
+                    android:id="@+id/et_password_sign_in"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Enter your password"

@@ -1,6 +1,7 @@
 package com.example.myreadbookapplication.network;
 
 import com.example.myreadbookapplication.model.ApiResponse;
+import com.example.myreadbookapplication.model.SignInRequest;
 import com.example.myreadbookapplication.model.SignUpRequest;
 import com.example.myreadbookapplication.model.VerifyOtpRequest;
 import com.example.myreadbookapplication.model.ResendOtpRequest;
@@ -19,5 +20,9 @@ public interface ApiService {
 
     @POST("api/auth/resend-otp")
     Call<ApiResponse> resendOtp(@Body ResendOtpRequest request);
+
+    @POST("api/auth/login")
+    Call<ApiResponse> signIn(@Body SignInRequest request);
+
 
 }
