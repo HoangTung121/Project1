@@ -57,5 +57,9 @@ module.exports = {
   cache: {
     ttl: parseInt(process.env.CACHE_TTL, 10) || 300,
     checkperiod: parseInt(process.env.CACHE_CHECKPERIOD, 10) || 120
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
+    expiry: process.env.JWT_EXPIRY || '24h'
   }
 }

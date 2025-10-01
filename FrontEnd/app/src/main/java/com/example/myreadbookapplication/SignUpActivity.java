@@ -23,6 +23,8 @@ import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.SignUpRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;
 
+import org.json.JSONObject;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -84,8 +86,15 @@ public class SignUpActivity extends AppCompatActivity {
                 return;
             }
 
+            // nếu password nhỏ hơn 8 ký tự thì thông báo
             if (password.length() < 8) {
                 edtPassword.setError("Password must be >= 8 characters");
+                return;
+            }
+
+            // nếu password toàn chũ hoặc số thì thông báo
+            if (password.matches("[a-zA-Z]+") || password.matches("[0-9]+")) {
+                edtPassword.setError("Password must contain both letters and numbers");
                 return;
             }
 
@@ -115,26 +124,37 @@ public class SignUpActivity extends AppCompatActivity {
                             startActivity(intent);
                         }
                     } else {
-                        // lỗi HTTP (4xx/5xx)
-                        Log.e(TAG, "Response error code: " + response.code());
                         String errorMessage = "Registration failed";
-
-                        // Thử đọc error message từ response body
                         try {
                             if (response.errorBody() != null) {
                                 String errorBody = response.errorBody().string();
                                 Log.e(TAG, "Error body: " + errorBody);
-                                // Có thể parse JSON để lấy message từ server
+                                JSONObject jsonObject = new JSONObject(errorBody);
+                                String serverMessage = jsonObject.optString("message", "Registration failed");
+
+                                // Ánh xạ thông báo lỗi từ backend
+                                switch (serverMessage) {
+                                    case "Email already in use":
+                                        errorMessage = "Email already exists. Please use a different email.";
+                                        break;
+                                    case "Invalid email":
+                                        errorMessage = "Invalid email format. Please check your email.";
+                                        break;
+                                    case "Password too weak":
+                                        errorMessage = "Password is too weak. Please use a stronger password.";
+                                        break;
+                                    case "Unable to create user":
+                                        errorMessage = "Server error. Please try again later.";
+                                        break;
+                                    default:
+                                        errorMessage = serverMessage;
+                                        break;
+                                }
                             }
                         } catch (Exception e) {
-                            Log.e(TAG, "Error reading error body", e);
+                            Log.e(TAG, "Error parsing error body", e);
                         }
 
-                        if (response.code() == 400) {
-                            errorMessage = "Email already exists. Please use a different email.";
-                        } else if (response.code() == 500) {
-                            errorMessage = "Server error. Please try again later.";
-                        }
                         Toast.makeText(SignUpActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                     }
                 }

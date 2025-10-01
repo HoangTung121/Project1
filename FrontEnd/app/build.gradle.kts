@@ -15,9 +15,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Cấu hình base URL cho API
         buildConfigField("String", "BASE_URL", "\"http://192.168.1.8:9000/\"")
-    }
 
     buildTypes {
         debug {

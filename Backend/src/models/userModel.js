@@ -240,19 +240,30 @@ const userModel = {
         )
       }
       const sanitizedUpdateData = {
-        ...updateData,
-        email: updateData.email
-          ? updateData.email.trim().toLowerCase()
-          : undefined,
-        fullName: updateData.fullName ? updateData.fullName.trim() : undefined,
-        phoneNumber: updateData.phoneNumber
-          ? updateData.phoneNumber.trim()
-          : undefined,
-        avatar: updateData.avatar ? updateData.avatar.trim() : undefined,
-        isOnline:
-          updateData.isOnline !== undefined ? updateData.isOnline : undefined,
-        lastSeen: updateData.lastSeen || Date.now(),
         updatedAt: Date.now()
+      }
+
+      // Only add fields that have values
+      if (updateData.email) {
+        sanitizedUpdateData.email = updateData.email.trim().toLowerCase()
+      }
+      if (updateData.fullName) {
+        sanitizedUpdateData.fullName = updateData.fullName.trim()
+      }
+      if (updateData.phoneNumber) {
+        sanitizedUpdateData.phoneNumber = updateData.phoneNumber.trim()
+      }
+      if (updateData.avatar) {
+        sanitizedUpdateData.avatar = updateData.avatar.trim()
+      }
+      if (updateData.isOnline !== undefined) {
+        sanitizedUpdateData.isOnline = updateData.isOnline
+      }
+      if (updateData.lastSeen) {
+        sanitizedUpdateData.lastSeen = updateData.lastSeen
+      }
+      if (updateData.lastLogin) {
+        sanitizedUpdateData.lastLogin = updateData.lastLogin
       }
       // Check phone number format if being updated
       if (sanitizedUpdateData.phoneNumber) {
