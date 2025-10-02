@@ -4,7 +4,6 @@ import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -15,11 +14,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.SignInRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;
@@ -43,6 +38,7 @@ public class SignInActivity extends AppCompatActivity {
         LinearLayout btnSignInHomPage = findViewById(R.id.btn_sign_in);
         EditText etEmailSignIn = findViewById(R.id.et_email_sign_in);
         EditText etPasswordSignIn = findViewById(R.id.et_password_sign_in);
+        TextView tvForgotPassword = findViewById(R.id.tv_forgot_password);
 
         // bắt sự kiện và xử lý
 
@@ -138,6 +134,14 @@ public class SignInActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(SignInActivity.this, SignUpActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        tvForgotPassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(SignInActivity.this, ForgotPasswordActivity.class);
                 startActivity(intent);
             }
         });
