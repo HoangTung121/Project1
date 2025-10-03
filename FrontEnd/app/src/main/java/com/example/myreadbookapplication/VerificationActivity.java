@@ -22,6 +22,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.myreadbookapplication.model.ApiResponse;
+import com.example.myreadbookapplication.model.ForgotPasswordRequest;
 import com.example.myreadbookapplication.model.ResendOtpRequest;
 import com.example.myreadbookapplication.model.VerifyOtpRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;
@@ -47,6 +48,7 @@ public class VerificationActivity extends AppCompatActivity {
     private static final long COUNTDOWN_INTERVAL = 1000; // 1 giây
     private ProgressDialog progressDialog;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private boolean fromForgot = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +63,7 @@ public class VerificationActivity extends AppCompatActivity {
 
         // Lấy email từ Intent hoặc SharedPreferences
         userEmail = getIntent().getStringExtra("email");
+        fromForgot = getIntent().getBooleanExtra("from_forgot", false);
         if (userEmail == null) {
             SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
             userEmail = prefs.getString("user_email", "");
@@ -178,8 +181,21 @@ public class VerificationActivity extends AppCompatActivity {
                             ApiResponse apiResponse = response.body();
                             Toast.makeText(VerificationActivity.this, apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
                             if (apiResponse.isSuccess()) {
-                                startActivity(new Intent(VerificationActivity.this, SignInActivity.class));
-                                finish();
+                                // Lưu email vào prefs nếu cần (cho resend sau)
+                                SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+                                prefs.edit().putString("user_email", userEmail).apply();
+
+                                if (fromForgot) {
+                                    // Từ forgot password → NewPassword
+                                    Intent intent = new Intent(VerificationActivity.this, NewPasswordActivity.class);
+                                    intent.putExtra("email", userEmail); // Gửi email cho NewPassword nếu cần
+                                    startActivity(intent);
+                                    finish();
+                                } else {
+                                    // Từ signup → SignIn
+                                    startActivity(new Intent(VerificationActivity.this, SignInActivity.class));
+                                    finish();
+                                }
                             }
                         } else {
                             String errorMessage = "Verification failed";
@@ -208,42 +224,82 @@ public class VerificationActivity extends AppCompatActivity {
     }
 
     private void resendOtp(String email) {
-        ResendOtpRequest request = new ResendOtpRequest(email);
-
-        RetrofitClient.getApiService().resendOtp(request).enqueue(new Callback<ApiResponse>() {
-            @Override
-            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
-                handler.post(() -> {
-                    if (!isFinishing() && !isDestroyed()) {
-                        progressDialog.dismiss();
-                        if (response.isSuccessful() && response.body() != null) {
-                            Toast.makeText(VerificationActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                            // Khởi động lại đồng hồ đếm ngược sau khi gửi lại OTP
-                            startCountdown();
-                        } else {
-                            String errorMessage = "Resend failed";
-                            int statusCode = response.code();
-                            if (statusCode == 400) {
-                                errorMessage = "Invalid request";
-                            } else if (statusCode == 500) {
-                                errorMessage = "Server error. Please try again later.";
+        if (fromForgot) {
+            // Nếu từ forgot password, gọi forgotPassword API
+            ForgotPasswordRequest request = new ForgotPasswordRequest(email);
+            RetrofitClient.getApiService().forgotPassword(request).enqueue(new Callback<ApiResponse>() {
+                @Override
+                public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    handler.post(() -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            progressDialog.dismiss();
+                            if (response.isSuccessful() && response.body() != null) {
+                                ApiResponse apiResponse = response.body();
+                                Toast.makeText(VerificationActivity.this, apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                                // Khởi động lại đồng hồ đếm ngược sau khi gửi lại OTP
+                                startCountdown();
+                            } else {
+                                String errorMessage = "Resend failed";
+                                int statusCode = response.code();
+                                if (statusCode == 400) {
+                                    errorMessage = "Invalid request";
+                                } else if (statusCode == 500) {
+                                    errorMessage = "Server error. Please try again later.";
+                                }
+                                Toast.makeText(VerificationActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                             }
-                            Toast.makeText(VerificationActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                         }
-                    }
-                });
-            }
+                    });
+                }
 
-            @Override
-            public void onFailure(Call<ApiResponse> call, Throwable t) {
-                handler.post(() -> {
-                    if (!isFinishing() && !isDestroyed()) {
-                        progressDialog.dismiss();
-                        Toast.makeText(VerificationActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
+                @Override
+                public void onFailure(Call<ApiResponse> call, Throwable t) {
+                    handler.post(() -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            progressDialog.dismiss();
+                            Toast.makeText(VerificationActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
+        } else {
+            // Nếu từ signup, gọi resendOtp API cũ
+            ResendOtpRequest request = new ResendOtpRequest(email);
+            RetrofitClient.getApiService().resendOtp(request).enqueue(new Callback<ApiResponse>() {
+                @Override
+                public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    handler.post(() -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            progressDialog.dismiss();
+                            if (response.isSuccessful() && response.body() != null) {
+                                Toast.makeText(VerificationActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                                // Khởi động lại đồng hồ đếm ngược sau khi gửi lại OTP
+                                startCountdown();
+                            } else {
+                                String errorMessage = "Resend failed";
+                                int statusCode = response.code();
+                                if (statusCode == 400) {
+                                    errorMessage = "Invalid request";
+                                } else if (statusCode == 500) {
+                                    errorMessage = "Server error. Please try again later.";
+                                }
+                                Toast.makeText(VerificationActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(Call<ApiResponse> call, Throwable t) {
+                    handler.post(() -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            progressDialog.dismiss();
+                            Toast.makeText(VerificationActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
+        }
     }
 
     @Override
