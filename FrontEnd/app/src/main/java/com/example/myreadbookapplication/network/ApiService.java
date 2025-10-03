@@ -5,6 +5,8 @@ import com.example.myreadbookapplication.model.SignInRequest;
 import com.example.myreadbookapplication.model.SignUpRequest;
 import com.example.myreadbookapplication.model.VerifyOtpRequest;
 import com.example.myreadbookapplication.model.ResendOtpRequest;
+import com.example.myreadbookapplication.model.ResetPasswordRequest;
+import com.example.myreadbookapplication.model.ForgotPasswordRequest;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -24,5 +26,10 @@ public interface ApiService {
     @POST("api/auth/login")
     Call<ApiResponse> signIn(@Body SignInRequest request);
 
+    @POST("api/auth/forgot-password")
+    Call<ApiResponse> forgotPassword(@Body ForgotPasswordRequest request);
+
+    @POST("api/auth/reset-password")
+    Call<ApiResponse> resetPassword(@Body ResetPasswordRequest request);
 
 }
