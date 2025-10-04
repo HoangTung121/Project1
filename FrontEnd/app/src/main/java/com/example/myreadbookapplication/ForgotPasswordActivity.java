@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -27,7 +28,7 @@ import retrofit2.Response;
 
 public class ForgotPasswordActivity extends AppCompatActivity {
 
-    private EditText etEmailForgotPassword; // Thêm EditText cho email
+    private EditText etEmailForgotPassword;
     private ProgressDialog progressDialog;
     private Handler handler = new Handler(Looper.getMainLooper());
     private static final String TAG = "ForgotPasswordActivity";
@@ -48,7 +49,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         TextView linkBackToSignIn = findViewById(R.id.link_back_to_sign_in);
         LinearLayout sendButtonFogotPassword = findViewById(R.id.send_button_container);
         LinearLayout signUpButtonFogotPassword = findViewById(R.id.signup_button_container);
-        etEmailForgotPassword = findViewById(R.id.edit_text_email_forgot_password); // Giả sử ID trong XML là et_email, chỉnh nếu khác
+        etEmailForgotPassword = findViewById(R.id.edit_text_email_forgot_password);
 
         if (etEmailForgotPassword == null) {
             Toast.makeText(this, "Layout error: Missing email input", Toast.LENGTH_SHORT).show();
@@ -69,6 +70,9 @@ public class ForgotPasswordActivity extends AppCompatActivity {
             if (email.isEmpty()) {
                 etEmailForgotPassword.setError("Please enter your email");
                 return;
+            }
+            if(!Patterns.EMAIL_ADDRESS.matcher(email).matches()){
+                etEmailForgotPassword.setError("Please enter a valid email address");
             }
             progressDialog.show();
             forgotPassword(email); // Gọi API gửi OTP
