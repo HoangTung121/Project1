@@ -121,6 +121,7 @@ public class SignUpActivity extends AppCompatActivity {
                             // Chuyển sang verification với email
                             Intent intent = new Intent(SignUpActivity.this, VerificationActivity.class);
                             intent.putExtra("email", email);
+                            intent.putExtra("from_forgot", false); // Mặc định false cho signup
                             startActivity(intent);
                         }
                     } else {
