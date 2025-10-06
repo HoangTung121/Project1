@@ -27,6 +27,12 @@ import retrofit2.Response;
 
 public class SignInActivity extends AppCompatActivity {
 
+    private TextView tvSignUp;
+    private LinearLayout btnSignInHomPage;
+    private EditText etEmailSignIn;
+    private EditText etPasswordSignIn;
+    private TextView tvForgotPassword;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,11 +40,11 @@ public class SignInActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sign_in);
 
         // ánh xạ
-        TextView tvSignUp = findViewById(R.id.tv_sign_up);
-        LinearLayout btnSignInHomPage = findViewById(R.id.btn_sign_in);
-        EditText etEmailSignIn = findViewById(R.id.et_email_sign_in);
-        EditText etPasswordSignIn = findViewById(R.id.et_password_sign_in);
-        TextView tvForgotPassword = findViewById(R.id.tv_forgot_password);
+        tvSignUp = findViewById(R.id.tv_sign_up);
+        btnSignInHomPage = findViewById(R.id.btn_sign_in);
+        etEmailSignIn = findViewById(R.id.et_email_sign_in);
+        etPasswordSignIn = findViewById(R.id.et_password_sign_in);
+        tvForgotPassword = findViewById(R.id.tv_forgot_password);
 
         // bắt sự kiện và xử lý
 
