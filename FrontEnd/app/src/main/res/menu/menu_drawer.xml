@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Other Features Section -->
+    <item
+        android:id="@+id/nav_favorite"
+        android:icon="@drawable/menu_icon"
+    android:title="Favorite" />
+    <item
+        android:id="@+id/nav_history"
+        android:icon="@drawable/menu_icon"
+    android:title="History" />
+    <item
+        android:id="@+id/nav_feedback"
+        android:icon="@drawable/icon_back"
+    android:title="Feedback" />
+    <item
+        android:id="@+id/nav_contact"
+        android:icon="@drawable/icon_back"
+    android:title="Contact" />
+
+    <!-- Divider -->
+    <item android:title="Account">
+        <menu>
+            <item
+                android:id="@+id/nav_change_password"
+                android:icon="@drawable/icon_back"
+            android:title="Change password" />
+            <item
+                android:id="@+id/nav_sign_out"
+                android:icon="@drawable/icon_back"
+            android:title="Sign out" />
+        </menu>
+    </item>
+</menu>

@@ -55,7 +55,7 @@ Fliply là ứng dụng đọc sách điện tử trên Android, giúp người 
 - **Phần Cứng**: Tối thiểu 4GB RAM cho phát triển, thiết bị Android hoặc giả lập.
 - **Internet**: Cần kết nối để xác thực, gọi API và triển khai.
 
-### Điều Kiện Tiên Quyết
+## Cài Đặt
 - Cài đặt [Android Studio](https://developer.android.com/studio).
 - Thiết lập dự án Firebase và kích hoạt Authentication/Firestore.
 - Cài đặt [Node.js](https://nodejs.org/).
@@ -95,10 +95,17 @@ fliply/<br>
 │   └── build.gradle        # Cấu hình Gradle<br>
 ├── backend/                # Mã nguồn backend Node.js<br>
 │   ├── src/<br>
+│   │   └── config/         # Tệp cấu hình<br>
 │   │   ├── routes/         # Tuyến API<br>
 │   │   ├── controllers/    # Logic API<br>
 │   │   └── models/         # Mô hình dữ liệu<br>
-│   ├── .env                # Biến môi trường<br>
+│   │   └── middlewares/     # Middleware tùy chỉnh<br>
+│   │   └── providers/       # Nhà cung cấp dữ liệu<br>
+│   │   └── services/        # Xử lý logic nghiệp vụ<br>
+│   │   └── sockets/         # Trình xử lý Socket.IO<br>
+│   │   └── upload/          # Xử lý tải lên tệp<br>
+│   │   └── utils/           # Hàm tiện ích<br>
+│   │   └── validations/     # Lược đồ kiểm tra dữ liệu đầu vào<br>
 │   └── package.json        # Phụ thuộc Node.js<br>
 ├── docs/                   # Tài liệu<br>
 │   ├── postman/            # Bộ sưu tập Postman<br>
@@ -131,7 +138,7 @@ Chúng tôi hoan nghênh mọi đóng góp để cải thiện Fliply! Để tha
 Dự án này được cấp phép theo [Giấy phép MIT](LICENSE).
 Giấy phép MIT
 
-Bản quyền (c) 2025, Bùi Thanh Phú - 223630702, Bùi Đức Anh - 223630666, Vũ Tuấn Kiệt - 223630694, Vũ Quyết Tiến - 223630716, Đỗ Hoàng Tùng - 223630721, Sinh viên trường Đại học Giao Thông Vận Tải.
+Bản quyền (c) 2025, Bùi Thanh Phú - 223630702, Bùi Đức Anh - 223630666, Vũ Tuấn Kiệt - 223630694, Vũ Quyết Tiến - 223630716, Đỗ Hoàng Tùng - 223630721, Sinh viên trường Đại học Giao Thông Vận Tải - Khoa Công Nghệ Thông Tin - Ngành Khoa Học Máy Tính.
 
 Được phép miễn phí cho bất kỳ ai nhận được bản sao của phần mềm này và các tài liệu liên quan (gọi là "Phần mềm"), để sử dụng Phần mềm mà không bị hạn chế, bao gồm quyền sử dụng, sao chép, chỉnh sửa, hợp nhất, xuất bản, phân phối, cấp phép phụ, hoặc bán bản sao của Phần mềm, với điều kiện:
 
