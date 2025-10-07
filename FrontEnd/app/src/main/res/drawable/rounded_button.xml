@@ -2,7 +2,7 @@
     android:shape="rectangle">
 
     <!-- Màu nền -->
-    <solid android:color="#E74C3C" />
+    <solid android:color="@color/ping" />
 
     <!-- Bo tròn -->
     <corners android:radius="50dp" />
