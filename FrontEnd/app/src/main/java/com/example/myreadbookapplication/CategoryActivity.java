@@ -1,51 +1,55 @@
 package com.example.myreadbookapplication;
 
-import android.content.Intent;
-import android.os.Bundle;
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
+import android.widget.TextView;
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import java.util.ArrayList;
 import java.util.List;
 
-public class CategoryActivity extends AppCompatActivity {
+public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapter.ViewHolder> {
 
-    private RecyclerView rvCategoryBooks;
-    private CategoryBookAdapter adapter;  // Thay tên adapter
-    private ImageView backIconCategory;
+    private List<String> bookTitles;
+    private Context context;
+    private String categoryName;  // Để set label dynamic (e.g., "Horror")
 
+    public CategoryBookAdapter(List<String> bookTitles, Context context, String categoryName) {
+        this.bookTitles = bookTitles;
+        this.context = context;
+        this.categoryName = categoryName;
+    }
+
+    @NonNull
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_category);
-
-        // Ánh xạ
-        backIconCategory = findViewById(R.id.back_icon_category);
-        rvCategoryBooks = findViewById(R.id.rv_category_books);
-
-        // Nhận category từ Intent (từ Home)
-        String selectedCategory = getIntent().getStringExtra("selected_category");
-        if (selectedCategory == null) selectedCategory = "Horror";  // Default
-
-        // Xử lý back button
-        backIconCategory.setOnClickListener(v -> finish());
-
-        // Data demo: 9 sách theo category
-        List<String> books = new ArrayList<>();
-        for (int i = 1; i <= 9; i++) {
-            books.add(selectedCategory + " Book " + i);
-        }
-
-        // Setup adapter và grid 3 cột - BÂY GIỜ KHỚP CONSTRUCTOR (3 params)
-        adapter = new CategoryBookAdapter(books, this, selectedCategory);
-        rvCategoryBooks.setLayoutManager(new GridLayoutManager(this, 3));
-        rvCategoryBooks.setAdapter(adapter);
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_category_book, parent, false);
+        return new ViewHolder(view);
     }
 
     @Override
-    public boolean onSupportNavigateUp() {
-        finish();
-        return true;
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        String title = bookTitles.get(position);
+        holder.bookTitle.setText(categoryName);  // Label category (dynamic)
+        // Load ảnh: Placeholder, thay bằng dynamic (e.g., Glide nếu URL)
+        holder.bookCover.setImageResource(R.drawable.horror_image);  // Hoặc R.drawable.book_cover + position
+    }
+
+    @Override
+    public int getItemCount() {
+        return bookTitles.size();
+    }
+
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        ImageView bookCover;
+        TextView bookTitle;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            bookCover = itemView.findViewById(R.id.book_cover);
+            bookTitle = itemView.findViewById(R.id.book_category_label);
+        }
     }
 }

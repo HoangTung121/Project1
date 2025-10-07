@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHolder> {
+public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapter.ViewHolder> {
     private List<String> categories;
     private Context context;
     private OnCategoryClickListener listener;  // Để xử lý click category
@@ -18,7 +18,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
         void onCategoryClick(String category);
     }
 
-    public CategoryAdapter(List<String> categories, Context context, OnCategoryClickListener listener) {
+    public CategoryBookAdapter(List<String> categories, Context context, OnCategoryClickListener listener) {
         this.categories = categories;
         this.context = context;
         this.listener = listener;

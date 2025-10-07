@@ -3,7 +3,6 @@ package com.example.myreadbookapplication;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -50,7 +49,7 @@ public class HomeActivity extends AppCompatActivity {
         demoCategories.add("Fantasy");
         demoCategories.add("Mystery");
 
-        CategoryAdapter categoryAdapter = new CategoryAdapter(demoCategories, this, new CategoryAdapter.OnCategoryClickListener() {
+        CategoryBookAdapter categoryAdapter = new CategoryBookAdapter(demoCategories, this, new CategoryBookAdapter.OnCategoryClickListener() {
             @Override
             public void onCategoryClick(String category) {
                 // Mở CategoryActivity với param category
