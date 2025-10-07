@@ -1,5 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MyReadBookApplication</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_change_password">Change password</string>
+    <string name="nav_sign_out">Sign out</string>
+    <string name="nav_account">Account</string>
+    <string name="nav_other_features">Other features</string>
+    <string name="nav_favorite">Favorite</string>
+    <string name="nav_history">History</string>
+    <string name="nav_feedback">Feedback</string>
+    <string name="nav_contact">Contact</string>
 </resources>

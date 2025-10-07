@@ -1,27 +1,33 @@
 package com.example.myreadbookapplication;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
+import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.myreadbookapplication.model.Book;
 import com.google.android.material.navigation.NavigationView;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.view.GravityCompat;  // Thêm import này
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class HomeActivity extends AppCompatActivity {
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
-    private Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,25 +36,58 @@ public class HomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         // Ánh xạ views
-        toolbar = findViewById(R.id.toolbar);
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
-        ImageView imBackIconHome = findViewById(R.id.icon_back_home_page);
+        ImageView menuIcon = findViewById(R.id.icon_menu);  // Icon menu trong header
+        LinearLayout searchBar = findViewById(R.id.searchBarLayout);
 
-        // Set toolbar
-        setSupportActionBar(toolbar);
+        RecyclerView rvCategories = findViewById(R.id.rv_categories);
+        List<String> demoCategories = new ArrayList<>();
+        demoCategories.add("Horror");
+        demoCategories.add("Romance");
+        demoCategories.add("Sci-Fi");
+        demoCategories.add("Fantasy");
+        demoCategories.add("Mystery");
 
-        // Setup hamburger icon để mở drawer
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
+        CategoryBookAdapter categoryAdapter = new CategoryBookAdapter(demoCategories, this, new CategoryBookAdapter.OnCategoryClickListener() {
+            @Override
+            public void onCategoryClick(String category) {
+                // Mở CategoryActivity với param category
+                Intent intent = new Intent(HomeActivity.this, CategoryActivity.class);
+                intent.putExtra("selected_category", category);
+                startActivity(intent);
+            }
+        });
+        rvCategories.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvCategories.setAdapter(categoryAdapter);
 
-        // Xử lý click menu items (hiện Toast tạm, bạn thay bằng navigate sau)
+        // Setup New Books RecyclerView
+        RecyclerView rvNewBooks = findViewById(R.id.rv_new_books);
+        List<Book> demoNewBooks = new ArrayList<>();
+        // Thêm demo data (thay URL bằng ảnh thật hoặc local res ID)
+        demoNewBooks.add(new Book("New Horror Book", "https://example.com/horror.jpg"));  // Hoặc R.drawable.horror_cover cho local
+        demoNewBooks.add(new Book("Sci-Fi Adventure", "https://example.com/scifi.jpg"));
+        demoNewBooks.add(new Book("Romance Novel", "https://example.com/romance.jpg"));
+
+        NewBookAdapter newBookAdapter = new NewBookAdapter(demoNewBooks, this);
+        rvNewBooks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvNewBooks.setAdapter(newBookAdapter);
+
+        // KHÔNG dùng ActionBarDrawerToggle nữa - dùng listener thủ công cho icon menu
+        menuIcon.setOnClickListener(v -> {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+
+        // Xử lý menu items (giữ nguyên từ trước)
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 int id = item.getItemId();
+                // Ví dụ xử lý từng item (thay Toast bằng Intent nếu cần)
                 if (id == R.id.nav_other_features) {
                     Toast.makeText(HomeActivity.this, "Other features clicked", Toast.LENGTH_SHORT).show();
                 } else if (id == R.id.nav_favorite) {
@@ -65,22 +104,45 @@ public class HomeActivity extends AppCompatActivity {
                     Toast.makeText(HomeActivity.this, "Sign out clicked", Toast.LENGTH_SHORT).show();
                 }
 
-                // Đóng drawer
+                // Đóng drawer sau khi click
                 drawerLayout.closeDrawer(GravityCompat.START);
                 return true;
             }
         });
 
-        // Giữ nguyên xử lý icon back
-        imBackIconHome.setOnClickListener(v -> {
-            finish();
+        // Xử lý search bar click (tạm Toast, thay bằng Intent đến SearchActivity)
+        searchBar.setOnClickListener(v -> {
+            Toast.makeText(this, "Open search", Toast.LENGTH_SHORT).show();
+            // Ví dụ: startActivity(new Intent(this, SearchActivity.class));
         });
 
-        // Xử lý EdgeToEdge
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.content_frame), (v, insets) -> {
+        // Xử lý "View all" categories
+        findViewById(R.id.viewAllCategories).setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, CategoryActivity.class);
+            startActivity(intent);
+        });
+
+        // Xử lý "View all" new books (tạm)
+        findViewById(R.id.viewAllNewBooks).setOnClickListener(v -> {
+            Toast.makeText(this, "View all new books", Toast.LENGTH_SHORT).show();
+            // Ví dụ: Intent to BooksActivity
+        });
+
+        // Xử lý EdgeToEdge cho ScrollView
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.scrollViewMain), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    // Xử lý nút back: Đóng drawer nếu đang mở, иначе thoát activity
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 }

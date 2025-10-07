@@ -2,4 +2,6 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="red_title">#FFE65C4B</color>
+    <color name="ping">#FFE65C4B</color>
 </resources>
