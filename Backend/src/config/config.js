@@ -13,9 +13,15 @@ module.exports = {
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID,
     projectNumber: process.env.FIREBASE_PROJECT_NUMBER,
-    databaseURL: process.env.FIREBASE_DATABASE_URL
+    databaseURL: process.env.FIREBASE_DATABASE_URL,
+    webApiKey: process.env.FIREBASE_WEB_API_KEY,
+    privateKeyId: process.env.FIREBASE_PRIVATE_KEY_ID,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    clientId: process.env.FIREBASE_CLIENT_ID
   },
   email: {
+    provider: process.env.EMAIL_PROVIDER || 'smtp',
     smtp: {
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
@@ -23,6 +29,9 @@ module.exports = {
         user: process.env.SMTP_USERNAME,
         pass: process.env.SMTP_PASSWORD
       }
+    },
+    sendgrid: {
+      apiKey: process.env.SENDGRID_API_KEY
     },
     from: process.env.EMAIL_FROM
   },
