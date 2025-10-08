@@ -4,51 +4,52 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapter.ViewHolder> {
-    private List<String> categories;
+    private List<String> bookTitles; // danh sách tên sách
     private Context context;
-    private OnCategoryClickListener listener;  // Để xử lý click category
+    private String categoryName;
 
-    public interface OnCategoryClickListener {
-        void onCategoryClick(String category);
-    }
-
-    public CategoryBookAdapter(List<String> categories, Context context, OnCategoryClickListener listener) {
-        this.categories = categories;
+    public CategoryBookAdapter(List<String> bookTitles, Context context, String categoryName) {
+        this.bookTitles = bookTitles;
         this.context = context;
-        this.listener = listener;
+        this.categoryName = categoryName;
     }
+
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public CategoryBookAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_category_book, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String category = categories.get(position);
-        holder.categoryName.setText(category);
-        holder.itemView.setOnClickListener(v -> listener.onCategoryClick(category));
+    public void onBindViewHolder(@NonNull CategoryBookAdapter.ViewHolder holder, int position) {
+        String title = bookTitles.get(position);
+        holder.bookTitle.setText(title);
+
+        holder.bookCover.setImageResource(R.drawable.honor_image);
     }
 
     @Override
     public int getItemCount() {
-        return categories.size();
+        return bookTitles.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView categoryName;
+        ImageView bookCover;
+        TextView bookTitle;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            categoryName = itemView.findViewById(R.id.category_name);
+            bookCover = itemView.findViewById(R.id.book_cover);
+            bookTitle = itemView.findViewById(R.id.book_category_label);
         }
     }
 }

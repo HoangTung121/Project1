@@ -3,6 +3,7 @@ package com.example.myreadbookapplication;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -28,6 +29,9 @@ public class HomeActivity extends AppCompatActivity {
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
+    private ImageView menuIcon;
+    private LinearLayout searchBar;
+    private RecyclerView rvCategories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,42 +42,11 @@ public class HomeActivity extends AppCompatActivity {
         // Ánh xạ views
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
-        ImageView menuIcon = findViewById(R.id.icon_menu);  // Icon menu trong header
-        LinearLayout searchBar = findViewById(R.id.searchBarLayout);
+        menuIcon = findViewById(R.id.icon_menu);
+        searchBar = findViewById(R.id.searchBarLayout);
+        rvCategories = findViewById(R.id.rv_categories);
 
-        RecyclerView rvCategories = findViewById(R.id.rv_categories);
-        List<String> demoCategories = new ArrayList<>();
-        demoCategories.add("Horror");
-        demoCategories.add("Romance");
-        demoCategories.add("Sci-Fi");
-        demoCategories.add("Fantasy");
-        demoCategories.add("Mystery");
-
-        CategoryBookAdapter categoryAdapter = new CategoryBookAdapter(demoCategories, this, new CategoryBookAdapter.OnCategoryClickListener() {
-            @Override
-            public void onCategoryClick(String category) {
-                // Mở CategoryActivity với param category
-                Intent intent = new Intent(HomeActivity.this, CategoryActivity.class);
-                intent.putExtra("selected_category", category);
-                startActivity(intent);
-            }
-        });
-        rvCategories.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        rvCategories.setAdapter(categoryAdapter);
-
-        // Setup New Books RecyclerView
-        RecyclerView rvNewBooks = findViewById(R.id.rv_new_books);
-        List<Book> demoNewBooks = new ArrayList<>();
-        // Thêm demo data (thay URL bằng ảnh thật hoặc local res ID)
-        demoNewBooks.add(new Book("New Horror Book", "https://example.com/horror.jpg"));  // Hoặc R.drawable.horror_cover cho local
-        demoNewBooks.add(new Book("Sci-Fi Adventure", "https://example.com/scifi.jpg"));
-        demoNewBooks.add(new Book("Romance Novel", "https://example.com/romance.jpg"));
-
-        NewBookAdapter newBookAdapter = new NewBookAdapter(demoNewBooks, this);
-        rvNewBooks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        rvNewBooks.setAdapter(newBookAdapter);
-
-        // KHÔNG dùng ActionBarDrawerToggle nữa - dùng listener thủ công cho icon menu
+        // xử lý click menu
         menuIcon.setOnClickListener(v -> {
             if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
                 drawerLayout.closeDrawer(GravityCompat.START);
@@ -82,7 +55,7 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
-        // Xử lý menu items (giữ nguyên từ trước)
+        // Xử lý menu items
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -109,6 +82,43 @@ public class HomeActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        // Setup Categories RecyclerView (sử dụng CategoryAdapter có listener)
+        List<String> demoCategories = new ArrayList<>();
+        demoCategories.add("Horror");
+        demoCategories.add("Romance");
+        demoCategories.add("Sci-Fi");
+        demoCategories.add("Fantasy");
+        demoCategories.add("Mystery");
+        demoCategories.add("Thriller");
+        demoCategories.add("Adventure");
+        demoCategories.add("Biography");
+        demoCategories.add("History");
+        demoCategories.add("Self-Help");
+
+        //tạo adapter với listener khi mở categoryactivity
+        CategoryAdapter categoryAdapter = new CategoryAdapter(demoCategories, this, new CategoryAdapter.OnCategoryClickListener() {
+            @Override
+            public void onCategoryClick(String category) {
+                Intent intent = new Intent(HomeActivity.this, CategoryActivity.class);
+                intent.putExtra("selected_category", category);  // Truyền tên category
+                startActivity(intent);
+            }
+        });
+        rvCategories.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvCategories.setAdapter(categoryAdapter);
+
+        // Setup New Books RecyclerView  - vuot ngang de xem sach moi
+        RecyclerView rvNewBooks = findViewById(R.id.rv_new_books);
+        List<Book> demoNewBooks = new ArrayList<>();
+        // Thêm demo data (thay URL bằng ảnh thật hoặc local res ID)
+        demoNewBooks.add(new Book("New Horror Book", "https://example.com/horror.jpg"));  // Hoặc R.drawable.horror_cover cho local
+        demoNewBooks.add(new Book("Sci-Fi Adventure", "https://example.com/scifi.jpg"));
+        demoNewBooks.add(new Book("Romance Novel", "https://example.com/romance.jpg"));
+
+        NewBookAdapter newBookAdapter = new NewBookAdapter(demoNewBooks, this);
+        rvNewBooks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvNewBooks.setAdapter(newBookAdapter);
 
         // Xử lý search bar click (tạm Toast, thay bằng Intent đến SearchActivity)
         searchBar.setOnClickListener(v -> {
