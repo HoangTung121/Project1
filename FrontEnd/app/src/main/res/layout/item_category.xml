@@ -19,7 +19,7 @@
             android:id="@+id/category_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/honor_image"
+            android:src="@drawable/horror_image"
             android:scaleType="centerInside"
             android:layout_gravity="center" />
 

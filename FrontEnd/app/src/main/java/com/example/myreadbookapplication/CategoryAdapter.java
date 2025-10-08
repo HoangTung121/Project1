@@ -38,7 +38,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
         holder.categoryName.setText(category);
         switch (category.toLowerCase()) {
             case "horror":
-                holder.category_icon.setImageResource(R.drawable.honor_image);
+                holder.category_icon.setImageResource(R.drawable.horror_image);
                 break;
             case "romance":
                 holder.category_icon.setImageResource(R.drawable.romance_image);

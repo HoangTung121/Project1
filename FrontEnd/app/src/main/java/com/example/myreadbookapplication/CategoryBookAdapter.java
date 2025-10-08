@@ -34,7 +34,23 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
         String title = bookTitles.get(position);
         holder.bookTitle.setText(title);
 
-        holder.bookCover.setImageResource(R.drawable.honor_image);
+        switch (categoryName.toLowerCase()){
+            case "horror":
+                holder.bookCover.setImageResource(R.drawable.horror_image);
+                break;
+            case "romance":
+                holder.bookCover.setImageResource(R.drawable.romance_image);
+                break;
+            case "mystery":
+                holder.bookCover.setImageResource(R.drawable.mystery_image);
+                break;
+            case "fantasy":
+                holder.bookCover.setImageResource(R.drawable.fantasy_image);
+                break;
+            default:
+                holder.bookCover.setImageResource(R.drawable.default_book_cover);  // Drawable mặc định
+                break;
+        }
     }
 
     @Override

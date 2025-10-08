@@ -46,7 +46,7 @@
                         android:scaleType="fitXY" />
 
                     <TextView
-                        android:id="@+id/title_text"
+                        android:id="@+id/tv_category_title"
                         android:textColor="#000000"
                         android:textSize="20sp"
                         android:layout_height="wrap_content"
