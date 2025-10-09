@@ -8,8 +8,8 @@
     android:padding="8dp">
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="138dp"
+        android:layout_height="118dp"
         android:background="@drawable/category_background"
         android:orientation="vertical"
         android:gravity="center"
@@ -17,15 +17,15 @@
 
         <ImageView
             android:id="@+id/category_icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/honor_image"
+            android:layout_width="130dp"
+            android:layout_height="87dp"
+            android:src="@drawable/horror_image"
             android:scaleType="centerInside"
             android:layout_gravity="center" />
 
         <TextView
             android:id="@+id/category_name"
-            android:layout_width="wrap_content"
+            android:layout_width="138dp"
             android:layout_height="wrap_content"
             android:text="Horror"
             android:textSize="14sp"

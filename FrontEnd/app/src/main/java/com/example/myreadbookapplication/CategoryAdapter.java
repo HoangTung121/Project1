@@ -7,19 +7,23 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import com.bumptech.glide.Glide;  // Để load image từ URL
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.myreadbookapplication.model.Category;
+
 import java.util.List;
 
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHolder> {
-    private List<String> categories;
+    private List<Category> categories;
     private Context context;
     private OnCategoryClickListener listener;
 
     public interface OnCategoryClickListener {
-        void onCategoryClick(String category);
+        void onCategoryClick(Category category); // truyen 1 cai category object
     }
 
-    public CategoryAdapter(List<String> categories, Context context, OnCategoryClickListener listener) {
+    public CategoryAdapter(List<Category> categories, Context context, OnCategoryClickListener listener) {
         this.categories = categories;
         this.context = context;
         this.listener = listener;
@@ -34,23 +38,15 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String category = categories.get(position);
-        holder.categoryName.setText(category);
-        switch (category.toLowerCase()) {
-            case "horror":
-                holder.category_icon.setImageResource(R.drawable.honor_image);
-                break;
-            case "romance":
-                holder.category_icon.setImageResource(R.drawable.romance_image);
-                break;
-            case "sci-fi":
-                holder.category_icon.setImageResource(R.drawable.scifi_image);
-                break;
-            case "fantasy":
-                holder.category_icon.setImageResource(R.drawable.fantasy_image);
-                break;
-            case "mystery":
-                holder.category_icon.setImageResource(R.drawable.mystery_image);
+        Category category = categories.get(position);
+        holder.categoryName.setText(category.getName());
+
+        // Load image từ BE imageUrl bằng Glide
+        if(category.getImageUrl() != null && !category.getImageUrl().isEmpty()){
+            Glide.with(context)
+                    .load(category.getImageUrl())
+                    .placeholder(R.drawable.default_book_cover) // ảnh mặc định
+                    .into(holder.category_icon);
         }
         // Xử lý sự kiện click vào category
         holder.itemView.setOnClickListener(v -> listener.onCategoryClick(category));

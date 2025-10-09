@@ -2,10 +2,12 @@ package com.example.myreadbookapplication;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -19,11 +21,22 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.Book;
+import com.example.myreadbookapplication.model.BooksResponse;
+import com.example.myreadbookapplication.model.CategoriesResponse;
+import com.example.myreadbookapplication.model.Category;
+import com.example.myreadbookapplication.network.ApiService;
+import com.example.myreadbookapplication.network.RetrofitClient;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -32,6 +45,11 @@ public class HomeActivity extends AppCompatActivity {
     private ImageView menuIcon;
     private LinearLayout searchBar;
     private RecyclerView rvCategories;
+    private RecyclerView rvNewBooks;
+    private ProgressBar progressBar;
+    private CategoryAdapter categoryAdapter;
+    private NewBookAdapter newBookAdapter;
+    private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +63,11 @@ public class HomeActivity extends AppCompatActivity {
         menuIcon = findViewById(R.id.icon_menu);
         searchBar = findViewById(R.id.searchBarLayout);
         rvCategories = findViewById(R.id.rv_categories);
+        rvNewBooks = findViewById(R.id.rv_new_books);
+        progressBar = findViewById(R.id.progressBar);
+
+        apiService = RetrofitClient.getApiService();
+
 
         // xử lý click menu
         menuIcon.setOnClickListener(v -> {
@@ -83,42 +106,9 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
-        // Setup Categories RecyclerView (sử dụng CategoryAdapter có listener)
-        List<String> demoCategories = new ArrayList<>();
-        demoCategories.add("Horror");
-        demoCategories.add("Romance");
-        demoCategories.add("Sci-Fi");
-        demoCategories.add("Fantasy");
-        demoCategories.add("Mystery");
-        demoCategories.add("Thriller");
-        demoCategories.add("Adventure");
-        demoCategories.add("Biography");
-        demoCategories.add("History");
-        demoCategories.add("Self-Help");
-
-        //tạo adapter với listener khi mở categoryactivity
-        CategoryAdapter categoryAdapter = new CategoryAdapter(demoCategories, this, new CategoryAdapter.OnCategoryClickListener() {
-            @Override
-            public void onCategoryClick(String category) {
-                Intent intent = new Intent(HomeActivity.this, CategoryActivity.class);
-                intent.putExtra("selected_category", category);  // Truyền tên category
-                startActivity(intent);
-            }
-        });
-        rvCategories.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        rvCategories.setAdapter(categoryAdapter);
-
-        // Setup New Books RecyclerView  - vuot ngang de xem sach moi
-        RecyclerView rvNewBooks = findViewById(R.id.rv_new_books);
-        List<Book> demoNewBooks = new ArrayList<>();
-        // Thêm demo data (thay URL bằng ảnh thật hoặc local res ID)
-        demoNewBooks.add(new Book("New Horror Book", "https://example.com/horror.jpg"));  // Hoặc R.drawable.horror_cover cho local
-        demoNewBooks.add(new Book("Sci-Fi Adventure", "https://example.com/scifi.jpg"));
-        demoNewBooks.add(new Book("Romance Novel", "https://example.com/romance.jpg"));
-
-        NewBookAdapter newBookAdapter = new NewBookAdapter(demoNewBooks, this);
-        rvNewBooks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        rvNewBooks.setAdapter(newBookAdapter);
+        //setup recycleview voi loading
+        setupCategories();
+        setupNewBooks();
 
         // Xử lý search bar click (tạm Toast, thay bằng Intent đến SearchActivity)
         searchBar.setOnClickListener(v -> {
@@ -146,6 +136,8 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
+
+
     // Xử lý nút back: Đóng drawer nếu đang mở, иначе thoát activity
     @Override
     public void onBackPressed() {
@@ -154,5 +146,86 @@ public class HomeActivity extends AppCompatActivity {
         } else {
             super.onBackPressed();
         }
+    }
+    private void setupCategories() {
+        progressBar.setVisibility(View.VISIBLE);
+        Log.d("HomeActivity", "Calling Categories API...");
+        Call<ApiResponse<CategoriesResponse>> call = apiService.getCategories("active");
+        call.enqueue(new Callback<ApiResponse<CategoriesResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<CategoriesResponse>> call, Response<ApiResponse<CategoriesResponse>> response) {
+                progressBar.setVisibility(View.GONE);
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    CategoriesResponse catResp = response.body().getData();
+                    List<Category> categoriesList = (catResp != null) ? catResp.getCategories() : null;
+                    if (categoriesList != null) {
+                        // Filter null và inactive (BE có null[0])
+                        categoriesList = categoriesList.stream()
+                                .filter(cat -> cat != null && "active".equals(cat.getStatus()))
+                                .collect(Collectors.toList());
+                        Log.d("HomeActivity", "Filtered categories size: " + categoriesList.size());  // Nên =12
+                    }
+                    if (categoriesList != null && !categoriesList.isEmpty()) {
+                        categoryAdapter = new CategoryAdapter(categoriesList, HomeActivity.this, new CategoryAdapter.OnCategoryClickListener() {
+                            @Override
+                            public void onCategoryClick(Category category) {
+                                Intent intent = new Intent(HomeActivity.this, CategoryActivity.class);
+                                intent.putExtra("selected_category_id", String.valueOf(category.getId()));  // String OK
+                                intent.putExtra("selected_category_name", category.getName());
+                                startActivity(intent);
+                            }
+                        });
+                        rvCategories.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
+                        rvCategories.setAdapter(categoryAdapter);
+                        Log.d("HomeActivity", "Categories adapter set");
+                    } else {
+                        Log.w("HomeActivity", "No categories after filter");
+                        Toast.makeText(HomeActivity.this, "No active categories", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Log.e("HomeActivity", "Categories API fail: " + response.code());
+                    Toast.makeText(HomeActivity.this, "Load categories failed", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<CategoriesResponse>> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
+                Log.e("HomeActivity", "Categories failure: " + t.getMessage());
+                Toast.makeText(HomeActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void setupNewBooks() {
+        Call<ApiResponse<BooksResponse>> call = apiService.getBooks(null, "active", 10, 1);
+        call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    BooksResponse bookResp = response.body().getData();
+                    List<Book> newBooksList = (bookResp != null) ? bookResp.getBooks() : null;
+                    if (newBooksList != null && !newBooksList.isEmpty()) {
+                        // Set adapter (giả định NewBookAdapter dùng List<Book>, load coverUrl bằng Glide)
+                        newBookAdapter = new NewBookAdapter(newBooksList, HomeActivity.this);
+                        rvNewBooks.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
+                        rvNewBooks.setAdapter(newBookAdapter);
+                        Log.d("HomeActivity", "New books adapter set: " + newBooksList.size());
+                    } else {
+                        Log.w("HomeActivity", "No new books");
+                        Toast.makeText(HomeActivity.this, "No new books", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Log.e("HomeActivity", "Books API fail: " + response.code());
+                    Toast.makeText(HomeActivity.this, "Load books failed", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
+                Log.e("HomeActivity", "Books failure: " + t.getMessage());
+                Toast.makeText(HomeActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

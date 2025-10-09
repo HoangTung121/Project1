@@ -11,7 +11,7 @@
         android:layout_height="140dp"
         android:scaleType="centerCrop"
         android:background="#FFEBEE"
-        android:src="@drawable/honor_image" />
+        android:src="@drawable/horror_image" />
 
     <TextView
         android:id="@+id/book_category_label"

@@ -8,15 +8,19 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+import com.example.myreadbookapplication.model.Book;
+
 import java.util.List;
 
 public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapter.ViewHolder> {
-    private List<String> bookTitles; // danh sách tên sách
+    private List<Book> books;
     private Context context;
     private String categoryName;
 
-    public CategoryBookAdapter(List<String> bookTitles, Context context, String categoryName) {
-        this.bookTitles = bookTitles;
+    public CategoryBookAdapter(List<Book> books, Context context, String categoryName) {
+        this.books = books;
         this.context = context;
         this.categoryName = categoryName;
     }
@@ -30,16 +34,26 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CategoryBookAdapter.ViewHolder holder, int position) {
-        String title = bookTitles.get(position);
-        holder.bookTitle.setText(title);
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Book book = books.get(position);
+        holder.bookTitle.setText(book.getTitle() + " - " + book.getAuthor());  // Thêm author
+        // Optional: Thêm rating nếu có TextView ratingTv
+        // holder.ratingTv.setText(String.format("★ %.1f (%d)", book.getAvgRating(), book.getNumberOfReviews()));
 
-        holder.bookCover.setImageResource(R.drawable.honor_image);
+        if (book.getCoverUrl() != null && !book.getCoverUrl().isEmpty()) {
+            Glide.with(context)
+                    .load(book.getCoverUrl())
+                    .placeholder(R.drawable.default_book_cover)
+                    .error(R.drawable.default_book_cover)
+                    .into(holder.bookCover);
+        } else {
+            holder.bookCover.setImageResource(R.drawable.default_book_cover);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return bookTitles.size();
+        return books.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
