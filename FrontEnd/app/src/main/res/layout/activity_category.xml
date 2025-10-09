@@ -5,6 +5,50 @@
     android:orientation="vertical"
     android:background="@color/white">
 
+    <!-- Header (Cố định, không cuộn theo ScrollView) -->
+    <LinearLayout
+        android:id="@+id/header_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:paddingTop="58dp"
+        android:layout_marginBottom="27dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/header_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:layout_marginStart="11dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/back_icon_category"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="152dp"
+                android:src="@drawable/icon_back"
+                android:scaleType="fitXY" />
+
+            <TextView
+                android:id="@+id/tv_category_title"
+                android:textColor="#000000"
+                android:textSize="20sp"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:text="Category" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/divider_line"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#000000"
+            android:orientation="vertical" />
+    </LinearLayout>
+
+    <!-- ScrollView chỉ cho content (ProgressBar + RecyclerView) -->
     <ScrollView
         android:id="@+id/scroll_view"
         android:layout_width="match_parent"
@@ -15,59 +59,25 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Header -->
-            <LinearLayout
-                android:id="@+id/header_layout"
-                android:layout_width="match_parent"
+            <!-- ProgressBar cho loading (center trong ScrollView) -->
+            <ProgressBar
+                android:id="@+id/progressBar_category"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#FFFFFF"
-                android:paddingTop="58dp"
-                android:paddingBottom="5dp"
-                android:layout_marginBottom="27dp"
-                android:orientation="vertical">
+                android:layout_gravity="center"
+                android:visibility="gone" />
 
-                <LinearLayout
-                    android:id="@+id/header_content"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:layout_marginStart="11dp"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/back_icon_category"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="152dp"
-                        android:src="@drawable/icon_back"
-                        android:scaleType="fitXY" />
-
-                    <TextView
-                        android:id="@+id/tv_category_title"
-                        android:textColor="#000000"
-                        android:textSize="20sp"
-                        android:layout_height="wrap_content"
-                        android:layout_width="wrap_content"
-                        android:text="Category" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/divider_line"
-                    android:layout_width="match_parent"
-                    android:layout_height="3dp"
-                    android:background="#000000"
-                    android:orientation="vertical" />
-            </LinearLayout>
-
+            <!-- RecyclerView books (scroll bên trong ScrollView) -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_category_books"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:padding="5dp"
-                android:clipToPadding="false"/>  <!-- Để scroll qua padding nếu cần -->
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />  <!-- Tắt nested scroll để tránh conflict với ScrollView cha -->
 
         </LinearLayout>
 

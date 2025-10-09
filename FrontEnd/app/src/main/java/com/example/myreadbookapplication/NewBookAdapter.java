@@ -34,7 +34,7 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
         Book book = newBooks.get(position);
         holder.bookTitle.setText(book.getTitle());
         // Load ảnh với Glide (nếu imageUrl là URL; nếu local, dùng setImageResource)
-        Glide.with(context).load(book.getImageUrl()).into(holder.bookCover);
+        Glide.with(context).load(book.getCoverUrl()).into(holder.bookCover);
     }
 
     @Override
