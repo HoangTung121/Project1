@@ -226,14 +226,31 @@
                             android:text="View all" />
                     </LinearLayout>
 
-                    <!--recycle-->
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rv_new_books"
+                    <!-- NEW: 2 Hàng Cuộn Ngang Độc Lập -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:scrollbars="horizontal"
-                        android:nestedScrollingEnabled="false" />
+                        android:orientation="vertical"
+                        android:layout_marginHorizontal="10dp">
+
+                        <!-- Hàng 1: Cuộn ngang -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rv_new_books_row1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:scrollbars="horizontal"
+                            android:nestedScrollingEnabled="false" />
+
+                        <!-- Hàng 2: Cuộn ngang độc lập -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rv_new_books_row2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:scrollbars="horizontal"
+                            android:nestedScrollingEnabled="false"
+                            android:layout_marginTop="8dp" />  <!-- Khoảng cách giữa 2 hàng -->
+
+                    </LinearLayout>
                 </LinearLayout>
                 <!-- ProgressBar cho loading toàn trang (center) -->
                 <ProgressBar
