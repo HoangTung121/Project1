@@ -6,13 +6,11 @@ const compression = require('compression')
 const helmet = require('helmet')
 const httpStatus = require('http-status')
 
-const { firebaseStrategy } = require('./config/passport')
 const config = require('./config/config')
 const logger = require('./config/logger')
-const auth = require('./routes/authRoute')
-const user = require('./routes/userRoute')
-const categories = require('./routes/categoriesRoute')
-const book = require('./routes/bookRoute')
+const { successHandler, errorHandler } = require('./config/morgan')
+const { authRoute, userRoute, categoriesRoute, bookRoute, epubRoute } = require('./routes/index')
+const { firebaseStrategy } = require('./config/passport')
 
 const app = express()
 
@@ -27,16 +25,39 @@ app.options('*', cors())
 // BODY PARSING
 app.use(
   express.json({
-    limit: config.upload.limit,
+    limit: config.upload.limit || '10mb',
     verify: (req, res, buf) => {
       req.rawBody = buf
     }
   })
 )
+
+// Handle JSON parsing for requests without proper Content-Type
+app.use((req, res, next) => {
+  // Handle text/plain content type that might contain JSON
+  if (req.is('text/plain') && req.body && typeof req.body === 'string') {
+    try {
+      req.body = JSON.parse(req.body)
+    } catch (e) {
+      // If parsing fails, continue with original body
+    }
+  }
+
+  // Handle requests with no content type that might contain JSON
+  if (!req.get('Content-Type') && req.body && typeof req.body === 'string') {
+    try {
+      req.body = JSON.parse(req.body)
+    } catch (e) {
+      // If parsing fails, continue with original body
+    }
+  }
+
+  next()
+})
 app.use(
   express.urlencoded({
     extended: true,
-    limit: config.upload.limit
+    limit: config.upload.limit || '10mb'
   })
 )
 
@@ -53,6 +74,10 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
+// REQUEST LOGGING
+app.use(successHandler)
+app.use(errorHandler)
+
 // AUTHENTICATION
 app.use(passport.initialize())
 passport.use('firebase', firebaseStrategy)
@@ -68,10 +93,11 @@ app.get('/health', (req, res) => {
 })
 
 // API ROUTES
-app.use('/api/auth', auth)
-app.use('/api/users', user)
-app.use('/api/categories', categories)
-app.use('/api/books', book)
+app.use('/api/auth', authRoute)
+app.use('/api/users', userRoute)
+app.use('/api/categories', categoriesRoute)
+app.use('/api/books', bookRoute)
+app.use('/api/epub', epubRoute)
 
 
 // ERROR HANDLER
