@@ -1,5 +1,5 @@
 const { ApiError } = require('../utils/index')
-const categoryModel = require('../models/categoryModel')
+const { categoryModel } = require('../models/index')
 const httpStatus = require('http-status')
 
 /**
@@ -63,7 +63,8 @@ const getAllCategories = async () => {
     const categories = await categoryModel.findAll()
     return {
       success: true,
-      data: { categories }
+      data: { categories },
+      message: 'Lấy danh sách thể loại thành công'
     }
   } catch (error) {
     if (error instanceof ApiError) throw error
@@ -84,7 +85,8 @@ const getCategoryById = async (categoryId) => {
     const category = await categoryModel.findById(categoryId)
     return {
       success: true,
-      data: { category }
+      data: { category },
+      message: 'Lấy thể loại thành công'
     }
   } catch (error) {
     if (error instanceof ApiError) throw error
@@ -149,7 +151,8 @@ const getCurrentMaxCategoryId = async () => {
     const maxId = await categoryModel.getCurrentMaxCategoryId()
     return {
       success: true,
-      data: { currentMaxId: maxId }
+      data: { currentMaxId: maxId },
+      message: 'Lấy ID hiện tại thành công'
     }
   } catch (error) {
     if (error instanceof ApiError) throw error
