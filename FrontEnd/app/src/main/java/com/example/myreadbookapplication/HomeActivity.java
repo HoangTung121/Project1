@@ -18,6 +18,7 @@ import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -63,7 +64,7 @@ public class HomeActivity extends AppCompatActivity {
         menuIcon = findViewById(R.id.icon_menu);
         searchBar = findViewById(R.id.searchBarLayout);
         rvCategories = findViewById(R.id.rv_categories);
-        rvNewBooks = findViewById(R.id.rv_new_books);
+        //rvNewBooks = findViewById(R.id.rv_new_books);
         progressBar = findViewById(R.id.progressBar);
 
         apiService = RetrofitClient.getApiService();
@@ -122,10 +123,10 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Xử lý "View all" new books (tạm)
+        // Xử lý "View all" new books
         findViewById(R.id.viewAllNewBooks).setOnClickListener(v -> {
-            Toast.makeText(this, "View all new books", Toast.LENGTH_SHORT).show();
-            // Ví dụ: Intent to BooksActivity
+            Intent intent = new Intent(HomeActivity.this, BookActivity.class);
+            startActivity(intent);
         });
 
         // Xử lý EdgeToEdge cho ScrollView
@@ -170,7 +171,7 @@ public class HomeActivity extends AppCompatActivity {
                             @Override
                             public void onCategoryClick(Category category) {
                                 Intent intent = new Intent(HomeActivity.this, CategoryActivity.class);
-                                intent.putExtra("selected_category_id", String.valueOf(category.getId()));  // String OK
+                                intent.putExtra("selected_category_id", String.valueOf(category.getId()));  // Id dạng INT
                                 intent.putExtra("selected_category_name", category.getName());
                                 startActivity(intent);
                             }
@@ -198,7 +199,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupNewBooks() {
-        Call<ApiResponse<BooksResponse>> call = apiService.getBooks(null, "active", 10, 1);
+        Call<ApiResponse<BooksResponse>> call = apiService.getBooks(null, "active", 10, 1);  // Giữ nguyên API
         call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
             @Override
             public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
@@ -206,24 +207,41 @@ public class HomeActivity extends AppCompatActivity {
                     BooksResponse bookResp = response.body().getData();
                     List<Book> newBooksList = (bookResp != null) ? bookResp.getBooks() : null;
                     if (newBooksList != null && !newBooksList.isEmpty()) {
-                        // Set adapter (giả định NewBookAdapter dùng List<Book>, load coverUrl bằng Glide)
-                        newBookAdapter = new NewBookAdapter(newBooksList, HomeActivity.this);
-                        rvNewBooks.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
-                        rvNewBooks.setAdapter(newBookAdapter);
-                        Log.d("HomeActivity", "New books adapter set: " + newBooksList.size());
+                        // NEW: Chia data thành 2 list cho 2 hàng
+                        List<Book> row1Books = new ArrayList<>();  // Hàng 1: sách 0,2,4...
+                        List<Book> row2Books = new ArrayList<>();  // Hàng 2: sách 1,3,5...
+                        for (int i = 0; i < newBooksList.size(); i++) {
+                            if (i % 2 == 0) {
+                                row1Books.add(newBooksList.get(i));
+                            } else {
+                                row2Books.add(newBooksList.get(i));
+                            }
+                        }
+                        Log.d("HomeActivity", "Row1 size: " + row1Books.size() + ", Row2 size: " + row2Books.size());
+
+                        // Hàng 1
+                        NewBookAdapter row1Adapter = new NewBookAdapter(row1Books, HomeActivity.this);
+                        RecyclerView rvRow1 = findViewById(R.id.rv_new_books_row1);  // ID mới trong XML
+                        rvRow1.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
+                        rvRow1.setAdapter(row1Adapter);
+
+                        // Hàng 2
+                        NewBookAdapter row2Adapter = new NewBookAdapter(row2Books, HomeActivity.this);
+                        RecyclerView rvRow2 = findViewById(R.id.rv_new_books_row2);  // ID mới trong XML
+                        rvRow2.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
+                        rvRow2.setAdapter(row2Adapter);
+
+                        Log.d("HomeActivity", "2-row horizontal adapters set");
                     } else {
-                        Log.w("HomeActivity", "No new books");
                         Toast.makeText(HomeActivity.this, "No new books", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Log.e("HomeActivity", "Books API fail: " + response.code());
-                    Toast.makeText(HomeActivity.this, "Load books failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(HomeActivity.this, "Load new books failed", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
-                Log.e("HomeActivity", "Books failure: " + t.getMessage());
                 Toast.makeText(HomeActivity.this, "Network error", Toast.LENGTH_SHORT).show();
             }
         });
