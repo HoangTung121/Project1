@@ -1,6 +1,7 @@
 package com.example.myreadbookapplication;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -8,6 +9,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -78,6 +80,17 @@ public class HomeActivity extends AppCompatActivity {
                 drawerLayout.openDrawer(GravityCompat.START);
             }
         });
+
+        //set email động vào header menu
+        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        String userEmail = prefs.getString("user_email", "guest@example.com"); // đặt làm email mặc định nếu không có
+        Log.d("HomeActivity", "Loaded email from prefs: " + userEmail);
+
+        View headerView = navigationView.getHeaderView(0);  // Lấy headerView (nav_header_xml)
+        TextView profileEmail = headerView.findViewById(R.id.profile_email);
+        if(profileEmail != null){
+            profileEmail.setText(userEmail);
+        }
 
         // Xử lý menu items
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {

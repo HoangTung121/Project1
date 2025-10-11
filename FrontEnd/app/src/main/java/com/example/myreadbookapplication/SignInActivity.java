@@ -18,6 +18,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.SignInRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.json.JSONObject;
 
@@ -81,9 +84,26 @@ public class SignInActivity extends AppCompatActivity {
                         ApiResponse apiResponse = response.body();
                         Toast.makeText(SignInActivity.this, apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
                         if(apiResponse.isSuccess()){
+                            //lay va luu email vao sharedPreference
+                            String userEmail = "";
+                            Object dataObj = apiResponse.getData();
+                            if(dataObj != null){
+                                try{
+                                    Gson gson = new Gson();
+                                    String dataJson = gson.toJson(dataObj); //convert data sang json string
+                                    JsonObject jsonData = JsonParser.parseString(dataJson).getAsJsonObject();
+                                    JsonObject userJson = jsonData.getAsJsonObject("user");
+                                    if(userJson != null){
+                                        userEmail = userJson.get("email").getAsString();
+                                    }
+                                }catch (Exception e){
+                                    Log.e(TAG, "Error parsing data", e);
+                                }
+                            }
+                            Log.d(TAG, "Login success, email: " + userEmail);
                             //luu email vao sharedPreference
-                            SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
-                            prefs.edit().putString("user_email", emailSignIn).apply();
+                            SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+                            prefs.edit().putString("user_email", userEmail).apply();
 
                             // chuyen sang homeActivity
                             Intent intent = new Intent(SignInActivity.this, HomeActivity.class);
