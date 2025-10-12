@@ -90,17 +90,3 @@ git clone https://github.com/<your-username>/<repo-name>.git
 - Cần cấu hình đúng IP hoặc domain trong `BASE_URL` nếu chạy trên mạng khác nhau.
 
 ---
-
-🤝 **Đóng góp**
-
-1. Fork repository.
-2. Tạo branch mới: `git checkout -b feature/<tên-tính-năng>`.
-3. Commit thay đổi: `git commit -m "Mô tả thay đổi"`.
-4. Push lên branch: `git push origin feature/<tên-tính-năng>`.
-5. Tạo Pull Request trên GitHub.
-
----
-
-❓ **Hỗ trợ**
-
-Nếu bạn gặp vấn đề khi cài đặt hoặc chạy dự án, vui lòng mở issue trên GitHub hoặc cung cấp logcat để được hỗ trợ.
