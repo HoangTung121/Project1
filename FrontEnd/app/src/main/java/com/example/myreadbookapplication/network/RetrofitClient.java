@@ -1,5 +1,7 @@
 package com.example.myreadbookapplication.network;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import com.example.myreadbookapplication.BuildConfig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -24,6 +26,13 @@ public class RetrofitClient {
                 logging.setLevel(HttpLoggingInterceptor.Level.BODY);
                 httpClient.addInterceptor(logging);
             }
+
+            // Interceptor thêm Authorization nếu có token
+            httpClient.addInterceptor(chain -> {
+                okhttp3.Request original = chain.request();
+                // Không có context toàn cục, nên giữ nguyên - caller có thể thêm Header thủ công khi gọi
+                return chain.proceed(original);
+            });
 
             // Tạo Gson với cấu hình
             Gson gson = new GsonBuilder()
