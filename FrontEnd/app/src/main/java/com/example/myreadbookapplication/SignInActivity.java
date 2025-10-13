@@ -101,9 +101,53 @@ public class SignInActivity extends AppCompatActivity {
                                 }
                             }
                             Log.d(TAG, "Login success, email: " + userEmail);
-                            //luu email vao sharedPreference
+                            //luu email, userId, accessToken vao sharedPreference
                             SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-                            prefs.edit().putString("user_email", userEmail).apply();
+                            String userId = "";
+                            String accessToken = "";
+                            try{
+                                Gson gson = new Gson();
+                                String dataJson = gson.toJson(apiResponse.getData());
+                                JsonObject jsonData = JsonParser.parseString(dataJson).getAsJsonObject();
+                                JsonObject user = jsonData.getAsJsonObject("user");
+                                if (user != null && user.get("_id") != null) {
+                                    try {
+                                        if (user.get("_id").isJsonPrimitive() && user.get("_id").getAsJsonPrimitive().isNumber()) {
+                                            long idNum = user.get("_id").getAsLong();
+                                            userId = String.valueOf(idNum);
+                                        } else {
+                                            userId = user.get("_id").getAsString();
+                                        }
+                                    } catch (Exception ignore) {
+                                        userId = user.get("_id").getAsString();
+                                    }
+                                }
+                                if (jsonData.get("accessToken") != null) {
+                                    accessToken = jsonData.get("accessToken").getAsString();
+                                }
+                            }catch (Exception e){
+                                Log.e(TAG, "Parse tokens failed", e);
+                            }
+                            prefs.edit()
+                                    .putString("user_email", userEmail)
+                                    .putString("user_id", userId != null ? userId.replace(".0", "") : null)
+                                    .putString("access_token", accessToken)
+                                    .apply();
+
+                            // Optional: seed local favorite ids from backend user.favoriteBooks for correct icon state
+                            try {
+                                Gson gson = new Gson();
+                                String dataJson = gson.toJson(apiResponse.getData());
+                                JsonObject jsonData = JsonParser.parseString(dataJson).getAsJsonObject();
+                                JsonObject userObj = jsonData.getAsJsonObject("user");
+                                if (userObj != null && userObj.get("favoriteBooks") != null && userObj.get("favoriteBooks").isJsonArray()) {
+                                    String favoritesJson = userObj.get("favoriteBooks").toString();
+                                    // Persist as list of strings
+                                    prefs.edit().putString("favorite_books", favoritesJson).apply();
+                                }
+                            } catch (Exception e2) {
+                                Log.w(TAG, "Unable to seed favorites from login response", e2);
+                            }
 
                             // chuyen sang homeActivity
                             Intent intent = new Intent(SignInActivity.this, HomeActivity.class);

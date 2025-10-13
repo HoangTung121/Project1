@@ -19,6 +19,9 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 import retrofit2.http.GET;
+import retrofit2.http.Path;
+import retrofit2.http.DELETE;
+import retrofit2.http.Header;
 
 public interface ApiService {
 
@@ -53,8 +56,39 @@ public interface ApiService {
             @Query("page") Integer page
     );
 
+    // Trong ApiService.java
+    @GET("api/books")
+    Call<ApiResponse<BooksResponse>> getBooksByIds(
+            @Query("ids") String ids,  // Comma-separated IDs
+            @Query("status") String status,
+            @Query("limit") Integer limit,
+            @Query("page") Integer page
+    );
+    
+
     //Optional: search book
     @GET("api/books/search")
     Call<ApiResponse<List<Book>>> searchBooks(@Query("q") String query); //q = author or title
+
+    // favorites
+    @GET("api/users/{userId}/favorites")
+    Call<ApiResponse<com.example.myreadbookapplication.model.FavoritesResponse>> getFavorites(
+            @Path("userId") String userId,
+            @Header("Authorization") String authorization
+    );
+
+    @POST("api/users/{userId}/favorites/{bookId}")
+    Call<ApiResponse> addFavorite(
+            @Path("userId") String userId,
+            @Path("bookId") String bookId,
+            @Header("Authorization") String authorization
+    );
+
+    @DELETE("api/users/{userId}/favorites/{bookId}")
+    Call<ApiResponse> removeFavorite(
+            @Path("userId") String userId,
+            @Path("bookId") String bookId,
+            @Header("Authorization") String authorization
+    );
 
 }

@@ -98,10 +98,13 @@ public class HomeActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 int id = item.getItemId();
                 // Ví dụ xử lý từng item (thay Toast bằng Intent nếu cần)
-                if (id == R.id.nav_other_features) {
-                    Toast.makeText(HomeActivity.this, "Other features clicked", Toast.LENGTH_SHORT).show();
-                } else if (id == R.id.nav_favorite) {
-                    Toast.makeText(HomeActivity.this, "Favorite clicked", Toast.LENGTH_SHORT).show();
+
+                if (id == R.id.nav_favorite) {
+                    Log.d("HomeActivity", "Favorite clicked");
+                    Intent intent = new Intent(HomeActivity.this, FavoriteActivity.class);  // Chuyển sang FavoriteActivity
+                    startActivity(intent);
+                    drawerLayout.closeDrawer(GravityCompat.START);  // Đóng drawer
+                    return true;
                 } else if (id == R.id.nav_history) {
                     Toast.makeText(HomeActivity.this, "History clicked", Toast.LENGTH_SHORT).show();
                 } else if (id == R.id.nav_feedback) {
