@@ -1,5 +1,7 @@
 package com.example.myreadbookapplication.model;
 
+import android.util.Log;
+
 import com.google.gson.annotations.SerializedName;
 
 public class Book {
@@ -64,4 +66,12 @@ public class Book {
     public void setAvgRating(double avgRating) { this.avgRating = avgRating; }
     public int getNumberOfReviews() { return numberOfReviews; }
     public void setNumberOfReviews(int numberOfReviews) { this.numberOfReviews = numberOfReviews; }
+    public int getIdAsInt() {
+        try {
+            return Integer.parseInt(String.valueOf(_id));  // Parse String _id sang int
+        } catch (NumberFormatException e) {
+            Log.e("Book", "Invalid ID: " + _id);
+            return -1;  // Default nếu parse fail
+        }
+    }
 }
