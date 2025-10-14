@@ -246,7 +246,7 @@
                 android:layout_marginHorizontal="20dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:orientation="vertical">
+                android:orientation="horizontal">
 
                 <TextView
                     android:id="@+id/btn_signup_text"
@@ -256,6 +256,14 @@
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
                     android:text="Sign Up" />
+
+                <ProgressBar
+                    android:id="@+id/progress_bar_signup"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="8dp"
+                    android:visibility="gone"
+                    android:indeterminateTint="#FFFFFF" />
             </LinearLayout>
 
             <!-- Already have account -->

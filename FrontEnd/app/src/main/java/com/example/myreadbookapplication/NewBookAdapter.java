@@ -59,9 +59,9 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
 
         // Thêm favorite icon (mới)
         if (holder.ivFavorite != null) {
-            String bookIdStr = String.valueOf(book.getId());
+            String bookIdStr = book.getId();
             boolean isFavorite = isBookFavorite(bookIdStr);
-            holder.ivFavorite.setImageResource(isFavorite ? R.drawable.ic_favorite_border : R.drawable.ic_favorite);
+            holder.ivFavorite.setImageResource(isFavorite ? R.drawable.ic_favorite : R.drawable.ic_favorite_image);
 
             holder.ivFavorite.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -72,6 +72,19 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
         } else {
             Log.w("NewBookAdapter", "iv_favorite ImageView not found in layout");
         }
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                android.content.Intent intent = new android.content.Intent(context, ReadBookActivity.class);
+                intent.putExtra("title", book.getTitle());
+                intent.putExtra("cover_url", book.getCoverUrl());
+                intent.putExtra("txt_url", book.getTxtUrl());
+                intent.putExtra("book_url", book.getBookUrl());
+                intent.putExtra("epub_url", book.getEpubUrl());
+                context.startActivity(intent);
+            }
+        });
     }
 
     // Copy toggleFavorite từ CategoryBookAdapter
@@ -90,7 +103,7 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
             syncBackendFavorite(bookId, false);
         } else {
             favorites.add(bookId);
-            ivFavorite.setImageResource(R.drawable.ic_favorite_border);
+            ivFavorite.setImageResource(R.drawable.ic_favorite_image);
             Toast.makeText(context, "You have added to favorites list", Toast.LENGTH_SHORT).show();
             syncBackendFavorite(bookId, true);
         }
