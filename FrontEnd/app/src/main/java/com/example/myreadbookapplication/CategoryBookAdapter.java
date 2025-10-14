@@ -65,9 +65,9 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
 
         if (holder.ivFavorite != null) {
             // Set icon dựa trên prefs
-            String bookIdStr = String.valueOf(book.getId());  // Chuyển int sang String
+            String bookIdStr = book.getId();
             boolean isFavorite = isBookFavorite(bookIdStr);
-            holder.ivFavorite.setImageResource(isFavorite ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
+            holder.ivFavorite.setImageResource(isFavorite ? R.drawable.ic_favorite_image : R.drawable.ic_favorite);
 
             holder.ivFavorite.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -78,6 +78,19 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
         } else {
             Log.w("CategoryBookAdapter", "iv_favorite ImageView not found in layout");
         }
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                android.content.Intent intent = new android.content.Intent(context, ReadBookActivity.class);
+                intent.putExtra("title", book.getTitle());
+                intent.putExtra("cover_url", book.getCoverUrl());
+                intent.putExtra("txt_url", book.getTxtUrl());
+                intent.putExtra("book_url", book.getBookUrl());
+                intent.putExtra("epub_url", book.getEpubUrl());
+                context.startActivity(intent);
+            }
+        });
     }
 
     // toggleFavorite: Nhận String bookId, dùng List<String>
@@ -91,12 +104,12 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
 
         if (favorites.contains(bookId)) {
             favorites.remove(bookId);  // Remove String
-            ivFavorite.setImageResource(R.drawable.ic_favorite_border);
+            ivFavorite.setImageResource(R.drawable.ic_favorite);
             Toast.makeText(context, "Removed from favorites", Toast.LENGTH_SHORT).show();
             syncBackendFavorite(bookId, false);
         } else {
             favorites.add(bookId);  // Add String
-            ivFavorite.setImageResource(R.drawable.ic_favorite);
+            ivFavorite.setImageResource(R.drawable.ic_favorite_image);
             Toast.makeText(context, "You have added to favorites list", Toast.LENGTH_SHORT).show();  // Message mới
             syncBackendFavorite(bookId, true);
         }

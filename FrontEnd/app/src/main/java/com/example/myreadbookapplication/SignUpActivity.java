@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +47,8 @@ public class SignUpActivity extends AppCompatActivity {
         EditText edtPhone = findViewById(R.id.input_phone);
         EditText edtPassword = findViewById(R.id.input_password);
         EditText edtConfirmPassword = findViewById(R.id.input_confirm_password);
+        ProgressBar progressBarSignup = findViewById(R.id.progress_bar_signup);
+        TextView btnSignupText = findViewById(R.id.btn_signup_text);
 
         // bắt sự kiện và xử lý cho text already have an acount, sign in
         tvAlreadyHaveAccount.setOnClickListener(new View.OnClickListener() {
@@ -98,9 +101,10 @@ public class SignUpActivity extends AppCompatActivity {
                 return;
             }
 
-            // Disable nút để tránh bấm liên tục
+            // Disable nút để tránh bấm liên tục và hiển thị spinner
             btnSignUp.setEnabled(false);
-            Toast.makeText(SignUpActivity.this, "Registering...", Toast.LENGTH_SHORT).show();
+            progressBarSignup.setVisibility(View.VISIBLE);
+            btnSignupText.setText("Registering...");
 
             // Tạo request object và gọi API
             SignUpRequest request = new SignUpRequest(fullName, email, password, confirmPassword, phoneNumber);
@@ -110,6 +114,8 @@ public class SignUpActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
                     btnSignUp.setEnabled(true);
+                    progressBarSignup.setVisibility(View.GONE);
+                    btnSignupText.setText("Sign Up");
                     if (response.isSuccessful() && response.body() != null) {
                         ApiResponse apiResponse = response.body();
                         Toast.makeText(SignUpActivity.this, apiResponse.getMessage(), Toast.LENGTH_SHORT).show();
@@ -163,6 +169,8 @@ public class SignUpActivity extends AppCompatActivity {
                 @Override
                 public void onFailure(Call<ApiResponse> call, Throwable t) {
                     btnSignUp.setEnabled(true);
+                    progressBarSignup.setVisibility(View.GONE);
+                    btnSignupText.setText("Sign Up");
                     Log.e(TAG, "API failure", t);
                     Toast.makeText(SignUpActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
