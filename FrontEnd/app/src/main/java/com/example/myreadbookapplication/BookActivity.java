@@ -10,7 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,13 +30,20 @@ public class BookActivity extends AppCompatActivity {
 
     private static final String TAG = "BookActivity";
 
-    private Toolbar toolbar;
     private TextView tvTitle;
     private RecyclerView rvBooks;
-    private CategoryBookAdapter bookAdapter;  // Dùng adapter cũ cho books
+    private AllBooksAdapter bookAdapter;  // Adapter mới cho all books
     private ProgressBar progressBar;
     private ApiService apiService;
     private ImageView backAllBookIcon;
+    private java.util.Map<Integer, String> categoryIdToName = new java.util.HashMap<>();
+    private java.util.List<Book> allBooks = new java.util.ArrayList<>();
+    private int currentPage = 1;
+    private int totalPages = Integer.MAX_VALUE;
+    private int pageSize = 12; // default, will be updated from response
+    private boolean isLoading = false;
+    private GridLayoutManager gridLayoutManager;
+    private boolean isLastPage = false; // Để biết hết data chưa
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,12 +58,7 @@ public class BookActivity extends AppCompatActivity {
         apiService = RetrofitClient.getApiService();
         backAllBookIcon = findViewById(R.id.back_all_book_icon);
 
-        // Set Toolbar
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowTitleEnabled(false);
-        }
+        // No Toolbar in layout, title is handled by TextView
 
         backAllBookIcon.setOnClickListener(v -> finish());
 
@@ -68,7 +70,8 @@ public class BookActivity extends AppCompatActivity {
         tvTitle.setVisibility(View.VISIBLE);
         Log.d(TAG, "BookActivity opened for: " + title + ", AllBooks: " + isAllBooks);
 
-        loadAllBooks();  // Load all books
+        // Load categories first to map category id -> name, then load books
+        loadCategoriesThenBooks();
     }
 
     // Back button
@@ -81,39 +84,133 @@ public class BookActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    // Cập nhật loadAllBooks()
     private void loadAllBooks() {
-        progressBar.setVisibility(View.VISIBLE);
-        Log.d(TAG, "Loading all books...");
-        // Gọi API với category=null (tất cả sách)
-        Call<ApiResponse<BooksResponse>> call = apiService.getBooks(null, "active", 50, 3);  // Limit 50, page 1
+        if (isLoading || isLastPage) return; // Thêm check isLastPage
+        isLoading = true;
+        progressBar.setVisibility(View.VISIBLE); // Hoặc dùng footer nếu muốn
+        Log.d(TAG, "Loading books page=" + currentPage + ", size=" + pageSize);
+
+        Call<ApiResponse<BooksResponse>> call = apiService.getBooks(null, "active", pageSize, currentPage);
         call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
             @Override
             public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
                 progressBar.setVisibility(View.GONE);
-                Log.d(TAG, "All books response code: " + response.code());
+                isLoading = false;
+                Log.d(TAG, "Books response code: " + response.code());
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     BooksResponse bookResp = response.body().getData();
                     List<Book> booksList = (bookResp != null) ? bookResp.getBooks() : null;
-                    Log.d(TAG, "All books size: " + (booksList != null ? booksList.size() : 0));
+
+                    // Cập nhật pagination từ response
+                    if (bookResp != null && bookResp.getPagination() != null) {
+                        try {
+                            pageSize = bookResp.getPagination().getLimit();
+                            totalPages = bookResp.getPagination().getTotalPages();
+                            if (currentPage >= totalPages) {
+                                isLastPage = true; // Đánh dấu hết
+                            }
+                        } catch (Exception ignored) {}
+                    }
+
+                    Log.d(TAG, "Loaded page=" + currentPage + ", count=" + (booksList != null ? booksList.size() : 0) + "/ totalPages=" + totalPages);
                     if (booksList != null && !booksList.isEmpty()) {
-                        bookAdapter = new CategoryBookAdapter(booksList, BookActivity.this, "All Books");  // Adapter cũ
-                        rvBooks.setLayoutManager(new GridLayoutManager(BookActivity.this, 3));  // Grid 3 cột
-                        rvBooks.setAdapter(bookAdapter);
+                        int insertStart = allBooks.size();
+                        allBooks.addAll(booksList);
+                        if (bookAdapter == null) {
+                            bookAdapter = new AllBooksAdapter(allBooks, BookActivity.this, categoryIdToName);
+                            gridLayoutManager = new GridLayoutManager(BookActivity.this, 3);
+                            rvBooks.setLayoutManager(gridLayoutManager);
+                            rvBooks.setAdapter(bookAdapter);
+                            attachScrollForPagination();
+                        } else {
+                            bookAdapter.notifyItemRangeInserted(insertStart, booksList.size());
+                        }
                         rvBooks.invalidate();
-                        Log.d(TAG, "All books adapter set");
+                        currentPage += 1;
                     } else {
-                        Toast.makeText(BookActivity.this, "No books found", Toast.LENGTH_SHORT).show();
+                        isLastPage = true; // Nếu response rỗng, coi như hết
+                        if (allBooks.isEmpty()) {
+                            Toast.makeText(BookActivity.this, "No books found", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 } else {
-                    Toast.makeText(BookActivity.this, "Load all books failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(BookActivity.this, "Load books failed: " + response.message(), Toast.LENGTH_SHORT).show();
+                    // Optional: Thêm retry button ở đây
                 }
             }
 
             @Override
             public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
                 progressBar.setVisibility(View.GONE);
-                Log.e(TAG, "All books failure: " + t.getMessage());
-                Toast.makeText(BookActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+                isLoading = false;
+                Log.e(TAG, "Books failure: " + t.getMessage());
+                Toast.makeText(BookActivity.this, "Network error. Tap to retry.", Toast.LENGTH_SHORT).show();
+                // Optional: Retry khi tap RecyclerView nếu fail
+            }
+        });
+    }
+
+    // Cập nhật attachScrollForPagination() – Thêm threshold nhỏ hơn (2 item thay vì 4) để load sớm hơn
+    private void attachScrollForPagination() {
+        rvBooks.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy <= 0 || isLastPage) return; // Chỉ load khi scroll down và chưa hết
+
+                int visibleItemCount = gridLayoutManager.getChildCount();
+                int totalItemCount = gridLayoutManager.getItemCount();
+                int firstVisibleItemPosition = gridLayoutManager.findFirstVisibleItemPosition();
+
+                // Load khi còn 2 item nữa là hết (threshold nhỏ hơn để mượt)
+                if (!isLoading && (visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 2 && firstVisibleItemPosition >= 0) {
+                    loadAllBooks();
+                }
+            }
+        });
+    }
+
+    // Trong onCreate(), gọi loadAllBooks() sau khi load categories (như cũ)
+// Optional: Reset pagination khi quay lại activity (onResume)
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (allBooks.isEmpty()) { // Chỉ reset nếu list rỗng (tránh load lại hết)
+            currentPage = 1;
+            isLastPage = false;
+            allBooks.clear();
+            if (bookAdapter != null) {
+                bookAdapter.notifyDataSetChanged();
+            }
+            loadCategoriesThenBooks(); // Hoặc chỉ loadAllBooks() nếu categories đã có
+        }
+    }
+
+    private void loadCategoriesThenBooks() {
+        progressBar.setVisibility(View.VISIBLE);
+        retrofit2.Call<com.example.myreadbookapplication.model.ApiResponse<com.example.myreadbookapplication.model.CategoriesResponse>> call =
+                apiService.getCategories("active");
+        call.enqueue(new retrofit2.Callback<com.example.myreadbookapplication.model.ApiResponse<com.example.myreadbookapplication.model.CategoriesResponse>>() {
+            @Override
+            public void onResponse(retrofit2.Call<com.example.myreadbookapplication.model.ApiResponse<com.example.myreadbookapplication.model.CategoriesResponse>> call,
+                                   retrofit2.Response<com.example.myreadbookapplication.model.ApiResponse<com.example.myreadbookapplication.model.CategoriesResponse>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    com.example.myreadbookapplication.model.CategoriesResponse data = response.body().getData();
+                    if (data != null && data.getCategories() != null) {
+                        for (com.example.myreadbookapplication.model.Category c : data.getCategories()) {
+                            if (c != null) categoryIdToName.put(c.getId(), c.getName());
+                        }
+                    }
+                }
+                // Regardless of success, continue to load books
+                loadAllBooks();
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<com.example.myreadbookapplication.model.ApiResponse<com.example.myreadbookapplication.model.CategoriesResponse>> call, Throwable t) {
+                // Continue with books even if categories fail
+                loadAllBooks();
             }
         });
     }

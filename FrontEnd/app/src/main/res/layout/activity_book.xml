@@ -48,34 +48,27 @@
             android:background="#000000" />
     </LinearLayout>
 
-    <!-- ScrollView cho content -->
-    <ScrollView
-        android:id="@+id/scroll_view"
+    <!-- Content: RecyclerView should handle its own scroll to enable pagination -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <ProgressBar
+            android:id="@+id/progressBar_books"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_gravity="center"
+            android:visibility="gone" />
 
-            <ProgressBar
-                android:id="@+id/progressBar_books"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:visibility="gone" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_books"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="5dp" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_books"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="5dp"
-                android:nestedScrollingEnabled="false" />
-
-        </LinearLayout>
-
-    </ScrollView>
+    </LinearLayout>
 
 </LinearLayout>

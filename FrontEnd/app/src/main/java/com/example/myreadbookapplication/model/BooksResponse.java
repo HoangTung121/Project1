@@ -7,17 +7,16 @@ import java.util.List;
 public class BooksResponse {
     @SerializedName("books")
     private List<Book> books;
-    private Pagination pagination;
+    private BooksResponse.Pagination pagination;
 
     // Getters/Setters
     public List<Book> getBooks() { return books; }
     public void setBooks(List<Book> books) { this.books = books; }
-    public Pagination getPagination() { return pagination; }
-    public void setPagination(Pagination pagination) { this.pagination = pagination; }
-}
+    public BooksResponse.Pagination getPagination() { return pagination; }
+    public void setPagination(BooksResponse.Pagination pagination) { this.pagination = pagination; }
 
-// Pagination class (nếu chưa có)
-class Pagination {
+    // Public static inner class to ensure visibility across packages
+    public static class Pagination {
     private int page;
     private int limit;
     private int total;
@@ -31,4 +30,5 @@ class Pagination {
     public void setTotal(int total) { this.total = total; }
     public int getTotalPages() { return totalPages; }
     public void setTotalPages(int totalPages) { this.totalPages = totalPages; }
+    }
 }
