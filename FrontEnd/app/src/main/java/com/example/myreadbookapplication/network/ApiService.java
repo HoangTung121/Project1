@@ -20,6 +20,8 @@ import retrofit2.http.POST;
 import retrofit2.http.Query;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
 
 // EPUB models
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubUrlRequest;
@@ -95,6 +97,34 @@ public interface ApiService {
     Call<ApiResponse> removeFavorite(
             @Path("userId") String userId,
             @Path("bookId") String bookId,
+            @Header("Authorization") String authorization
+    );
+
+    // history
+    @GET("api/history/{userId}")
+    Call<ApiResponse<com.example.myreadbookapplication.model.ReadingHistoryResponse>> getReadingHistory(
+            @Path("userId") String userId,
+            @Header("Authorization") String authorization,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit,
+            @Query("sortBy") String sortBy,
+            @Query("sortOrder") String sortOrder
+    );
+
+    @GET("api/history/{userId}/bookmark/{bookId}")
+    Call<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>> getBookmark(
+            @Path("userId") String userId,
+            @Path("bookId") String bookId,
+            @Header("Authorization") String authorization
+    );
+
+    @FormUrlEncoded
+    @POST("api/history/bookmark")
+    Call<ApiResponse> saveBookmark(
+            @Field("userId") String userId,
+            @Field("bookId") String bookId,
+            @Field("page") int page,
+            @Field("chapterId") String chapterId,
             @Header("Authorization") String authorization
     );
 
