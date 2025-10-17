@@ -20,6 +20,13 @@ import retrofit2.http.POST;
 import retrofit2.http.Query;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
+
+// EPUB models
+import com.example.myreadbookapplication.model.epub.EpubModels.EpubUrlRequest;
+import com.example.myreadbookapplication.model.epub.EpubModels.EpubMetadataData;
+import com.example.myreadbookapplication.model.epub.EpubModels.EpubChaptersData;
+import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentData;
+import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentRequest;
 import retrofit2.http.DELETE;
 import retrofit2.http.Header;
 
@@ -90,5 +97,18 @@ public interface ApiService {
             @Path("bookId") String bookId,
             @Header("Authorization") String authorization
     );
+
+    // ================= EPUB =================
+    @POST("api/epub/validate-url")
+    Call<ApiResponse> validateEpubUrl(@Body EpubUrlRequest request);
+
+    @POST("api/epub/metadata")
+    Call<ApiResponse<EpubMetadataData>> getEpubMetadata(@Body EpubUrlRequest request);
+
+    @POST("api/epub/chapters")
+    Call<ApiResponse<EpubChaptersData>> getEpubChapters(@Body EpubUrlRequest request);
+
+    @POST("api/epub/chapter-content")
+    Call<ApiResponse<EpubChapterContentData>> getEpubChapterContent(@Body EpubChapterContentRequest request);
 
 }

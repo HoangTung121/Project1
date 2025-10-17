@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class Book {
     @SerializedName("_id")
-    private int _id;
+    private String _id;
     private String title;
     private String author;
     private int category; // id cua category
@@ -32,8 +32,8 @@ public class Book {
         this.cover_url=cover_url;
     }
     //getters and setters
-    public int getId() { return _id; }
-    public void setId(int _id) { this._id = _id; }
+    public String getId() { return _id; }
+    public void setId(String _id) { this._id = _id; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getAuthor() { return author; }
@@ -45,7 +45,7 @@ public class Book {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public String getReleaseDate() { return releaseDate; }
-    public void setReleaseDate(String release_date) { this.releaseDate = releaseDate; }
+    public void setReleaseDate(String release_date) { this.releaseDate = release_date; }
     public String getCoverUrl() { return cover_url; }
     public void setCoverUrl(String cover_url) { this.cover_url = cover_url; }
     public String getTxtUrl() { return txt_url; }
@@ -68,8 +68,8 @@ public class Book {
     public void setNumberOfReviews(int numberOfReviews) { this.numberOfReviews = numberOfReviews; }
     public int getIdAsInt() {
         try {
-            return Integer.parseInt(String.valueOf(_id));  // Parse String _id sang int
-        } catch (NumberFormatException e) {
+            return Integer.parseInt(_id);  // Parse String _id sang int
+        } catch (Exception e) {
             Log.e("Book", "Invalid ID: " + _id);
             return -1;  // Default nếu parse fail
         }
