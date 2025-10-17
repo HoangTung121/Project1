@@ -40,6 +40,9 @@ public class ReadBookActivity extends AppCompatActivity {
     private ApiService apiRef;
     private String currentEpubUrl;
     private final Map<String, String> hrefToId = new HashMap<>();
+    private String currentBookId;
+    private int currentPage = 1; // logical page index for non-epub
+    private String currentChapterId; // for epub bookmarking
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +61,7 @@ public class ReadBookActivity extends AppCompatActivity {
         String txtUrl = getIntent().getStringExtra("txt_url");
         String bookUrl = getIntent().getStringExtra("book_url");
         String epubUrl = getIntent().getStringExtra("epub_url");
+        this.currentBookId = getIntent().getStringExtra("book_id");
 
         tvTitle.setText(title != null ? title : "");
         if (coverUrl != null && !coverUrl.isEmpty()) {
@@ -92,6 +96,8 @@ public class ReadBookActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                         // 2) Fetch metadata and chapters in parallel, then load first chapter
                         fetchChaptersAndOpenFirst(api, epubUrl, webView, tvTitle);
+                        // Try resuming from bookmark if available
+                        resumeFromBookmarkIfAny();
                     } else {
                         // Fallback to direct URL flow if validation fails
                         fallbackDirectLoad(webView, bookUrl, txtUrl, epubUrl);
@@ -149,6 +155,7 @@ public class ReadBookActivity extends AppCompatActivity {
     }
 
     private void openChapter(ApiService api, String epubUrl, String chapterId, WebView webView, TextView tvTitle) {
+        this.currentChapterId = chapterId;
         api.getEpubChapterContent(new EpubChapterContentRequest(epubUrl, chapterId))
                 .enqueue(new Callback<ApiResponse<EpubChapterContentData>>() {
                     @Override
@@ -259,13 +266,80 @@ public class ReadBookActivity extends AppCompatActivity {
         if (webViewRef != null && webViewRef.canGoBack()) {
             webViewRef.goBack();
         } else {
-            finish();
+            saveBookmarkAndFinish();
         }
     }
 
     @Override
     public void onBackPressed() {
         handleBack();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Persist bookmark also on pause to be robust
+        if (isFinishing()) return;
+        saveBookmarkAndFinish();
+    }
+
+    private void resumeFromBookmarkIfAny() {
+        try {
+            if (currentBookId == null || currentBookId.isEmpty()) return;
+            android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+            String userId = prefs.getString("user_id", null);
+            if (userId != null) userId = userId.replace(".0", "");
+            String token = prefs.getString("access_token", null);
+            if (userId == null || token == null || token.isEmpty()) return;
+            if (apiRef == null) apiRef = RetrofitClient.getApiService();
+
+            apiRef.getBookmark(userId, currentBookId, "Bearer " + token).enqueue(new Callback<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>>() {
+                @Override
+                public void onResponse(Call<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>> call, Response<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>> response) {
+                    if (response.isSuccessful() && response.body() != null && response.body().isSuccess() && response.body().getData() != null) {
+                        com.example.myreadbookapplication.model.HistoryItem item = response.body().getData();
+                        currentPage = item.getPage();
+                        currentChapterId = item.getChapterId();
+                        if (currentChapterId != null && apiRef != null && currentEpubUrl != null && webViewRef != null) {
+                            openChapter(apiRef, currentEpubUrl, currentChapterId, webViewRef, (TextView) findViewById(R.id.tv_title));
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>> call, Throwable t) {
+                }
+            });
+        } catch (Exception ignored) {}
+    }
+
+    private void saveBookmarkAndFinish() {
+        try {
+            if (currentBookId == null || currentBookId.isEmpty()) { finish(); return; }
+            android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+            String userId = prefs.getString("user_id", null);
+            if (userId != null) userId = userId.replace(".0", "");
+            String token = prefs.getString("access_token", null);
+            if (userId == null || token == null || token.isEmpty()) { finish(); return; }
+            if (apiRef == null) apiRef = RetrofitClient.getApiService();
+
+            String chapterIdToSave = currentChapterId;
+            int pageToSave = currentPage <= 0 ? 1 : currentPage;
+            apiRef.saveBookmark(userId, currentBookId, pageToSave, chapterIdToSave, "Bearer " + token)
+                    .enqueue(new Callback<ApiResponse>() {
+                        @Override
+                        public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                            finish();
+                        }
+
+                        @Override
+                        public void onFailure(Call<ApiResponse> call, Throwable t) {
+                            finish();
+                        }
+                    });
+        } catch (Exception e) {
+            finish();
+        }
     }
 }
 
