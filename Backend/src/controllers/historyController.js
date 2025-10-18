@@ -9,20 +9,19 @@ const historyController = {
    * @return {void}
    */
   saveBookmark: catchAsync(async (req, res) => {
-    const { userId, bookId, page, chapterId } = req.body
+    const { userId, bookId, chapterId } = req.body
 
     // Validate required fields
-    if (!userId || !bookId || !page) {
+    if (!userId || !bookId || chapterId === 'null') {
       throw new ApiError(
         httpStatus.status.BAD_REQUEST,
-        'ID người dùng, ID sách và trang là bắt buộc'
+        'ID người dùng, ID sách và chapterId không được để trống'
       )
     }
 
     const result = await historyService.saveBookmark({
       userId,
       bookId,
-      page,
       chapterId
     })
 
