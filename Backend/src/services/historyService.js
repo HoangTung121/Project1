@@ -3,6 +3,7 @@ const bookModel = require('../models/bookModel')
 const userModel = require('../models/userModel')
 const { ApiError } = require('../utils/index')
 const httpStatus = require('http-status')
+const epubService = require('./epubService')
 
 const historyService = {
   /**
@@ -11,7 +12,7 @@ const historyService = {
    */
   saveBookmark: async (bookmarkData) => {
     try {
-      const { userId, bookId, page, chapterId } = bookmarkData
+      const { userId, bookId, chapterId } = bookmarkData
 
       // Validate user exists
       await userModel.findById(userId)
@@ -19,25 +20,34 @@ const historyService = {
       // Validate book exists
       await bookModel.getById(bookId)
 
-      // Check if reading history already exists for this user and book
+      if (chapterId === 'null') {
+        throw new ApiError(
+          httpStatus.status.BAD_REQUEST,
+          'ChapterId là bắt buộc'
+        )
+      }
+
+      await epubService.getEpubChapterRaw({ url: bookModel.epub_url, chapterId: chapterId })
+
       const existingHistory = await historyModel.findByUserAndBook(userId, bookId)
 
       const updateData = {
-        page,
+        chapterId,
         lastReadAt: Date.now()
       }
 
-      // Add chapterId if provided
-      if (chapterId) updateData.chapterId = chapterId
 
       if (existingHistory) {
         // Update existing history
         const updatedHistory = await historyModel.update(existingHistory._id, updateData)
 
+        // Remove page property from response
+        // eslint-disable-next-line no-unused-vars
+        const { page, ...historyWithoutPage } = updatedHistory
         return {
           success: true,
           message: 'Bookmark đã được cập nhật thành công',
-          data: updatedHistory
+          data: historyWithoutPage
         }
       } else {
         // Create new history
@@ -47,10 +57,14 @@ const historyService = {
           ...updateData
         })
 
+        // Get the created history without page property
+        const createdHistory = await historyModel.findById(newHistory.historyId)
+        // eslint-disable-next-line no-unused-vars
+        const { page, ...historyWithoutPage } = createdHistory
         return {
           success: true,
           message: 'Bookmark đã được lưu thành công',
-          data: newHistory
+          data: historyWithoutPage
         }
       }
     } catch (error) {

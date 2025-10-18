@@ -58,8 +58,7 @@ Lưu hoặc cập nhật bookmark khi user thoát giao diện đọc sách.
 {
   "userId": 123,        // ID người dùng (bắt buộc)
   "bookId": 456,        // ID sách (bắt buộc)
-  "page": 25,           // Trang hiện tại (bắt buộc)
-  "chapterId": "ch1"    // ID chương (tùy chọn, cho EPUB)
+  "chapterId": "ch1"    // ID chương (bắt buộc)
 }
 ```
 
@@ -71,7 +70,6 @@ curl -X POST http://localhost:3000/api/history/bookmark \
   -d '{
     "userId": 123,
     "bookId": 456,
-    "page": 25,
     "chapterId": "ch1"
   }'
 ```
@@ -82,8 +80,13 @@ curl -X POST http://localhost:3000/api/history/bookmark \
   "success": true,
   "message": "Bookmark đã được lưu thành công",
   "data": {
-    "historyId": 789,
-    "message": "Lịch sử đọc sách đã được tạo thành công"
+    "_id": 789,
+    "userId": 123,
+    "bookId": 456,
+    "chapterId": "ch1",
+    "lastReadAt": 1703123456789,
+    "createdAt": 1703120000000,
+    "updatedAt": 1703123456789
   }
 }
 ```
@@ -97,7 +100,6 @@ curl -X POST http://localhost:3000/api/history/bookmark \
     "_id": 789,
     "userId": 123,
     "bookId": 456,
-    "page": 25,
     "chapterId": "ch1",
     "lastReadAt": 1703123456789,
     "createdAt": 1703120000000,
@@ -116,7 +118,7 @@ Lấy danh sách sách đã đọc của user với phân trang và sắp xếp.
 - **Query:**
   - `page` (number, optional) - Trang hiện tại (mặc định: 1)
   - `limit` (number, optional) - Số items/trang (mặc định: 10, tối đa: 100)
-  - `sortBy` (string, optional) - Sắp xếp theo: `lastReadAt`, `createdAt`, `page` (mặc định: `lastReadAt`)
+  - `sortBy` (string, optional) - Sắp xếp theo: `lastReadAt`, `createdAt` (mặc định: `lastReadAt`)
   - `sortOrder` (string, optional) - Thứ tự: `asc`, `desc` (mặc định: `desc`)
 
 #### 📝 Ví dụ request:
@@ -124,8 +126,8 @@ Lấy danh sách sách đã đọc của user với phân trang và sắp xếp.
 # Lấy 10 sách gần đọc nhất
 GET /api/history/123?page=1&limit=10&sortBy=lastReadAt&sortOrder=desc
 
-# Lấy sách theo trang đọc
-GET /api/history/123?sortBy=page&sortOrder=desc
+# Lấy sách theo thời gian tạo
+GET /api/history/123?sortBy=createdAt&sortOrder=desc
 
 # Lấy trang 2, mỗi trang 5 items
 GET /api/history/123?page=2&limit=5
@@ -142,7 +144,6 @@ GET /api/history/123?page=2&limit=5
         "_id": "789",
         "userId": 123,
         "bookId": 456,
-        "page": 25,
         "chapterId": "ch1",
         "lastReadAt": 1703123456789,
         "createdAt": 1703120000000,
@@ -189,7 +190,6 @@ GET /api/history/123/bookmark/456
     "_id": "789",
     "userId": 123,
     "bookId": 456,
-    "page": 25,
     "chapterId": "ch1",
     "lastReadAt": 1703123456789,
     "createdAt": 1703120000000,
@@ -211,7 +211,7 @@ GET /api/history/123/bookmark/456
   "message": "Chưa có bookmark cho cuốn sách này",
   "data": {
     "bookId": 456,
-    "page": 1,
+    "chapterId": null,
     "lastReadAt": null,
     "book": {
       "_id": 456,
@@ -268,7 +268,7 @@ GET /api/history/user/123
       "_id": "789",
       "userId": 123,
       "bookId": 456,
-      "page": 25,
+      "chapterId": "ch1",
       "chapterId": "ch1",
       "lastReadAt": 1703123456789,
       "createdAt": 1703120000000,
@@ -302,7 +302,7 @@ GET /api/history/book/456
       "_id": "789",
       "userId": 123,
       "bookId": 456,
-      "page": 25,
+      "chapterId": "ch1",
       "chapterId": "ch1",
       "lastReadAt": 1703123456789,
       "createdAt": 1703120000000,
@@ -366,7 +366,7 @@ Tất cả API đều trả về JSON với cấu trúc:
 
 ### 2. 💾 Lưu Bookmark
 - User thoát giao diện đọc sách
-- Client gửi trang hiện tại và chapterId (nếu có)
+- Client gửi chapterId hiện tại
 - Gọi API `POST /api/history/bookmark`
 
 ### 3. 🗄️ Xử Lý Database
@@ -380,8 +380,7 @@ Tất cả API đều trả về JSON với cấu trúc:
     "_id": 789,           // History ID riêng biệt
     "userId": 123,        // User ID (khớp với user._id)
     "bookId": 456,        // Book ID
-    "page": 25,           // Trang hiện tại
-    "chapterId": "ch1",   // Chapter ID (tùy chọn)
+    "chapterId": "ch1",   // Chapter ID (bắt buộc)
     "lastReadAt": 1703123456789,
     "createdAt": 1703120000000,
     "updatedAt": 1703123456789
@@ -397,7 +396,7 @@ Tất cả API đều trả về JSON với cấu trúc:
 
 ### 📊 Phân Trang & Sắp Xếp
 - Phân trang: `page` và `limit` (tối đa 100 items/trang)
-- Sắp xếp theo: `lastReadAt`, `createdAt`, `page`
+- Sắp xếp theo: `lastReadAt`, `createdAt`
 - Thứ tự: `asc` (tăng dần) hoặc `desc` (giảm dần)
 
 ### ✅ Validation
@@ -412,6 +411,7 @@ Tất cả API đều trả về JSON với cấu trúc:
 
 ## 📝 Ghi Chú
 - API này chỉ quản lý bookmark và lịch sử đọc, không có tính năng theo dõi tiến độ đọc
-- Hỗ trợ cả sách thường và EPUB (với chapterId)
+- Hỗ trợ EPUB với chapterId (bắt buộc)
 - Tất cả thời gian được lưu dưới dạng timestamp (milliseconds)
 - Mỗi user chỉ có một bookmark duy nhất cho mỗi cuốn sách
+- API tự động cập nhật `lastReadAt` khi lưu bookmark
