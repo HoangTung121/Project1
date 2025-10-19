@@ -88,7 +88,13 @@ public class HistoryActivity extends AppCompatActivity {
                         for (HistoryItem item : items) {
                             if (item == null) continue;
                             if (item.getBook() != null) {
-                                books.add(item.getBook());
+                                Book book = item.getBook();
+                                // Add reading progress info to book title
+                                String progressInfo = getReadingProgressInfo(item);
+                                if (progressInfo != null && !progressInfo.isEmpty()) {
+                                    book.setTitle(book.getTitle() + " - " + progressInfo);
+                                }
+                                books.add(book);
                             } else {
                                 // fall back to later fetch by ids
                                 if (String.valueOf(item.getBookId()) != null) {
@@ -144,6 +150,54 @@ public class HistoryActivity extends AppCompatActivity {
             rvHistoryBooks.setAdapter(historyBookAdapter);
         } else {
             Toast.makeText(HistoryActivity.this, "Chưa có lịch sử đọc", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private String getReadingProgressInfo(HistoryItem item) {
+        if (item == null) return null;
+        
+        StringBuilder progress = new StringBuilder();
+        
+        // Add chapter info if available
+        if (item.getChapterId() != null && !item.getChapterId().isEmpty() && !item.getChapterId().equals("null")) {
+            progress.append("Chương: ").append(item.getChapterId());
+        }
+        
+        // Add page info if available
+        if (item.getPage() > 0) {
+            if (progress.length() > 0) {
+                progress.append(", ");
+            }
+            progress.append("Trang: ").append(item.getPage());
+        }
+        
+        // Add last read time if available
+        if (item.getLastReadAt() > 0) {
+            if (progress.length() > 0) {
+                progress.append(" - ");
+            }
+            long timeDiff = System.currentTimeMillis() - item.getLastReadAt();
+            String timeAgo = getTimeAgo(timeDiff);
+            progress.append(timeAgo);
+        }
+        
+        return progress.length() > 0 ? progress.toString() : null;
+    }
+
+    private String getTimeAgo(long timeDiff) {
+        long seconds = timeDiff / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+        
+        if (days > 0) {
+            return days + " ngày trước";
+        } else if (hours > 0) {
+            return hours + " giờ trước";
+        } else if (minutes > 0) {
+            return minutes + " phút trước";
+        } else {
+            return "Vừa xong";
         }
     }
 }
