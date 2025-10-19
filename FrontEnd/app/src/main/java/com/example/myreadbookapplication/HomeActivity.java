@@ -106,7 +106,10 @@ public class HomeActivity extends AppCompatActivity {
                     drawerLayout.closeDrawer(GravityCompat.START);  // Đóng drawer
                     return true;
                 } else if (id == R.id.nav_history) {
-                    Toast.makeText(HomeActivity.this, "History clicked", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(HomeActivity.this, HistoryActivity.class);
+                    startActivity(intent);
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                    return true;
                 } else if (id == R.id.nav_feedback) {
                     Toast.makeText(HomeActivity.this, "Feedback clicked", Toast.LENGTH_SHORT).show();
                 } else if (id == R.id.nav_contact) {

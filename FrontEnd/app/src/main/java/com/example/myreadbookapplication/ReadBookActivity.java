@@ -40,6 +40,12 @@ public class ReadBookActivity extends AppCompatActivity {
     private ApiService apiRef;
     private String currentEpubUrl;
     private final Map<String, String> hrefToId = new HashMap<>();
+    private String currentBookId;
+    private int currentPage = 1; // logical page index for non-epub
+    private String currentChapterId; // for epub bookmarking
+    private int currentScrollPosition = 0; // for tracking scroll position within chapter
+    private android.os.Handler scrollSaveHandler = new android.os.Handler();
+    private Runnable scrollSaveRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +64,7 @@ public class ReadBookActivity extends AppCompatActivity {
         String txtUrl = getIntent().getStringExtra("txt_url");
         String bookUrl = getIntent().getStringExtra("book_url");
         String epubUrl = getIntent().getStringExtra("epub_url");
+        this.currentBookId = getIntent().getStringExtra("book_id");
 
         tvTitle.setText(title != null ? title : "");
         if (coverUrl != null && !coverUrl.isEmpty()) {
@@ -78,6 +85,15 @@ public class ReadBookActivity extends AppCompatActivity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return handleWebLink(request.getUrl().toString(), view, tvTitle);
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // Restore scroll position if available
+                restoreScrollPosition();
+                // Start auto-save scroll position
+                startAutoSaveScrollPosition();
+            }
         });
 
         if (epubUrl != null && !epubUrl.isEmpty()) {
@@ -92,6 +108,8 @@ public class ReadBookActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                         // 2) Fetch metadata and chapters in parallel, then load first chapter
                         fetchChaptersAndOpenFirst(api, epubUrl, webView, tvTitle);
+                        // Try resuming from bookmark if available
+                        resumeFromBookmarkIfAny();
                     } else {
                         // Fallback to direct URL flow if validation fails
                         fallbackDirectLoad(webView, bookUrl, txtUrl, epubUrl);
@@ -149,6 +167,15 @@ public class ReadBookActivity extends AppCompatActivity {
     }
 
     private void openChapter(ApiService api, String epubUrl, String chapterId, WebView webView, TextView tvTitle) {
+        // Save current scroll position before switching chapters
+        if (this.currentChapterId != null && !this.currentChapterId.equals(chapterId)) {
+            saveCurrentScrollPosition();
+        }
+        
+        this.currentChapterId = chapterId;
+        // Load saved scroll position for the new chapter
+        loadSavedScrollPosition();
+        
         api.getEpubChapterContent(new EpubChapterContentRequest(epubUrl, chapterId))
                 .enqueue(new Callback<ApiResponse<EpubChapterContentData>>() {
                     @Override
@@ -259,13 +286,156 @@ public class ReadBookActivity extends AppCompatActivity {
         if (webViewRef != null && webViewRef.canGoBack()) {
             webViewRef.goBack();
         } else {
-            finish();
+            saveBookmarkAndFinish();
         }
     }
 
     @Override
     public void onBackPressed() {
         handleBack();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop auto-save when pausing
+        stopAutoSaveScrollPosition();
+        // Persist bookmark also on pause to be robust
+        if (isFinishing()) return;
+        saveBookmarkAndFinish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Cleanup handlers
+        stopAutoSaveScrollPosition();
+        if (scrollSaveHandler != null) {
+            scrollSaveHandler.removeCallbacksAndMessages(null);
+        }
+    }
+
+    private void resumeFromBookmarkIfAny() {
+        try {
+            if (currentBookId == null || currentBookId.isEmpty()) return;
+            android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+            String userId = prefs.getString("user_id", null);
+            if (userId != null) userId = userId.replace(".0", "");
+            String token = prefs.getString("access_token", null);
+            if (userId == null || token == null || token.isEmpty()) return;
+            if (apiRef == null) apiRef = RetrofitClient.getApiService();
+
+            apiRef.getBookmark(userId, currentBookId, "Bearer " + token).enqueue(new Callback<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>>() {
+                @Override
+                public void onResponse(Call<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>> call, Response<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>> response) {
+                    if (response.isSuccessful() && response.body() != null && response.body().isSuccess() && response.body().getData() != null) {
+                        com.example.myreadbookapplication.model.HistoryItem item = response.body().getData();
+                        currentPage = item.getPage();
+                        currentChapterId = item.getChapterId();
+                        
+                        // Load saved scroll position from local storage
+                        loadSavedScrollPosition();
+                        
+                        if (currentChapterId != null && apiRef != null && currentEpubUrl != null && webViewRef != null) {
+                            openChapter(apiRef, currentEpubUrl, currentChapterId, webViewRef, (TextView) findViewById(R.id.tv_title));
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>> call, Throwable t) {
+                }
+            });
+        } catch (Exception ignored) {}
+    }
+
+    private void saveBookmarkAndFinish() {
+        try {
+            if (currentBookId == null || currentBookId.isEmpty()) { finish(); return; }
+            android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+            String userId = prefs.getString("user_id", null);
+            if (userId != null) userId = userId.replace(".0", "");
+            String token = prefs.getString("access_token", null);
+            if (userId == null || token == null || token.isEmpty()) { finish(); return; }
+            if (apiRef == null) apiRef = RetrofitClient.getApiService();
+
+            // Save current scroll position before saving bookmark
+            saveCurrentScrollPosition();
+
+            String chapterIdToSave = currentChapterId;
+            int pageToSave = currentPage <= 0 ? 1 : currentPage;
+            apiRef.saveBookmark(userId, currentBookId, pageToSave, chapterIdToSave, "Bearer " + token)
+                    .enqueue(new Callback<ApiResponse>() {
+                        @Override
+                        public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                            finish();
+                        }
+
+                        @Override
+                        public void onFailure(Call<ApiResponse> call, Throwable t) {
+                            finish();
+                        }
+                    });
+        } catch (Exception e) {
+            finish();
+        }
+    }
+
+    private void saveCurrentScrollPosition() {
+        try {
+            if (webViewRef != null && currentBookId != null && currentChapterId != null) {
+                webViewRef.evaluateJavascript("window.scrollY", value -> {
+                    try {
+                        int scrollY = (int) Double.parseDouble(value.replace("\"", ""));
+                        android.content.SharedPreferences prefs = getSharedPreferences("reading_progress", MODE_PRIVATE);
+                        String key = currentBookId + "_" + currentChapterId;
+                        prefs.edit().putInt(key, scrollY).apply();
+                    } catch (Exception ignored) {}
+                });
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void loadSavedScrollPosition() {
+        try {
+            if (currentBookId != null && currentChapterId != null) {
+                android.content.SharedPreferences prefs = getSharedPreferences("reading_progress", MODE_PRIVATE);
+                String key = currentBookId + "_" + currentChapterId;
+                currentScrollPosition = prefs.getInt(key, 0);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void restoreScrollPosition() {
+        try {
+            if (webViewRef != null && currentScrollPosition > 0) {
+                webViewRef.post(() -> {
+                    webViewRef.scrollTo(0, currentScrollPosition);
+                });
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void startAutoSaveScrollPosition() {
+        // Stop previous auto-save if running
+        stopAutoSaveScrollPosition();
+        
+        scrollSaveRunnable = new Runnable() {
+            @Override
+            public void run() {
+                saveCurrentScrollPosition();
+                // Schedule next save in 2 seconds
+                scrollSaveHandler.postDelayed(this, 2000);
+            }
+        };
+        scrollSaveHandler.postDelayed(scrollSaveRunnable, 2000);
+    }
+
+    private void stopAutoSaveScrollPosition() {
+        if (scrollSaveRunnable != null) {
+            scrollSaveHandler.removeCallbacks(scrollSaveRunnable);
+            scrollSaveRunnable = null;
+        }
     }
 }
 
