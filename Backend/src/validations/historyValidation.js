@@ -19,14 +19,9 @@ const historyValidation = {
         'number.positive': 'ID sách phải là số dương',
         'any.required': 'ID sách là bắt buộc'
       }),
-      page: Joi.number().integer().min(1).required().messages({
-        'number.base': 'Trang phải là số',
-        'number.integer': 'Trang phải là số nguyên',
-        'number.min': 'Trang phải lớn hơn hoặc bằng 1',
-        'any.required': 'Trang là bắt buộc'
-      }),
-      chapterId: Joi.string().optional().messages({
-        'string.base': 'ID chương phải là chuỗi'
+      chapterId: Joi.string().required().messages({
+        'string.base': 'ID chương phải là chuỗi',
+        'any.required': 'ID chương là bắt buộc'
       })
     })
   },

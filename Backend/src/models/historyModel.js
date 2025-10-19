@@ -17,6 +17,13 @@ const historyModel = {
         )
       }
 
+      if (historyData.chapterId === 'null') {
+        throw new ApiError(
+          httpStatus.status.BAD_REQUEST,
+          'ID chương không được để trống'
+        )
+      }
+
       const newHistoryId = await generateHistoryId()
       const historyId = parseInt(newHistoryId)
 
@@ -24,7 +31,7 @@ const historyModel = {
         _id: historyId,
         userId: parseInt(historyData.userId),
         bookId: parseInt(historyData.bookId),
-        page: parseInt(historyData.page),
+        chapterId: historyData.chapterId.trim(),
         lastReadAt: Date.now(),
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -65,8 +72,8 @@ const historyModel = {
         updatedAt: Date.now()
       }
 
-      if (updateData.page !== undefined) {
-        sanitizedUpdateData.page = parseInt(updateData.page)
+      if (updateData.chapterId !== undefined) {
+        sanitizedUpdateData.chapterId = updateData.chapterId.trim()
       }
       if (updateData.lastReadAt !== undefined) {
         sanitizedUpdateData.lastReadAt = updateData.lastReadAt
