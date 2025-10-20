@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,6 +11,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -20,10 +22,13 @@ import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.myreadbookapplication.R;
+import com.example.myreadbookapplication.adapter.CategoryAdapter;
+import com.example.myreadbookapplication.adapter.NewBookAdapter;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.Book;
 import com.example.myreadbookapplication.model.BooksResponse;
@@ -32,6 +37,7 @@ import com.example.myreadbookapplication.model.Category;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
 import com.google.android.material.navigation.NavigationView;
+import com.example.myreadbookapplication.adapter.BannerAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +60,14 @@ public class HomeActivity extends AppCompatActivity {
     private NewBookAdapter newBookAdapter;
     private ApiService apiService;
 
+    // Banner slider components
+    private ViewPager2 bannerViewPager;
+    private LinearLayout indicatorLayout;
+    private BannerAdapter bannerAdapter;
+    private Handler autoScrollHandler;
+    private Runnable autoScrollRunnable;
+    private int currentBannerPosition = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +82,10 @@ public class HomeActivity extends AppCompatActivity {
         rvCategories = findViewById(R.id.rv_categories);
         //rvNewBooks = findViewById(R.id.rv_new_books);
         progressBar = findViewById(R.id.progressBar);
+
+        // Banner slider views
+        bannerViewPager = findViewById(R.id.bannerViewPager);
+        indicatorLayout = findViewById(R.id.indicatorLayout);
 
         apiService = RetrofitClient.getApiService();
 
@@ -127,6 +145,7 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         //setup recycleview voi loading
+        setupBannerSlider();
         setupCategories();
         setupNewBooks();
 
@@ -165,6 +184,117 @@ public class HomeActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.START);
         } else {
             super.onBackPressed();
+        }
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startAutoScroll();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopAutoScroll();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopAutoScroll();
+    }
+    private void setupBannerSlider() {
+        // Tạo danh sách banner images (có thể lấy từ API hoặc hardcode)
+        List<Integer> bannerImages = new ArrayList<>();
+        bannerImages.add(R.drawable.h1_slide_show); // Banner hiện tại
+        bannerImages.add(R.drawable.fantasy_image); // Banner thứ 2
+        bannerImages.add(R.drawable.h1_slide_show); // Banner thứ 3
+        bannerImages.add(R.drawable.scifi_image); // Banner thứ 4
+
+        // Setup BannerAdapter
+        bannerAdapter = new BannerAdapter(bannerImages, new BannerAdapter.OnBannerClickListener() {
+            @Override
+            public void onBannerClick(int position) {
+                Toast.makeText(HomeActivity.this, "Banner " + (position + 1) + " clicked", Toast.LENGTH_SHORT).show();
+                // Có thể thêm logic chuyển đến trang chi tiết banner
+            }
+        });
+
+        // Setup ViewPager2
+        bannerViewPager.setAdapter(bannerAdapter);
+
+        // Setup indicator dots
+        setupIndicatorDots(bannerImages.size());
+
+        // Setup auto-scroll
+        autoScrollHandler = new Handler(Looper.getMainLooper());
+        setupAutoScroll();
+
+        // Listen to page changes để update indicator
+        bannerViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                currentBannerPosition = position;
+                updateIndicatorDots(position);
+            }
+        });
+    }
+
+    private void setupIndicatorDots(int count) {
+        indicatorLayout.removeAllViews();
+
+        for (int i = 0; i < count; i++) {
+            ImageView dot = new ImageView(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(8, 0, 8, 0);
+            dot.setLayoutParams(params);
+            dot.setImageResource(R.drawable.dot_indicator);
+            indicatorLayout.addView(dot);
+        }
+
+        // Set first dot as selected
+        if (count > 0) {
+            updateIndicatorDots(0);
+        }
+    }
+
+    private void updateIndicatorDots(int selectedPosition) {
+        for (int i = 0; i < indicatorLayout.getChildCount(); i++) {
+            ImageView dot = (ImageView) indicatorLayout.getChildAt(i);
+            if (i == selectedPosition) {
+                dot.setImageResource(R.drawable.dot_indicator_selected);
+            } else {
+                dot.setImageResource(R.drawable.dot_indicator);
+            }
+        }
+    }
+
+    private void setupAutoScroll() {
+        autoScrollRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (bannerAdapter != null && bannerAdapter.getItemCount() > 0) {
+                    currentBannerPosition = (currentBannerPosition + 1) % bannerAdapter.getItemCount();
+                    bannerViewPager.setCurrentItem(currentBannerPosition, true);
+                }
+                autoScrollHandler.postDelayed(this, 3000); // Auto scroll mỗi 3 giây
+            }
+        };
+    }
+
+    private void startAutoScroll() {
+        if (autoScrollHandler != null && autoScrollRunnable != null) {
+            autoScrollHandler.postDelayed(autoScrollRunnable, 3000);
+        }
+    }
+
+    private void stopAutoScroll() {
+        if (autoScrollHandler != null && autoScrollRunnable != null) {
+            autoScrollHandler.removeCallbacks(autoScrollRunnable);
         }
     }
     private void setupCategories() {

@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import static android.content.ContentValues.TAG;
 
@@ -16,10 +16,8 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
+import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.SignUpRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;

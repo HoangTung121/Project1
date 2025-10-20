@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myreadbookapplication.R;
+import com.example.myreadbookapplication.adapter.CategoryBookAdapter;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.Book;
 import com.example.myreadbookapplication.model.HistoryItem;

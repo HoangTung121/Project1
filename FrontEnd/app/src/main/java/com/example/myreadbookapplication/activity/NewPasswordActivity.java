@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.ResetPasswordRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;

@@ -16,40 +16,40 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".FavoriteActivity"
+            android:name=".activity.FavoriteActivity"
             android:exported="false" />
         <activity
-            android:name=".HistoryActivity"
+            android:name=".activity.HistoryActivity"
             android:exported="false" />
         <activity
-            android:name=".BookActivity"
+            android:name=".activity.BookActivity"
             android:exported="false" />
         <activity
-            android:name=".CategoryActivity"
+            android:name=".activity.CategoryActivity"
             android:exported="false" />
         <activity
-            android:name=".NewPasswordActivity"
+            android:name=".activity.NewPasswordActivity"
             android:exported="false" />
         <activity
-            android:name=".ForgotPasswordActivity"
+            android:name=".activity.ForgotPasswordActivity"
             android:exported="false" />
         <activity
-            android:name=".HomeActivity"
+            android:name=".activity.HomeActivity"
             android:exported="false" />
         <activity
-            android:name=".VerificationActivity"
+            android:name=".activity.VerificationActivity"
             android:exported="false" />
         <activity
-            android:name=".SignUpActivity"
+            android:name=".activity.SignUpActivity"
             android:exported="false" />
         <activity
-            android:name=".SignInActivity"
+            android:name=".activity.SignInActivity"
             android:exported="false" />
         <activity
-            android:name=".ReadBookActivity"
+            android:name=".activity.ReadBookActivity"
             android:exported="false" />
         <activity
-            android:name=".IntroActivity"
+            android:name=".activity.IntroActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
