@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.adapter;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -14,6 +14,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.myreadbookapplication.R;
+import com.example.myreadbookapplication.activity.ReadBookActivity;
 import com.example.myreadbookapplication.model.Book;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;

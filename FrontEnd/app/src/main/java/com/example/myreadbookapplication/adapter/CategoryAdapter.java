@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import com.bumptech.glide.Glide;  // Để load image từ URL
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.Category;
 
 import java.util.List;

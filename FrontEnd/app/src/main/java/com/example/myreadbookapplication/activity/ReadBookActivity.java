@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -15,9 +15,10 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.example.myreadbookapplication.BuildConfig;
+import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubUrlRequest;
-import com.example.myreadbookapplication.model.epub.EpubModels.EpubMetadataData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChaptersData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentRequest;
@@ -27,7 +28,6 @@ import com.example.myreadbookapplication.network.RetrofitClient;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
