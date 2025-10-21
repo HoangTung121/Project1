@@ -7,12 +7,98 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <!-- Nội dung chính: Layout XML của bạn -->
+    <!-- Nội dung chính: Layout XML -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#FFFFFF"
         android:orientation="vertical">
+        <!-- Header Section  -->
+        <LinearLayout
+            android:id="@+id/headerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:paddingTop="60dp"
+            android:paddingBottom="11dp"
+            android:layout_marginBottom="7dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/appTitleLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginBottom="20dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Icon menu (thay vì back, dùng để mở drawer) -->
+                <ImageView
+                    android:id="@+id/icon_menu"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/menu_icon" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:layout_marginEnd="40dp">
+                    <TextView
+                        android:id="@+id/appTitleText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:text="Fliply"
+                        android:textColor="#000000"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/headerDivider"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:background="#000000"
+                android:layout_marginBottom="4dp"
+                android:orientation="vertical" />
+
+            <!-- Search Bar (giống XML) -->
+            <LinearLayout
+                android:id="@+id/searchBarLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:background="@drawable/search_input_background"
+                android:paddingVertical="9dp"
+                android:paddingHorizontal="15dp"
+                android:layout_marginHorizontal="10dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/searchHintText"
+                    android:textColor="#000000"
+                    android:textSize="20sp"
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_weight="1"
+                    android:text="Name..." />
+
+                <ImageView
+                    android:id="@+id/searchIcon"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/search_icon"
+                    android:scaleType="fitXY" />
+            </LinearLayout>
+        </LinearLayout>
 
         <ScrollView
             android:id="@+id/scrollViewMain"
@@ -26,124 +112,30 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-                <!-- Header Section (giống XML của bạn) -->
+                <!-- Banner Section with viewPage2 -->
                 <LinearLayout
-                    android:id="@+id/headerLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="#FFFFFF"
-                    android:paddingTop="60dp"
-                    android:paddingBottom="11dp"
-                    android:layout_marginBottom="7dp"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:id="@+id/appTitleLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:layout_marginBottom="19dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <!-- Icon menu (thay vì back, dùng để mở drawer) -->
-                        <ImageView
-                            android:id="@+id/icon_menu"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/menu_icon" />
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:gravity="center"
-                            android:layout_marginEnd="40dp">
-                            <TextView
-                                android:id="@+id/appTitleText"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:gravity="center"
-                                android:text="Fliply"
-                                android:textColor="#000000"
-                                android:textSize="20sp"
-                                android:textStyle="bold"/>
-
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/headerDivider"
-                        android:layout_width="match_parent"
-                        android:layout_height="3dp"
-                        android:background="#000000"
-                        android:layout_marginBottom="4dp"
-                        android:orientation="vertical" />
-
-                    <!-- Search Bar (giống XML) -->
-                    <LinearLayout
-                        android:id="@+id/searchBarLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:background="@drawable/edittext_background"
-                        android:paddingVertical="9dp"
-                        android:paddingHorizontal="15dp"
-                        android:layout_marginHorizontal="10dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/searchHintText"
-                            android:textColor="#000000"
-                            android:textSize="20sp"
-                            android:layout_height="wrap_content"
-                            android:layout_width="match_parent"
-                            android:layout_weight="1"
-                            android:text="Name..." />
-
-                        <ImageView
-                            android:id="@+id/searchIcon"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
-                            android:src="@drawable/search_icon"
-                            android:scaleType="fitXY" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Banner Section (giống XML) -->
-                <RelativeLayout
                     android:id="@+id/bannerLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="51dp"
-                    android:layout_marginHorizontal="10dp">
+                    android:layout_marginBottom="20dp"
+                    android:orientation="vertical">
 
-                    <LinearLayout
+                    <!-- ViewPager2 cho banner slider -->
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/bannerViewPager"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical">
+                        android:layout_height="225dp"
+                        android:layout_marginHorizontal="10dp" />
 
-                        <ImageView
-                            android:id="@+id/mainBannerImage"
-                            android:layout_width="match_parent"
-                            android:layout_height="225dp"
-                            android:src="@drawable/h1_slide_show"
-                            android:scaleType="fitXY" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:id="@+id/secondaryBannerImage"
-                        android:layout_width="420dp"
-                        android:layout_height="224dp"
-                        android:layout_marginBottom="0dp"
-                        android:layout_marginStart="389dp"
-                        android:layout_alignParentBottom="true"
-                        android:src="@mipmap/ic_launcher"
-                        android:scaleType="fitXY" />
-                </RelativeLayout>
+                    <!-- Indicator dots -->
+                    <LinearLayout
+                        android:id="@+id/indicatorLayout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal" />
+                </LinearLayout>
 
                 <!--category-->
                 <LinearLayout
@@ -174,7 +166,7 @@
 
                         <TextView
                             android:id="@+id/viewAllCategories"
-                            android:textColor="#FF00E5"
+                            android:textColor="@color/ping"
                             android:textSize="18sp"
                             android:layout_height="wrap_content"
                             android:layout_width="match_parent"
@@ -225,7 +217,7 @@
 
                         <TextView
                             android:id="@+id/viewAllNewBooks"
-                            android:textColor="#FF00E5"
+                            android:textColor="@color/ping"
                             android:textSize="18sp"
                             android:layout_height="wrap_content"
                             android:layout_width="match_parent"

@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +14,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myreadbookapplication.R;
+import com.example.myreadbookapplication.adapter.AllBooksAdapter;
 import com.example.myreadbookapplication.model.Book;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.BooksResponse;

@@ -1,13 +1,11 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.util.Patterns;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -17,9 +15,9 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.ForgotPasswordRequest;
-import com.example.myreadbookapplication.model.ResendOtpRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;
 
 import retrofit2.Call;
