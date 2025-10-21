@@ -7,13 +7,13 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <!-- Nội dung chính: Layout XML của bạn -->
+    <!-- Nội dung chính: Layout XML -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#FFFFFF"
         android:orientation="vertical">
-        <!-- Header Section (giống XML của bạn) -->
+        <!-- Header Section  -->
         <LinearLayout
             android:id="@+id/headerLayout"
             android:layout_width="match_parent"
@@ -29,7 +29,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
-                android:layout_marginBottom="19dp"
+                android:layout_marginBottom="20dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -74,7 +74,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:background="@drawable/edittext_background"
+                android:background="@drawable/search_input_background"
                 android:paddingVertical="9dp"
                 android:paddingHorizontal="15dp"
                 android:layout_marginHorizontal="10dp"
@@ -166,7 +166,7 @@
 
                         <TextView
                             android:id="@+id/viewAllCategories"
-                            android:textColor="#FF00E5"
+                            android:textColor="@color/ping"
                             android:textSize="18sp"
                             android:layout_height="wrap_content"
                             android:layout_width="match_parent"
@@ -217,7 +217,7 @@
 
                         <TextView
                             android:id="@+id/viewAllNewBooks"
-                            android:textColor="#FF00E5"
+                            android:textColor="@color/ping"
                             android:textSize="18sp"
                             android:layout_height="wrap_content"
                             android:layout_width="match_parent"
