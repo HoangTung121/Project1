@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide;
 import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.activity.ReadBookActivity;
 import com.example.myreadbookapplication.model.Book;
+import com.example.myreadbookapplication.model.Category;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
@@ -30,16 +31,25 @@ import java.util.List;
 public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHolder> {
     private List<Book> newBooks;
     private Context context;
+    private List<Category> categoriesList; // Thêm danh sách categories để map
 
+    public NewBookAdapter(List<Book> newBooks, Context context, List<Category> categoriesList) {
+        this.newBooks = newBooks;
+        this.context = context;
+        this.categoriesList = categoriesList;
+    }
+    
+    // Constructor cũ để backward compatibility
     public NewBookAdapter(List<Book> newBooks, Context context) {
         this.newBooks = newBooks;
         this.context = context;
+        this.categoriesList = null;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_new_book, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book, parent, false);
         return new ViewHolder(view);
     }
 
@@ -47,6 +57,21 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Book book = newBooks.get(position);
         holder.bookTitle.setText(book.getTitle());
+        
+        // Set category name
+        String categoryName = book.getCategoryName();
+        Log.d("NewBookAdapter", "Book: " + book.getTitle() + ", CategoryName: " + categoryName + ", Category ID: " + book.getCategory());
+        
+        if (categoryName != null && !categoryName.isEmpty()) {
+            holder.bookCategory.setText(categoryName);
+        } else if (categoriesList != null) {
+            // Map category ID sang category name từ danh sách categories
+            String mappedCategoryName = mapCategoryIdToName(book.getCategory());
+            holder.bookCategory.setText(mappedCategoryName != null ? mappedCategoryName : "Unknown Category");
+        } else {
+            // Fallback: hiển thị category ID nếu không có category name
+            holder.bookCategory.setText("Category " + book.getCategory());
+        }
 
         // Load cover với Glide
         if (book.getCoverUrl() != null && !book.getCoverUrl().isEmpty()) {
@@ -63,7 +88,7 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
         if (holder.ivFavorite != null) {
             String bookIdStr = book.getId();
             boolean isFavorite = isBookFavorite(bookIdStr);
-            holder.ivFavorite.setImageResource(isFavorite ? R.drawable.ic_favorite : R.drawable.ic_favorite_image);
+            holder.ivFavorite.setImageResource(isFavorite ? R.drawable.ic_favorite_image : R.drawable.ic_favorite);
 
             holder.ivFavorite.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -107,7 +132,7 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
         } else {
             favorites.add(bookId);
             ivFavorite.setImageResource(R.drawable.ic_favorite_image);
-            Toast.makeText(context, "You have added to favorites list", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Added to favorites", Toast.LENGTH_SHORT).show();
             syncBackendFavorite(bookId, true);
         }
 
@@ -122,6 +147,18 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
         Type type = new TypeToken<List<String>>(){}.getType();
         List<String> favorites = gson.fromJson(favoritesJson, type);
         return favorites != null && favorites.contains(bookId);
+    }
+    
+    // Map category ID sang category name
+    private String mapCategoryIdToName(int categoryId) {
+        if (categoriesList != null) {
+            for (Category category : categoriesList) {
+                if (category.getId() == categoryId) {
+                    return category.getName();
+                }
+            }
+        }
+        return null;
     }
 
     private void syncBackendFavorite(String bookId, boolean add) {
@@ -159,12 +196,14 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView bookCover;
         TextView bookTitle;
+        TextView bookCategory;
         ImageView ivFavorite;  // Mới: Thêm field
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             bookCover = itemView.findViewById(R.id.book_cover);
             bookTitle = itemView.findViewById(R.id.book_title);
+            bookCategory = itemView.findViewById(R.id.book_category);
             ivFavorite = itemView.findViewById(R.id.iv_favorite);  // Ánh xạ
         }
     }

@@ -5,46 +5,66 @@
     android:orientation="vertical"
     android:background="@color/white">
 
-    <!-- Header (Cố định, không cuộn theo ScrollView) -->
+    <!-- Header -->
     <LinearLayout
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        android:paddingTop="58dp"
+        android:background="@color/white"
+        android:paddingTop="60dp"
+        android:paddingBottom="20dp"
         android:layout_marginBottom="27dp"
         android:orientation="vertical">
 
-        <LinearLayout
+        <!-- Header content với layout cân đối -->
+        <RelativeLayout
             android:id="@+id/header_content"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:layout_marginStart="11dp"
-            android:orientation="horizontal">
+            android:layout_marginBottom="20dp"
+            android:paddingHorizontal="16dp">
 
+            <!-- Nút back ở bên trái -->
             <ImageView
                 android:id="@+id/back_icon_category"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:layout_marginEnd="152dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
                 android:src="@drawable/icon_back"
-                android:scaleType="fitXY" />
+                android:scaleType="fitXY"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Back" />
 
+            <!-- Tiêu đề ở giữa -->
             <TextView
                 android:id="@+id/tv_category_title"
-                android:textColor="#000000"
-                android:textSize="20sp"
-                android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:text="Category" />
-        </LinearLayout>
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="Category"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:gravity="center" />
 
+            <!-- Spacer để cân đối layout -->
+            <View
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true" />
+
+        </RelativeLayout>
+
+        <!-- Divider line -->
         <LinearLayout
             android:id="@+id/divider_line"
             android:layout_width="match_parent"
             android:layout_height="3dp"
-            android:background="#000000"
+            android:background="@color/black"
             android:orientation="vertical" />
     </LinearLayout>
 

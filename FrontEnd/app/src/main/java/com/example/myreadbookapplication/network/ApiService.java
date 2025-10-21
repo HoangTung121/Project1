@@ -75,9 +75,13 @@ public interface ApiService {
     );
     
 
-    //Optional: search book
+    //Search book API
     @GET("api/books/search")
-    Call<ApiResponse<List<Book>>> searchBooks(@Query("q") String query); //q = author or title
+    Call<ApiResponse<BooksResponse>> searchBooks(
+            @Query("input") String input,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit
+    );
 
     // favorites
     @GET("api/users/{userId}/favorites")

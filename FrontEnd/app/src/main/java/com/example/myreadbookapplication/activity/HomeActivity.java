@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -14,13 +15,9 @@ import android.widget.Toast;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
 import androidx.core.view.GravityCompat;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -59,6 +56,7 @@ public class HomeActivity extends AppCompatActivity {
     private CategoryAdapter categoryAdapter;
     private NewBookAdapter newBookAdapter;
     private ApiService apiService;
+    private List<Category> categoriesList; // Lưu danh sách categories để map
 
     // Banner slider components
     private ViewPager2 bannerViewPager;
@@ -70,8 +68,11 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Đặt ngay sau super.onCreate() và trước setContentView
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+                           WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
 
         // Ánh xạ views
@@ -147,12 +148,12 @@ public class HomeActivity extends AppCompatActivity {
         //setup recycleview voi loading
         setupBannerSlider();
         setupCategories();
-        setupNewBooks();
+        // setupNewBooks() sẽ được gọi sau khi setupCategories() hoàn thành
 
-        // Xử lý search bar click (tạm Toast, thay bằng Intent đến SearchActivity)
+        // Xử lý search bar click
         searchBar.setOnClickListener(v -> {
-            Toast.makeText(this, "Open search", Toast.LENGTH_SHORT).show();
-            // Ví dụ: startActivity(new Intent(this, SearchActivity.class));
+            Intent intent = new Intent(HomeActivity.this, SearchActivity.class);
+            startActivity(intent);
         });
 
         // Xử lý "View all" categories
@@ -167,12 +168,6 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Xử lý EdgeToEdge cho ScrollView
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.scrollViewMain), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
     }
 
 
@@ -240,7 +235,7 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
     }
-
+    //setup các dot theo image
     private void setupIndicatorDots(int count) {
         indicatorLayout.removeAllViews();
 
@@ -316,6 +311,9 @@ public class HomeActivity extends AppCompatActivity {
                         Log.d("HomeActivity", "Filtered categories size: " + categoriesList.size());  // Nên =12
                     }
                     if (categoriesList != null && !categoriesList.isEmpty()) {
+                        // Lưu categoriesList để sử dụng trong setupNewBooks
+                        HomeActivity.this.categoriesList = categoriesList;
+                        
                         categoryAdapter = new CategoryAdapter(categoriesList, HomeActivity.this, new CategoryAdapter.OnCategoryClickListener() {
                             @Override
                             public void onCategoryClick(Category category) {
@@ -328,13 +326,20 @@ public class HomeActivity extends AppCompatActivity {
                         rvCategories.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
                         rvCategories.setAdapter(categoryAdapter);
                         Log.d("HomeActivity", "Categories adapter set");
+                        
+                        // Sau khi categories load xong, gọi setupNewBooks
+                        setupNewBooks();
                     } else {
                         Log.w("HomeActivity", "No categories after filter");
                         Toast.makeText(HomeActivity.this, "No active categories", Toast.LENGTH_SHORT).show();
+                        // Vẫn gọi setupNewBooks ngay cả khi không có categories
+                        setupNewBooks();
                     }
                 } else {
                     Log.e("HomeActivity", "Categories API fail: " + response.code());
                     Toast.makeText(HomeActivity.this, "Load categories failed", Toast.LENGTH_SHORT).show();
+                    // Vẫn gọi setupNewBooks ngay cả khi categories API fail
+                    setupNewBooks();
                 }
             }
 
@@ -343,6 +348,8 @@ public class HomeActivity extends AppCompatActivity {
                 progressBar.setVisibility(View.GONE);
                 Log.e("HomeActivity", "Categories failure: " + t.getMessage());
                 Toast.makeText(HomeActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+                // Vẫn gọi setupNewBooks ngay cả khi categories API failure
+                setupNewBooks();
             }
         });
     }
@@ -369,13 +376,13 @@ public class HomeActivity extends AppCompatActivity {
                         Log.d("HomeActivity", "Row1 size: " + row1Books.size() + ", Row2 size: " + row2Books.size());
 
                         // Hàng 1
-                        NewBookAdapter row1Adapter = new NewBookAdapter(row1Books, HomeActivity.this);
+                        NewBookAdapter row1Adapter = new NewBookAdapter(row1Books, HomeActivity.this, categoriesList);
                         RecyclerView rvRow1 = findViewById(R.id.rv_new_books_row1);  // ID mới trong XML
                         rvRow1.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
                         rvRow1.setAdapter(row1Adapter);
 
                         // Hàng 2
-                        NewBookAdapter row2Adapter = new NewBookAdapter(row2Books, HomeActivity.this);
+                        NewBookAdapter row2Adapter = new NewBookAdapter(row2Books, HomeActivity.this, categoriesList);
                         RecyclerView rvRow2 = findViewById(R.id.rv_new_books_row2);  // ID mới trong XML
                         rvRow2.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
                         rvRow2.setAdapter(row2Adapter);

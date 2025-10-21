@@ -45,7 +45,7 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_category_book, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book, parent, false);
         return new ViewHolder(view);
     }
 
@@ -53,6 +53,15 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Book book = books.get(position);
         holder.bookTitle.setText(book.getTitle() + " - " + book.getAuthor());
+        
+        // Set category name - sử dụng categoryName từ constructor
+        if (categoryName != null && !categoryName.isEmpty()) {
+            holder.bookCategory.setText(categoryName);
+        } else if (book.getCategoryName() != null && !book.getCategoryName().isEmpty()) {
+            holder.bookCategory.setText(book.getCategoryName());
+        } else {
+            holder.bookCategory.setText("Unknown Category");
+        }
 
         // Load cover
         if (book.getCoverUrl() != null && !book.getCoverUrl().isEmpty()) {
@@ -166,12 +175,14 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView bookCover;
         TextView bookTitle;
+        TextView bookCategory;
         ImageView ivFavorite;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             bookCover = itemView.findViewById(R.id.book_cover);
-            bookTitle = itemView.findViewById(R.id.book_category_label);
+            bookTitle = itemView.findViewById(R.id.book_title);
+            bookCategory = itemView.findViewById(R.id.book_category);
             ivFavorite = itemView.findViewById(R.id.iv_favorite);
         }
     }
