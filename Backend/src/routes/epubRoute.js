@@ -5,6 +5,7 @@ const epubController = require('../controllers/epubController')
 
 const router = express.Router()
 
+// EPUB related routes
 router.post(
   '/metadata',
   validate(epubValidation.getMetadata),
@@ -29,6 +30,7 @@ router.post(
   epubController.validateUrl
 )
 
+// Các tính năng mở rộng
 router.post(
   '/chapter-raw',
   validate(epubValidation.getChapterRaw),

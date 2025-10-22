@@ -5,12 +5,6 @@ const bookController = require('../controllers/bookController')
 
 const router = express.Router()
 
-// Bỏ qua route `/:id` nếu tham số id không phải là số
-router.param('id', (req, res, next, id) => {
-  if (!/^\d+$/.test(id)) return next('route')
-  next()
-})
-
 router.get(
   '/',
   validate(bookValidation.getList),
@@ -50,13 +44,6 @@ router.delete(
   '/:id',
   validate(bookValidation.delete),
   bookController.delete
-)
-
-
-router.get(
-  '/search',
-  validate(bookValidation.quickSearch),
-  bookController.search
 )
 
 module.exports = router

@@ -3,8 +3,8 @@
 API quản lý lịch sử đọc sách và bookmark của người dùng.
 
 ## 📋 Tổng quan
-- **Base URL:** `http://localhost:9000/api/history`
-- **Authentication:** Hầu hết endpoints yêu cầu Bearer token (ghi rõ bên dưới từng endpoint)
+- **Base URL:** `/api/history`
+- **Authentication:** Tất cả endpoints đều yêu cầu Bearer token
 - **Response Format:** JSON với cấu trúc `{ success, message, data }`
 
 ## 🔄 Luồng hoạt động
@@ -64,7 +64,7 @@ Lưu hoặc cập nhật bookmark khi user thoát giao diện đọc sách.
 
 #### 📝 Ví dụ request:
 ```bash
-curl -X POST http://localhost:9000/api/history/bookmark \
+curl -X POST http://localhost:3000/api/history/bookmark \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -111,8 +111,6 @@ curl -X POST http://localhost:9000/api/history/bookmark \
 ### 2. 📖 Lấy Lịch Sử Đọc Sách
 **GET** `/api/history/{userId}`
 
-Yêu cầu Bearer token.
-
 Lấy danh sách sách đã đọc của user với phân trang và sắp xếp.
 
 #### 📥 Parameters
@@ -126,13 +124,13 @@ Lấy danh sách sách đã đọc của user với phân trang và sắp xếp.
 #### 📝 Ví dụ request:
 ```bash
 # Lấy 10 sách gần đọc nhất
-GET http://localhost:9000/api/history/123?page=1&limit=10&sortBy=lastReadAt&sortOrder=desc
+GET /api/history/123?page=1&limit=10&sortBy=lastReadAt&sortOrder=desc
 
 # Lấy sách theo thời gian tạo
-GET http://localhost:9000/api/history/123?sortBy=createdAt&sortOrder=desc
+GET /api/history/123?sortBy=createdAt&sortOrder=desc
 
 # Lấy trang 2, mỗi trang 5 items
-GET http://localhost:9000/api/history/123?page=2&limit=5
+GET /api/history/123?page=2&limit=5
 ```
 
 #### Response
@@ -172,8 +170,6 @@ GET http://localhost:9000/api/history/123?page=2&limit=5
 ### 3. 🔖 Lấy Bookmark Của Một Cuốn Sách
 **GET** `/api/history/{userId}/bookmark/{bookId}`
 
-Yêu cầu Bearer token.
-
 Lấy thông tin bookmark của một cuốn sách cụ thể.
 
 #### 📥 Parameters
@@ -182,7 +178,7 @@ Lấy thông tin bookmark của một cuốn sách cụ thể.
 
 #### 📝 Ví dụ request:
 ```bash
-GET http://localhost:9000/api/history/123/bookmark/456
+GET /api/history/123/bookmark/456
 ```
 
 #### Response - Có bookmark
@@ -230,8 +226,6 @@ GET http://localhost:9000/api/history/123/bookmark/456
 ### 4. 🗑️ Xóa Bookmark
 **DELETE** `/api/history/{userId}/bookmark/{bookId}`
 
-Yêu cầu Bearer token.
-
 Xóa bookmark của một cuốn sách cụ thể.
 
 #### 📥 Parameters
@@ -240,7 +234,7 @@ Xóa bookmark của một cuốn sách cụ thể.
 
 #### 📝 Ví dụ request:
 ```bash
-DELETE http://localhost:9000/api/history/123/bookmark/456
+DELETE /api/history/123/bookmark/456
 ```
 
 #### Response
@@ -254,8 +248,6 @@ DELETE http://localhost:9000/api/history/123/bookmark/456
 ### 5. 👤 Lấy Lịch Sử Theo User
 **GET** `/api/history/user/{userId}`
 
-Yêu cầu Bearer token.
-
 Lấy tất cả lịch sử đọc sách của một user.
 
 #### 📥 Parameters
@@ -263,7 +255,7 @@ Lấy tất cả lịch sử đọc sách của một user.
 
 #### 📝 Ví dụ request:
 ```bash
-GET http://localhost:9000/api/history/user/123
+GET /api/history/user/123
 ```
 
 #### Response
@@ -297,7 +289,7 @@ Lấy tất cả lịch sử đọc của một cuốn sách.
 
 #### 📝 Ví dụ request:
 ```bash
-GET http://localhost:9000/api/history/book/456
+GET /api/history/book/456
 ```
 
 #### Response
@@ -333,7 +325,6 @@ GET http://localhost:9000/api/history/book/456
 ```
 
 ### 401 Unauthorized
-Áp dụng cho các endpoint yêu cầu xác thực (ví dụ: lưu/xem/xóa bookmark, lịch sử theo user).
 ```json
 {
   "success": false,

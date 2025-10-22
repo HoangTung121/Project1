@@ -16,12 +16,10 @@ try {
 }
 
 /**
- * Tạo access token
- * @param {Object} data - Dữ liệu tạo token
- * @param {string} data.userId - ID người dùng
- * @param {string} data.role - Vai trò người dùng
- * @returns {string} - Access token
- * @throws {Error} - Nếu tạo token thất bại
+ * Generate access token
+ * @param {string} userId
+ * @param {string} role
+ * @returns {string}
  */
 const generateAccessToken = (data) => {
   const { userId, role } = data
@@ -40,11 +38,9 @@ const generateAccessToken = (data) => {
 }
 
 /**
- * Tạo refresh token
- * @param {Object} data - Dữ liệu tạo token
- * @param {string} data.userId - ID người dùng
- * @returns {string} - Refresh token
- * @throws {Error} - Nếu tạo token thất bại
+ * Generate refresh token
+ * @param {string} userId
+ * @returns {string}
  */
 const generateRefreshToken = (data) => {
   const { userId } = data
@@ -64,12 +60,10 @@ const generateRefreshToken = (data) => {
 }
 
 /**
- * Tạo Firebase custom token
- * @param {Object} data - Dữ liệu tạo token
- * @param {string} data.userId - ID người dùng
- * @param {Object} [data.additionalClaims={}] - Thông tin bổ sung
- * @returns {Promise<string>} - Firebase custom token
- * @throws {Error} - Nếu tạo token thất bại
+ * Generate Firebase custom token
+ * @param {string} userId
+ * @param {object} additionalClaims
+ * @returns {Promise<string>}
  */
 const generateFirebaseCustomToken = async (data) => {
   const { userId, additionalClaims = {} } = data
@@ -87,11 +81,9 @@ const generateFirebaseCustomToken = async (data) => {
 }
 
 /**
- * Xác thực JWT token
- * @param {Object} data - Dữ liệu xác thực
- * @param {string} data.token - JWT token
- * @returns {Object|null} - Thông tin token đã giải mã
- * @throws {Error} - Nếu token không hợp lệ
+ * Verify JWT token
+ * @param {string} token
+ * @returns {object|null}
  */
 const verifyToken = (data) => {
   const { token } = data
@@ -106,11 +98,9 @@ const verifyToken = (data) => {
 }
 
 /**
- * Làm mới access token bằng refresh token
- * @param {Object} data - Dữ liệu làm mới token
- * @param {string} data.refreshToken - Refresh token
- * @returns {Promise<Object>} - Access token và refresh token mới
- * @throws {Error} - Nếu làm mới token thất bại
+ * Refresh access token using refresh token
+ * @param {string} refreshToken
+ * @returns {Promise<{ accessToken: string, refreshToken: string }>}
  */
 const refresh = async (data) => {
   const { refreshToken } = data
@@ -135,11 +125,8 @@ const refresh = async (data) => {
 }
 
 /**
- * Thu hồi refresh token
- * @param {Object} data - Dữ liệu thu hồi token
- * @param {string} data.userId - ID người dùng
- * @returns {void}
- * @throws {Error} - Nếu thu hồi token thất bại
+ * Revoke refresh token
+ * @param {string} userId
  */
 const revoke = (data) => {
   const { userId } = data

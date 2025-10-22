@@ -5,6 +5,7 @@ const categoriesController = require('../controllers/categoriesController')
 
 const router = express.Router()
 
+// POST /api/categories - Tạo thể loại mới
 router.post(
   '/',
   validate(categoriesValidation.create),

@@ -3,13 +3,12 @@ const EPub = require('epub')
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
-const logger = require('../config/logger')
 
+// Tạo thư mục temp trong thư mục tạm của hệ thống
 const tempDir = path.join(os.tmpdir(), 'reading-book-epub')
 
 /**
- * Đảm bảo thư mục tạm tồn tại
- * @returns {void}
+ * Đảm bảo thư mục temp tồn tại
  */
 const ensureTempDir = () => {
   if (!fs.existsSync(tempDir)) {
@@ -17,20 +16,18 @@ const ensureTempDir = () => {
   }
 }
 
+// Khởi tạo thư mục temp
 ensureTempDir()
 
 /**
- * Tạo tên file tạm thời
- * @returns {string} - Tên file tạm thời
+ * Tạo tên file tạm unique
  */
 const generateTempFileName = () => {
   return `epub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.epub`
 }
 
 /**
- * Xóa file tạm thời
- * @param {string} filePath - Đường dẫn file cần xóa
- * @returns {void}
+ * Xóa file tạm
  */
 const cleanupTempFile = (filePath) => {
   try {
@@ -38,39 +35,40 @@ const cleanupTempFile = (filePath) => {
       fs.unlinkSync(filePath)
     }
   } catch (error) {
-    logger.error(`Failed to cleanup temp file: ${error.message}`)
+    console.error('Failed to cleanup temp file:', error.message)
   }
 }
 
 /**
- * Phân tích file EPUB từ URL
- * @param {Object} data - Dữ liệu yêu cầu
- * @param {string} data.url - URL của file EPUB
- * @returns {Promise<Object>} - Dữ liệu EPUB đã phân tích
+ * Download và parse EPUB từ URL
  */
 const parseEpubFromUrl = async (data) => {
   const { url } = data
   const tempPath = path.join(tempDir, generateTempFileName())
 
   try {
+    // Download file EPUB
     const response = await axios({
       method: 'GET',
       url: url,
       responseType: 'arraybuffer',
-      timeout: 30000,
-      maxRedirects: 5,
+      timeout: 30000, // 30 seconds timeout
+      maxRedirects: 5, // Allow redirects
       headers: {
         'User-Agent': 'Reading-Book-API/1.0'
       }
     })
 
+    // Lưu file tạm
     fs.writeFileSync(tempPath, response.data)
 
+    // Validate file size
     const stats = fs.statSync(tempPath)
     if (stats.size === 0) {
       throw new Error('Downloaded file is empty')
     }
 
+    // Parse EPUB
     const epubData = await parseEpubFile({ filePath: tempPath })
 
     return epubData
@@ -78,14 +76,13 @@ const parseEpubFromUrl = async (data) => {
   } catch (error) {
     throw new Error(`Failed to process EPUB from URL: ${error.message}`)
   } finally {
+    // Xóa file tạm
     cleanupTempFile(tempPath)
   }
 }
 
 /**
- * @param {Object} data
- * @param {string} data.filePath
- * @return {Promise<Object>}
+ * Parse file EPUB từ đường dẫn local
  */
 const parseEpubFile = async (data) => {
   const { filePath } = data
@@ -137,9 +134,7 @@ const parseEpubFile = async (data) => {
 }
 
 /**
- * @param {Object} data
- * @param {string} data.url
- * @return {Promise<Object>}
+ * Lấy metadata của EPUB từ URL
  */
 const getEpubMetadata = async (data) => {
   const { url } = data
@@ -162,9 +157,7 @@ const getEpubMetadata = async (data) => {
 }
 
 /**
- * @param {Object} data
- * @param {string} data.url
- * @return {Promise<Object>}
+ * Lấy danh sách chương của EPUB từ URL
  */
 const getEpubChapters = async (data) => {
   const { url } = data
@@ -186,16 +179,14 @@ const getEpubChapters = async (data) => {
 }
 
 /**
- * @param {Object} data
- * @param {string} data.url
- * @param {string} data.chapterId
- * @return {Promise<Object>}
+ * Lấy nội dung một chương cụ thể từ EPUB URL
  */
 const getEpubChapterContent = async (data) => {
   const { url, chapterId } = data
   const tempPath = path.join(tempDir, generateTempFileName())
 
   try {
+    // Download file EPUB
     const response = await axios({
       method: 'GET',
       url: url,
@@ -206,11 +197,13 @@ const getEpubChapterContent = async (data) => {
 
     fs.writeFileSync(tempPath, response.data)
 
+    // Validate file size
     const stats = fs.statSync(tempPath)
     if (stats.size === 0) {
       throw new Error('Downloaded file is empty')
     }
 
+    // Parse EPUB và lấy nội dung chương
     const epub = new EPub(tempPath)
 
     return new Promise((resolve, reject) => {
@@ -219,36 +212,40 @@ const getEpubChapterContent = async (data) => {
           if (error) {
             reject(new Error(`Failed to get chapter content: ${error.message}`))
           } else {
+            // Tìm title từ flow trước
             let chapterTitle = epub.flow.find(ch => ch.id === chapterId)?.title
-            logger.debug(`🔍 [getChapterContent] Finding title for chapterId: ${chapterId}`)
-            logger.debug(`📚 [getChapterContent] Flow chapters: ${JSON.stringify(epub.flow.map(ch => ({ id: ch.id, title: ch.title, href: ch.href })))}`)
+            console.log(`🔍 [getChapterContent] Finding title for chapterId: ${chapterId}`)
+            console.log('📚 [getChapterContent] Flow chapters:', epub.flow.map(ch => ({ id: ch.id, title: ch.title, href: ch.href })))
 
+            // Nếu không tìm thấy trong flow, thử tìm trong TOC
             if (!chapterTitle) {
-              logger.debug('❌ [getChapterContent] Not found in flow, searching TOC...')
+              console.log('❌ [getChapterContent] Not found in flow, searching TOC...')
               chapterTitle = epub.toc.find(item => item.id === chapterId)?.title
-              logger.debug(`📖 [getChapterContent] TOC chapters: ${JSON.stringify(epub.toc.map(item => ({ id: item.id, title: item.title, href: item.href })))}`)
+              console.log('📖 [getChapterContent] TOC chapters:', epub.toc.map(item => ({ id: item.id, title: item.title, href: item.href })))
             }
 
+            // Nếu vẫn không tìm thấy, thử tìm theo href
             if (!chapterTitle) {
-              logger.debug('❌ [getChapterContent] Not found by ID, searching by href...')
+              console.log('❌ [getChapterContent] Not found by ID, searching by href...')
               const flowChapter = epub.flow.find(ch => ch.href === chapterId)
               if (flowChapter) {
                 chapterTitle = flowChapter.title
-                logger.debug(`✅ [getChapterContent] Found in flow by href: ${chapterTitle}`)
+                console.log(`✅ [getChapterContent] Found in flow by href: ${chapterTitle}`)
               } else {
                 const tocChapter = epub.toc.find(item => item.href === chapterId)
                 if (tocChapter) {
                   chapterTitle = tocChapter.title
-                  logger.debug(`✅ [getChapterContent] Found in TOC by href: ${chapterTitle}`)
+                  console.log(`✅ [getChapterContent] Found in TOC by href: ${chapterTitle}`)
                 }
               }
             } else {
-              logger.debug(`✅ [getChapterContent] Found title: ${chapterTitle}`)
+              console.log(`✅ [getChapterContent] Found title: ${chapterTitle}`)
             }
 
+            // Fallback cuối cùng
             if (!chapterTitle) {
               chapterTitle = `Chapter ${chapterId}`
-              logger.debug(`⚠️ [getChapterContent] Using fallback title: ${chapterTitle}`)
+              console.log(`⚠️ [getChapterContent] Using fallback title: ${chapterTitle}`)
             }
 
             resolve({
@@ -281,13 +278,12 @@ const getEpubChapterContent = async (data) => {
 }
 
 /**
- * @param {Object} data
- * @param {string} data.url
- * @return {Promise<Object>}
+ * Validate EPUB URL
  */
 const validateEpubUrl = async (data) => {
   const { url } = data
   try {
+    // Kiểm tra URL format
     const urlPattern = /^https?:\/\/.+/
     if (!urlPattern.test(url)) {
       return {
@@ -296,6 +292,7 @@ const validateEpubUrl = async (data) => {
       }
     }
 
+    // Kiểm tra file extension
     if (!url.toLowerCase().includes('.epub')) {
       return {
         success: false,
@@ -303,6 +300,7 @@ const validateEpubUrl = async (data) => {
       }
     }
 
+    // Thử download header để kiểm tra file có tồn tại không
     const response = await axios.head(url, {
       timeout: 10000,
       headers: {
@@ -332,16 +330,14 @@ const validateEpubUrl = async (data) => {
 }
 
 /**
- * @param {Object} data
- * @param {string} data.url
- * @param {string} data.chapterId
- * @return {Promise<Object>}
+ * Lấy nội dung chương dạng raw (không xử lý HTML)
  */
 const getEpubChapterRaw = async (data) => {
   const { url, chapterId } = data
   const tempPath = path.join(tempDir, generateTempFileName())
 
   try {
+    // Download file EPUB
     const response = await axios({
       method: 'GET',
       url: url,
@@ -352,11 +348,13 @@ const getEpubChapterRaw = async (data) => {
 
     fs.writeFileSync(tempPath, response.data)
 
+    // Validate file size
     const stats = fs.statSync(tempPath)
     if (stats.size === 0) {
       throw new Error('Downloaded file is empty')
     }
 
+    // Parse EPUB và lấy nội dung chương raw
     const epub = new EPub(tempPath)
 
     return new Promise((resolve, reject) => {
@@ -365,33 +363,37 @@ const getEpubChapterRaw = async (data) => {
           if (error) {
             reject(new Error(`Failed to get raw chapter content: ${error.message}`))
           } else {
+            // Tìm title từ flow trước
             let chapterTitle = epub.flow.find(ch => ch.id === chapterId)?.title
-            logger.debug(`🔍 [getChapterRaw] Finding title for chapterId: ${chapterId}`)
-            logger.debug(`📚 [getChapterRaw] Flow chapters: ${JSON.stringify(epub.flow.map(ch => ({ id: ch.id, title: ch.title, href: ch.href })))}`)
+            console.log(`🔍 [getChapterRaw] Finding title for chapterId: ${chapterId}`)
+            console.log('📚 [getChapterRaw] Flow chapters:', epub.flow.map(ch => ({ id: ch.id, title: ch.title, href: ch.href })))
+            // Nếu không tìm thấy trong flow, thử tìm trong TOC
             if (!chapterTitle) {
-              logger.debug('❌ [getChapterRaw] Not found in flow, searching TOC...')
+              console.log('❌ [getChapterRaw] Not found in flow, searching TOC...')
               chapterTitle = epub.toc.find(item => item.id === chapterId)?.title
-              logger.debug(`📖 [getChapterRaw] TOC chapters: ${JSON.stringify(epub.toc.map(item => ({ id: item.id, title: item.title, href: item.href })))}`)
+              console.log('📖 [getChapterRaw] TOC chapters:', epub.toc.map(item => ({ id: item.id, title: item.title, href: item.href })))
             }
+            // Nếu vẫn không tìm thấy, thử tìm theo href
             if (!chapterTitle) {
-              logger.debug('❌ [getChapterRaw] Not found by ID, searching by href...')
+              console.log('❌ [getChapterRaw] Not found by ID, searching by href...')
               const flowChapter = epub.flow.find(ch => ch.href === chapterId)
               if (flowChapter) {
                 chapterTitle = flowChapter.title
-                logger.debug(`✅ [getChapterRaw] Found in flow by href: ${chapterTitle}`)
+                console.log(`✅ [getChapterRaw] Found in flow by href: ${chapterTitle}`)
               } else {
                 const tocChapter = epub.toc.find(item => item.href === chapterId)
                 if (tocChapter) {
                   chapterTitle = tocChapter.title
-                  logger.debug(`✅ [getChapterRaw] Found in TOC by href: ${chapterTitle}`)
+                  console.log(`✅ [getChapterRaw] Found in TOC by href: ${chapterTitle}`)
                 }
               }
             } else {
-              logger.debug(`✅ [getChapterRaw] Found title: ${chapterTitle}`)
+              console.log(`✅ [getChapterRaw] Found title: ${chapterTitle}`)
             }
+            // Fallback cuối cùng
             if (!chapterTitle) {
               chapterTitle = `Chapter ${chapterId}`
-              logger.debug(`⚠️ [getChapterRaw] Using fallback title: ${chapterTitle}`)
+              console.log(`⚠️ [getChapterRaw] Using fallback title: ${chapterTitle}`)
             }
             resolve({
               success: true,
@@ -423,16 +425,14 @@ const getEpubChapterRaw = async (data) => {
 }
 
 /**
- * @param {Object} data
- * @param {string} data.url
- * @param {string} data.imageId
- * @return {Promise<Object>}
+ * Lấy ảnh từ EPUB
  */
 const getEpubImage = async (data) => {
   const { url, imageId } = data
   const tempPath = path.join(tempDir, generateTempFileName())
 
   try {
+    // Download file EPUB
     const response = await axios({
       method: 'GET',
       url: url,
@@ -443,11 +443,13 @@ const getEpubImage = async (data) => {
 
     fs.writeFileSync(tempPath, response.data)
 
+    // Validate file size
     const stats = fs.statSync(tempPath)
     if (stats.size === 0) {
       throw new Error('Downloaded file is empty')
     }
 
+    // Parse EPUB và lấy ảnh
     const epub = new EPub(tempPath)
 
     return new Promise((resolve, reject) => {
@@ -487,16 +489,14 @@ const getEpubImage = async (data) => {
 }
 
 /**
- * @param {Object} data
- * @param {string} data.url
- * @param {string} data.fileId
- * @return {Promise<Object>}
+ * Lấy file từ EPUB (CSS, JS, etc.)
  */
 const getEpubFile = async (data) => {
   const { url, fileId } = data
   const tempPath = path.join(tempDir, generateTempFileName())
 
   try {
+    // Download file EPUB
     const response = await axios({
       method: 'GET',
       url: url,
@@ -507,11 +507,13 @@ const getEpubFile = async (data) => {
 
     fs.writeFileSync(tempPath, response.data)
 
+    // Validate file size
     const stats = fs.statSync(tempPath)
     if (stats.size === 0) {
       throw new Error('Downloaded file is empty')
     }
 
+    // Parse EPUB và lấy file
     const epub = new EPub(tempPath)
 
     return new Promise((resolve, reject) => {
@@ -551,9 +553,7 @@ const getEpubFile = async (data) => {
 }
 
 /**
- * @param {Object} data
- * @param {string} data.url
- * @return {Promise<Object>}
+ * Lấy danh sách tất cả ảnh trong EPUB
  */
 const getEpubImages = async (data) => {
   const { url } = data
@@ -579,9 +579,9 @@ const getEpubImages = async (data) => {
 }
 
 /**
- * @return {void}
+ * Dọn dẹp tất cả file tạm cũ (older than 1 hour)
  */
-const cleanupOldTempFiles = () => {
+const cleanupOldTempFiles = (data) => {
   try {
     const files = fs.readdirSync(tempDir)
     const oneHourAgo = Date.now() - (60 * 60 * 1000)
@@ -595,7 +595,7 @@ const cleanupOldTempFiles = () => {
       }
     })
   } catch (error) {
-    logger.error(`Failed to cleanup old temp files: ${error.message}`)
+    console.error('Failed to cleanup old temp files:', error.message)
   }
 }
 

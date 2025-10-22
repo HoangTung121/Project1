@@ -7,7 +7,6 @@ const { password, confirmPassword } = require('./custom')
  */
 const authValidation = {
   /**
-   * Validation schema cho đăng ký người dùng
    * @param {Object} body - Request body
    * @param {string} body.email - Email address (valid email format)
    * @param {string} body.password - Password (custom validation)
@@ -17,7 +16,7 @@ const authValidation = {
    * @param {string} [body.role='user'] - User role ('user' or 'admin')
    * @param {number} [body._id] - User ID (positive integer)
    * @param {number} [body.userId] - User ID (positive integer)
-   * @returns {Object} Joi validation schema
+   * @return {Object} Joi validation schema
    */
   register: {
     body: Joi.object().keys({
@@ -50,11 +49,10 @@ const authValidation = {
   },
 
   /**
-   * Validation schema cho xác thực OTP
    * @param {Object} body - Request body
    * @param {string} body.email - Email address (valid email format)
    * @param {string} body.otp - OTP code (required)
-   * @returns {Object} Joi validation schema
+   * @return {Object} Joi validation schema
    */
   verifyOTP: {
     body: Joi.object().keys({
@@ -69,10 +67,9 @@ const authValidation = {
   },
 
   /**
-   * Validation schema cho gửi lại OTP
    * @param {Object} body - Request body
    * @param {string} body.email - Email address (valid email format)
-   * @returns {Object} Joi validation schema
+   * @return {Object} Joi validation schema
    */
   resendOTP: {
     body: Joi.object().keys({
@@ -84,11 +81,10 @@ const authValidation = {
   },
 
   /**
-   * Validation schema cho đăng nhập
    * @param {Object} body - Request body
    * @param {string} body.email - Email address (valid email format)
    * @param {string} body.password - Password (required)
-   * @returns {Object} Joi validation schema
+   * @return {Object} Joi validation schema
    */
   login: {
     body: Joi.object().keys({
@@ -103,10 +99,9 @@ const authValidation = {
   },
 
   /**
-   * Validation schema cho quên mật khẩu
    * @param {Object} body - Request body
    * @param {string} body.email - Email address (valid email format)
-   * @returns {Object} Joi validation schema
+   * @return {Object} Joi validation schema
    */
   forgotPassword: {
     body: Joi.object().keys({
@@ -118,12 +113,11 @@ const authValidation = {
   },
 
   /**
-   * Validation schema cho đặt lại mật khẩu
    * @param {Object} body - Request body
    * @param {string} body.email - Email address (valid email format)
    * @param {string} body.newPassword - New password (custom validation)
    * @param {string} body.confirmPassword - Password confirmation (must match newPassword)
-   * @returns {Object} Joi validation schema
+   * @return {Object} Joi validation schema
    */
   resetPassword: {
     body: Joi.object().keys({

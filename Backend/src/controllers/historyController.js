@@ -4,10 +4,9 @@ const httpStatus = require('http-status')
 
 const historyController = {
   /**
-   * Lưu bookmark cho người dùng
-   * @param {Object} req - HTTP request
-   * @param {Object} res - HTTP response
-   * @returns {void}
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   * @return {void}
    */
   saveBookmark: catchAsync(async (req, res) => {
     const { userId, bookId, chapterId } = req.body
@@ -30,10 +29,9 @@ const historyController = {
   }),
 
   /**
-   * Lấy lịch sử đọc của người dùng
-   * @param {Object} req - HTTP request
-   * @param {Object} res - HTTP response
-   * @returns {void}
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   * @return {void}
    */
   getReadingHistory: catchAsync(async (req, res) => {
     const { userId } = req.params
@@ -61,10 +59,9 @@ const historyController = {
   }),
 
   /**
-   * Lấy bookmark của người dùng cho một cuốn sách
-   * @param {Object} req - HTTP request
-   * @param {Object} res - HTTP response
-   * @returns {void}
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   * @return {void}
    */
   getBookmark: catchAsync(async (req, res) => {
     const { userId, bookId } = req.params
@@ -84,10 +81,9 @@ const historyController = {
   }),
 
   /**
-   * Xóa bookmark của người dùng
-   * @param {Object} req - HTTP request
-   * @param {Object} res - HTTP response
-   * @returns {void}
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   * @return {void}
    */
   deleteBookmark: catchAsync(async (req, res) => {
     const { userId, bookId } = req.params
@@ -108,10 +104,9 @@ const historyController = {
 
 
   /**
-   * Lấy lịch sử đọc theo người dùng
-   * @param {Object} req - HTTP request
-   * @param {Object} res - HTTP response
-   * @returns {void}
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   * @return {void}
    */
   getHistoryByUser: catchAsync(async (req, res) => {
     const { userId } = req.params
@@ -131,10 +126,9 @@ const historyController = {
   }),
 
   /**
-   * Lấy lịch sử đọc theo sách
-   * @param {Object} req - HTTP request
-   * @param {Object} res - HTTP response
-   * @returns {void}
+   * @param {Object} req - Request object
+   * @param {Object} res - Response object
+   * @return {void}
    */
   getHistoryByBook: catchAsync(async (req, res) => {
     const { bookId } = req.params
