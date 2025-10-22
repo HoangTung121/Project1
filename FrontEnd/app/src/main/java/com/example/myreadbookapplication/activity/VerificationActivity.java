@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -21,14 +20,12 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.ForgotPasswordRequest;
 import com.example.myreadbookapplication.model.ResendOtpRequest;
 import com.example.myreadbookapplication.model.VerifyOtpRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 
 import retrofit2.Call;
 import retrofit2.Callback;

@@ -11,5 +11,5 @@
     <!-- Viền -->
     <stroke
         android:width="2dp"
-        android:color="#BDBDBD" /> <!-- Màu xám nhạt -->
+        android:color="@color/gray_light" /> <!-- Màu xám nhạt -->
 </shape>

@@ -1,4 +1,4 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.adapter;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -14,10 +14,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.myreadbookapplication.R;
+import com.example.myreadbookapplication.activity.ReadBookActivity;
 import com.example.myreadbookapplication.model.Book;
-import com.example.myreadbookapplication.model.ApiResponse;
-import com.example.myreadbookapplication.network.ApiService;
-import com.example.myreadbookapplication.network.RetrofitClient;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -25,28 +24,46 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHolder> {
-    private List<Book> newBooks;
-    private Context context;
+import com.example.myreadbookapplication.model.ApiResponse;
+import com.example.myreadbookapplication.network.ApiService;
+import com.example.myreadbookapplication.network.RetrofitClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
-    public NewBookAdapter(List<Book> newBooks, Context context) {
-        this.newBooks = newBooks;
+public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapter.ViewHolder> {
+    private List<Book> books;
+    private Context context;
+    private String categoryName;
+
+    public CategoryBookAdapter(List<Book> books, Context context, String categoryName) {
+        this.books = books;
         this.context = context;
+        this.categoryName = categoryName;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_new_book, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Book book = newBooks.get(position);
-        holder.bookTitle.setText(book.getTitle());
+        Book book = books.get(position);
+        holder.bookTitle.setText(book.getTitle() + " - " + book.getAuthor());
+        
+        // Set category name - sử dụng categoryName từ constructor
+        if (categoryName != null && !categoryName.isEmpty()) {
+            holder.bookCategory.setText(categoryName);
+        } else if (book.getCategoryName() != null && !book.getCategoryName().isEmpty()) {
+            holder.bookCategory.setText(book.getCategoryName());
+        } else {
+            holder.bookCategory.setText("Unknown Category");
+        }
 
-        // Load cover với Glide
+        // Load cover
         if (book.getCoverUrl() != null && !book.getCoverUrl().isEmpty()) {
             Glide.with(context)
                     .load(book.getCoverUrl())
@@ -57,20 +74,20 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
             holder.bookCover.setImageResource(R.drawable.default_book_cover);
         }
 
-        // Thêm favorite icon (mới)
         if (holder.ivFavorite != null) {
+            // Set icon dựa trên prefs
             String bookIdStr = book.getId();
             boolean isFavorite = isBookFavorite(bookIdStr);
-            holder.ivFavorite.setImageResource(isFavorite ? R.drawable.ic_favorite : R.drawable.ic_favorite_image);
+            holder.ivFavorite.setImageResource(isFavorite ? R.drawable.ic_favorite_image : R.drawable.ic_favorite);
 
             holder.ivFavorite.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    toggleFavorite(bookIdStr, holder.ivFavorite);
+                    toggleFavorite(bookIdStr, holder.ivFavorite);  // Pass String ID
                 }
             });
         } else {
-            Log.w("NewBookAdapter", "iv_favorite ImageView not found in layout");
+            Log.w("CategoryBookAdapter", "iv_favorite ImageView not found in layout");
         }
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -88,38 +105,29 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
         });
     }
 
-    // Copy toggleFavorite từ CategoryBookAdapter
+    // toggleFavorite: Nhận String bookId, dùng List<String>
     private void toggleFavorite(String bookId, ImageView ivFavorite) {
         SharedPreferences prefs = context.getSharedPreferences("app_prefs", context.MODE_PRIVATE);
-        String favoritesJson = prefs.getString("favorite_books", "[]");
+        String favoritesJson = prefs.getString("favorite_books", "[]");  // Key thống nhất
         Gson gson = new Gson();
         Type type = new TypeToken<List<String>>(){}.getType();
         List<String> favorites = gson.fromJson(favoritesJson, type);
         if (favorites == null) favorites = new ArrayList<>();
 
         if (favorites.contains(bookId)) {
-            favorites.remove(bookId);
+            favorites.remove(bookId);  // Remove String
             ivFavorite.setImageResource(R.drawable.ic_favorite);
             Toast.makeText(context, "Removed from favorites", Toast.LENGTH_SHORT).show();
             syncBackendFavorite(bookId, false);
         } else {
-            favorites.add(bookId);
+            favorites.add(bookId);  // Add String
             ivFavorite.setImageResource(R.drawable.ic_favorite_image);
-            Toast.makeText(context, "You have added to favorites list", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "You have added to favorites list", Toast.LENGTH_SHORT).show();  // Message mới
             syncBackendFavorite(bookId, true);
         }
 
+        // Lưu lại
         prefs.edit().putString("favorite_books", gson.toJson(favorites)).apply();
-    }
-
-    // Copy isBookFavorite từ CategoryBookAdapter
-    private boolean isBookFavorite(String bookId) {
-        SharedPreferences prefs = context.getSharedPreferences("app_prefs", context.MODE_PRIVATE);
-        String favoritesJson = prefs.getString("favorite_books", "[]");
-        Gson gson = new Gson();
-        Type type = new TypeToken<List<String>>(){}.getType();
-        List<String> favorites = gson.fromJson(favoritesJson, type);
-        return favorites != null && favorites.contains(bookId);
     }
 
     private void syncBackendFavorite(String bookId, boolean add) {
@@ -132,38 +140,50 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
                 return; // not logged in; local only
             }
             ApiService api = RetrofitClient.getApiService();
-            retrofit2.Call<ApiResponse> call = add
+            Call<ApiResponse> call = add
                     ? api.addFavorite(userId, bookId, "Bearer " + token)
                     : api.removeFavorite(userId, bookId, "Bearer " + token);
-            call.enqueue(new retrofit2.Callback<ApiResponse>() {
+            call.enqueue(new Callback<ApiResponse>() {
                 @Override
-                public void onResponse(retrofit2.Call<ApiResponse> call, retrofit2.Response<ApiResponse> response) {
-                    // No-op for now
+                public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                    // No-op; optimistic UI already updated
                 }
 
                 @Override
-                public void onFailure(retrofit2.Call<ApiResponse> call, Throwable t) {
-                    // No-op
+                public void onFailure(Call<ApiResponse> call, Throwable t) {
+                    // Optional: could revert local on failure
                 }
             });
         } catch (Exception ignored) {}
     }
 
+    // isBookFavorite: Nhận String bookId
+    private boolean isBookFavorite(String bookId) {
+        SharedPreferences prefs = context.getSharedPreferences("app_prefs", context.MODE_PRIVATE);
+        String favoritesJson = prefs.getString("favorite_books", "[]");  // Key thống nhất
+        Gson gson = new Gson();
+        Type type = new TypeToken<List<String>>(){}.getType();
+        List<String> favorites = gson.fromJson(favoritesJson, type);
+        return favorites != null && favorites.contains(bookId);
+    }
+
     @Override
     public int getItemCount() {
-        return newBooks.size();
+        return books.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView bookCover;
         TextView bookTitle;
-        ImageView ivFavorite;  // Mới: Thêm field
+        TextView bookCategory;
+        ImageView ivFavorite;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             bookCover = itemView.findViewById(R.id.book_cover);
             bookTitle = itemView.findViewById(R.id.book_title);
-            ivFavorite = itemView.findViewById(R.id.iv_favorite);  // Ánh xạ
+            bookCategory = itemView.findViewById(R.id.book_category);
+            ivFavorite = itemView.findViewById(R.id.iv_favorite);
         }
     }
 }

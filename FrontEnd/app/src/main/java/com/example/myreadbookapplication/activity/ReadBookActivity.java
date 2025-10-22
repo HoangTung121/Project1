@@ -1,8 +1,11 @@
-package com.example.myreadbookapplication;
+package com.example.myreadbookapplication.activity;
 
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
+import android.widget.PopupWindow;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -10,14 +13,18 @@ import android.webkit.WebViewClient;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.LinearLayout;
+import android.content.SharedPreferences;
+import android.graphics.drawable.ColorDrawable;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.example.myreadbookapplication.BuildConfig;
+import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubUrlRequest;
-import com.example.myreadbookapplication.model.epub.EpubModels.EpubMetadataData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChaptersData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentRequest;
@@ -27,7 +34,6 @@ import com.example.myreadbookapplication.network.RetrofitClient;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -46,6 +52,11 @@ public class ReadBookActivity extends AppCompatActivity {
     private int currentScrollPosition = 0; // for tracking scroll position within chapter
     private android.os.Handler scrollSaveHandler = new android.os.Handler();
     private Runnable scrollSaveRunnable;
+    
+    // Menu dropdown variables
+    private PopupWindow menuPopup;
+    private boolean isNightMode = false;
+    private boolean isFavorite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +68,17 @@ public class ReadBookActivity extends AppCompatActivity {
         TextView tvTitle = findViewById(R.id.tv_title);
         ImageView ivCover = findViewById(R.id.iv_cover);
         WebView webView = findViewById(R.id.web_view);
+        ImageView menuInBook = findViewById(R.id.menu_in_book);
+        
+        // Load saved states
+        loadSavedStates();
+        
+        // Setup menu dropdown
+        setupMenuDropdown(menuInBook);
+        
+        // Setup click listeners
+        backIcon.setOnClickListener(v -> finish());
+        menuInBook.setOnClickListener(v -> showMenuDropdown(menuInBook));
         this.webViewRef = webView;
 
         String title = getIntent().getStringExtra("title");
@@ -436,6 +458,163 @@ public class ReadBookActivity extends AppCompatActivity {
             scrollSaveHandler.removeCallbacks(scrollSaveRunnable);
             scrollSaveRunnable = null;
         }
+    }
+    
+    // Menu dropdown methods
+    private void loadSavedStates() {
+        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        isNightMode = prefs.getBoolean("night_mode_" + currentBookId, false);
+        isFavorite = prefs.getBoolean("favorite_" + currentBookId, false);
+        
+        // Apply night mode if enabled
+        if (isNightMode) {
+            applyNightMode();
+        }
+    }
+    
+    private void setupMenuDropdown(ImageView menuButton) {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View menuView = inflater.inflate(R.layout.menu_dropdown, null);
+        
+        menuPopup = new PopupWindow(menuView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        menuPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        menuPopup.setElevation(8);
+        
+        // Setup menu items
+        LinearLayout menuAddFavorite = menuView.findViewById(R.id.menu_add_favorite);
+        LinearLayout menuNightMode = menuView.findViewById(R.id.menu_night_mode);
+        
+        menuAddFavorite.setOnClickListener(v -> {
+            toggleFavorite();
+            menuPopup.dismiss();
+        });
+        
+        menuNightMode.setOnClickListener(v -> {
+            toggleNightMode();
+            menuPopup.dismiss();
+        });
+    }
+    
+    private void showMenuDropdown(ImageView menuButton) {
+        if (menuPopup != null) {
+            // Calculate position to show menu aligned to the right edge of the button
+            int[] location = new int[2];
+            menuButton.getLocationOnScreen(location);
+            int xOffset = menuButton.getWidth() - menuPopup.getWidth();
+            menuPopup.showAsDropDown(menuButton, xOffset, 0);
+        }
+    }
+    
+    private void toggleFavorite() {
+        isFavorite = !isFavorite;
+        
+        // Save to SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        prefs.edit().putBoolean("favorite_" + currentBookId, isFavorite).apply();
+        
+        // Show feedback
+        String message = isFavorite ? "Added to favorites" : "Removed from favorites";
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        
+        // Sync with backend if user is logged in
+        syncFavoriteWithBackend();
+    }
+    
+    private void toggleNightMode() {
+        isNightMode = !isNightMode;
+        
+        // Save to SharedPreferences
+        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        prefs.edit().putBoolean("night_mode_" + currentBookId, isNightMode).apply();
+        
+        // Apply night mode
+        if (isNightMode) {
+            applyNightMode();
+            Toast.makeText(this, "Night mode enabled", Toast.LENGTH_SHORT).show();
+        } else {
+            applyDayMode();
+            Toast.makeText(this, "Day mode enabled", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void applyNightMode() {
+        // Change background to dark
+        findViewById(R.id.header_layout).setBackgroundColor(Color.parseColor("#1E1E1E"));
+        findViewById(R.id.divider_line).setBackgroundColor(Color.parseColor("#333333"));
+        
+        // Change text color to light
+        TextView tvTitle = findViewById(R.id.tv_title);
+        tvTitle.setTextColor(Color.WHITE);
+        
+        // Apply dark theme to WebView
+        if (webViewRef != null) {
+            webViewRef.setBackgroundColor(Color.parseColor("#1E1E1E"));
+            // Inject CSS for dark mode
+            String darkModeCSS = "javascript:(function(){" +
+                "var style = document.createElement('style');" +
+                "style.innerHTML = 'body { background-color: #1E1E1E !important; color: #FFFFFF !important; }';" +
+                "document.head.appendChild(style);" +
+                "})()";
+            webViewRef.evaluateJavascript(darkModeCSS, null);
+        }
+    }
+    
+    private void applyDayMode() {
+        // Change background to light
+        findViewById(R.id.header_layout).setBackgroundColor(Color.WHITE);
+        findViewById(R.id.divider_line).setBackgroundColor(Color.BLACK);
+        
+        // Change text color to dark
+        TextView tvTitle = findViewById(R.id.tv_title);
+        tvTitle.setTextColor(Color.BLACK);
+        
+        // Apply light theme to WebView
+        if (webViewRef != null) {
+            webViewRef.setBackgroundColor(Color.WHITE);
+            // Inject CSS for light mode
+            String lightModeCSS = "javascript:(function(){" +
+                "var style = document.createElement('style');" +
+                "style.innerHTML = 'body { background-color: #FFFFFF !important; color: #000000 !important; }';" +
+                "document.head.appendChild(style);" +
+                "})()";
+            webViewRef.evaluateJavascript(lightModeCSS, null);
+        }
+    }
+    
+    private void syncFavoriteWithBackend() {
+        try {
+            SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+            String userId = prefs.getString("user_id", null);
+            if (userId != null) userId = userId.replace(".0", "");
+            String token = prefs.getString("access_token", null);
+            
+            if (userId != null && token != null && !token.isEmpty()) {
+                ApiService api = RetrofitClient.getApiService();
+                if (isFavorite) {
+                    api.addFavorite(userId, currentBookId, "Bearer " + token).enqueue(new Callback<ApiResponse>() {
+                        @Override
+                        public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                            // Silent success
+                        }
+                        @Override
+                        public void onFailure(Call<ApiResponse> call, Throwable t) {
+                            // Silent failure
+                        }
+                    });
+                } else {
+                    api.removeFavorite(userId, currentBookId, "Bearer " + token).enqueue(new Callback<ApiResponse>() {
+                        @Override
+                        public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                            // Silent success
+                        }
+                        @Override
+                        public void onFailure(Call<ApiResponse> call, Throwable t) {
+                            // Silent failure
+                        }
+                    });
+                }
+            }
+        } catch (Exception ignored) {}
     }
 }
 

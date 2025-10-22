@@ -17,11 +17,15 @@
 
         <ImageView
             android:id="@+id/category_icon"
-            android:layout_width="130dp"
-            android:layout_height="87dp"
+            android:layout_width="134dp"
+            android:layout_height="95dp"
             android:src="@drawable/horror_image"
-            android:scaleType="centerInside"
-            android:layout_gravity="center" />
+            android:scaleType="centerCrop"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:cropToPadding="true"
+            android:background="@drawable/category_image_background"
+            android:clipToOutline="true" />
 
         <TextView
             android:id="@+id/category_name"
