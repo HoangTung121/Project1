@@ -97,6 +97,12 @@
 
     </ScrollView>
 
+    <!-- Pagination Footer Container -->
+    <FrameLayout
+        android:id="@+id/pagination_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
 </LinearLayout>
 
 

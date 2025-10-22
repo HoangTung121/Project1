@@ -54,7 +54,7 @@ public interface ApiService {
 
     //category
     @GET("api/categories")
-    Call<ApiResponse<CategoriesResponse>> getCategories(@Query("status") String status); //status=active or inactive
+    Call<ApiResponse<CategoriesResponse>> getCategories(@Query("status") String status); //status=active or inactive ?
 
     //book
     @GET("api/books")
@@ -65,7 +65,6 @@ public interface ApiService {
             @Query("page") Integer page
     );
 
-    // Trong ApiService.java
     @GET("api/books")
     Call<ApiResponse<BooksResponse>> getBooksByIds(
             @Query("ids") String ids,  // Comma-separated IDs
@@ -75,7 +74,7 @@ public interface ApiService {
     );
     
 
-    //Search book API
+    //Search book
     @GET("api/books/search")
     Call<ApiResponse<BooksResponse>> searchBooks(
             @Query("input") String input,
@@ -132,7 +131,7 @@ public interface ApiService {
             @Header("Authorization") String authorization
     );
 
-    // ================= EPUB =================
+    // EPUB
     @POST("api/epub/validate-url")
     Call<ApiResponse> validateEpubUrl(@Body EpubUrlRequest request);
 

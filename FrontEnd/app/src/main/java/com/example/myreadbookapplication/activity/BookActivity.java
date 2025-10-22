@@ -28,6 +28,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import com.example.myreadbookapplication.utils.PaginationManager;
+
 public class BookActivity extends AppCompatActivity {
 
     private static final String TAG = "BookActivity";
@@ -46,6 +48,10 @@ public class BookActivity extends AppCompatActivity {
     private boolean isLoading = false;
     private GridLayoutManager gridLayoutManager;
     private boolean isLastPage = false; // Để biết hết data chưa
+    
+    // Pagination
+    private PaginationManager paginationManager;
+    private android.widget.FrameLayout paginationContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,12 +63,16 @@ public class BookActivity extends AppCompatActivity {
         tvTitle = findViewById(R.id.tv_book_title);
         rvBooks = findViewById(R.id.rv_books);
         progressBar = findViewById(R.id.progressBar_books);
+        paginationContainer = findViewById(R.id.pagination_container);
         apiService = RetrofitClient.getApiService();
         backAllBookIcon = findViewById(R.id.back_all_book_icon);
 
         // No Toolbar in layout, title is handled by TextView
 
         backAllBookIcon.setOnClickListener(v -> finish());
+
+        // Initialize pagination
+        initPagination();
 
         // Nhận extra từ Home (nếu có)
         boolean isAllBooks = getIntent().getBooleanExtra("all_books", true);  // Default true
@@ -76,6 +86,18 @@ public class BookActivity extends AppCompatActivity {
         loadCategoriesThenBooks();
     }
 
+    private void initPagination() {
+        paginationManager = new PaginationManager(this, paginationContainer);
+        paginationManager.setOnPageChangeListener(page -> {
+            currentPage = page;
+            loadAllBooks();
+        });
+        paginationManager.setOnPageJumpListener(page -> {
+            currentPage = page;
+            loadAllBooks();
+        });
+    }
+
     // Back button
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -86,11 +108,11 @@ public class BookActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    // Cập nhật loadAllBooks()
+    // Cập nhật loadAllBooks() để sử dụng pagination
     private void loadAllBooks() {
-        if (isLoading || isLastPage) return; // Thêm check isLastPage
+        if (isLoading) return;
         isLoading = true;
-        progressBar.setVisibility(View.VISIBLE); // Hoặc dùng footer nếu muốn
+        progressBar.setVisibility(View.VISIBLE);
         Log.d(TAG, "Loading books page=" + currentPage + ", size=" + pageSize);
 
         Call<ApiResponse<BooksResponse>> call = apiService.getBooks(null, "active", pageSize, currentPage);
@@ -109,36 +131,38 @@ public class BookActivity extends AppCompatActivity {
                         try {
                             pageSize = bookResp.getPagination().getLimit();
                             totalPages = bookResp.getPagination().getTotalPages();
-                            if (currentPage >= totalPages) {
-                                isLastPage = true; // Đánh dấu hết
-                            }
+                            int totalItems = bookResp.getPagination().getTotal();
+                            
+                            // Update pagination UI
+                            paginationManager.setPaginationData(currentPage, totalPages, totalItems, pageSize);
+                            paginationManager.setVisible(totalPages > 1);
                         } catch (Exception ignored) {}
                     }
 
                     Log.d(TAG, "Loaded page=" + currentPage + ", count=" + (booksList != null ? booksList.size() : 0) + "/ totalPages=" + totalPages);
                     if (booksList != null && !booksList.isEmpty()) {
-                        int insertStart = allBooks.size();
+                        // Clear existing books for new page
+                        allBooks.clear();
                         allBooks.addAll(booksList);
+                        
                         if (bookAdapter == null) {
                             bookAdapter = new AllBooksAdapter(allBooks, BookActivity.this, categoryIdToName);
                             gridLayoutManager = new GridLayoutManager(BookActivity.this, 3);
                             rvBooks.setLayoutManager(gridLayoutManager);
                             rvBooks.setAdapter(bookAdapter);
-                            attachScrollForPagination();
                         } else {
-                            bookAdapter.notifyItemRangeInserted(insertStart, booksList.size());
+                            bookAdapter.notifyDataSetChanged();
                         }
                         rvBooks.invalidate();
-                        currentPage += 1;
                     } else {
-                        isLastPage = true; // Nếu response rỗng, coi như hết
                         if (allBooks.isEmpty()) {
                             Toast.makeText(BookActivity.this, "No books found", Toast.LENGTH_SHORT).show();
                         }
+                        paginationManager.setVisible(false);
                     }
                 } else {
                     Toast.makeText(BookActivity.this, "Load books failed: " + response.message(), Toast.LENGTH_SHORT).show();
-                    // Optional: Thêm retry button ở đây
+                    paginationManager.setVisible(false);
                 }
             }
 
@@ -148,39 +172,17 @@ public class BookActivity extends AppCompatActivity {
                 isLoading = false;
                 Log.e(TAG, "Books failure: " + t.getMessage());
                 Toast.makeText(BookActivity.this, "Network error. Tap to retry.", Toast.LENGTH_SHORT).show();
-                // Optional: Retry khi tap RecyclerView nếu fail
+                paginationManager.setVisible(false);
             }
         });
     }
 
-    // Cập nhật attachScrollForPagination() – Thêm threshold nhỏ hơn (2 item thay vì 4) để load sớm hơn
-    private void attachScrollForPagination() {
-        rvBooks.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                if (dy <= 0 || isLastPage) return; // Chỉ load khi scroll down và chưa hết
-
-                int visibleItemCount = gridLayoutManager.getChildCount();
-                int totalItemCount = gridLayoutManager.getItemCount();
-                int firstVisibleItemPosition = gridLayoutManager.findFirstVisibleItemPosition();
-
-                // Load khi còn 2 item nữa là hết (threshold nhỏ hơn để mượt)
-                if (!isLoading && (visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 2 && firstVisibleItemPosition >= 0) {
-                    loadAllBooks();
-                }
-            }
-        });
-    }
-
-    // Trong onCreate(), gọi loadAllBooks() sau khi load categories (như cũ)
-// Optional: Reset pagination khi quay lại activity (onResume)
+    // Reset pagination khi quay lại activity
     @Override
     protected void onResume() {
         super.onResume();
         if (allBooks.isEmpty()) { // Chỉ reset nếu list rỗng (tránh load lại hết)
             currentPage = 1;
-            isLastPage = false;
             allBooks.clear();
             if (bookAdapter != null) {
                 bookAdapter.notifyDataSetChanged();
