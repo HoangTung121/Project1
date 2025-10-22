@@ -2,4 +2,5 @@
 <resources>
     <dimen name="text_size_title">20sp</dimen>
     <dimen name="text_size_body">18sp</dimen>
+    <dimen name="text_size_profile">28sp</dimen>
 </resources>
