@@ -152,7 +152,7 @@ const bookModel = {
       const {
         page = 1,
         limit = 10,
-        search = '',
+        search = '', // backward-compat
         q = '',
         title = '',
         author = '',
@@ -165,6 +165,7 @@ const bookModel = {
 
       let allBooks = await bookModel.getAll()
 
+      // Helper: accent-insensitive normalize
       const normalize = (str = '') =>
         String(str)
           .toLowerCase()
@@ -178,6 +179,7 @@ const bookModel = {
       const normAuthor = normalize(author)
       const normKeyword = normalize(keyword)
 
+      // Lọc theo q hoặc search (tổng quát: tiêu đề, tác giả, mô tả, từ khóa)
       if (normQ || normSearch) {
         const needle = normQ || normSearch
         allBooks = allBooks.filter(book => {
@@ -197,14 +199,17 @@ const bookModel = {
         })
       }
 
+      // Lọc riêng theo title
       if (normTitle) {
         allBooks = allBooks.filter(book => normalize(book.title).includes(normTitle))
       }
 
+      // Lọc riêng theo author
       if (normAuthor) {
         allBooks = allBooks.filter(book => normalize(book.author).includes(normAuthor))
       }
 
+      // Lọc riêng theo keyword (một từ trong mảng keywords)
       if (normKeyword) {
         allBooks = allBooks.filter(book => {
           if (!book.keywords) return false
@@ -213,14 +218,17 @@ const bookModel = {
         })
       }
 
+      // Lọc theo category
       if (category) {
         allBooks = allBooks.filter(book => book.category == category)
       }
 
+      // Lọc theo status
       if (status) {
         allBooks = allBooks.filter(book => book.status === status)
       }
 
+      // Sắp xếp
       allBooks.sort((a, b) => {
         const aValue = a[sortBy] || ''
         const bValue = b[sortBy] || ''
@@ -232,6 +240,7 @@ const bookModel = {
         }
       })
 
+      // Phân trang
       const total = allBooks.length
       const startIndex = (page - 1) * limit
       const endIndex = startIndex + limit
