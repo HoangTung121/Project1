@@ -5,10 +5,11 @@ const bookService = require('./bookService')
 const admin = require('firebase-admin')
 
 /**
- * Get user by ID
- * @param {string} id - User ID (Firebase Auth UID)
- * @returns {Promise<Object>} - User object
- * @throws {ApiError} 404 - User not found
+ * Lấy thông tin người dùng theo ID
+ * @param {Object} data - Dữ liệu yêu cầu
+ * @param {string} data.id - ID người dùng
+ * @returns {Promise<Object>} - Thông tin người dùng
+ * @throws {ApiError} - Nếu không tìm thấy người dùng
  */
 const getUserById = async (data) => {
   const { id } = data
@@ -33,10 +34,11 @@ const getUserById = async (data) => {
 }
 
 /**
- * Get user by email
- * @param {string} email - User email
- * @returns {Promise<Object>} - User object
- * @throws {ApiError} 404 - User not found
+ * Lấy thông tin người dùng theo email
+ * @param {Object} data - Dữ liệu yêu cầu
+ * @param {string} data.email - Email người dùng
+ * @returns {Promise<Object>} - Thông tin người dùng
+ * @throws {ApiError} - Nếu không tìm thấy người dùng
  */
 const getUserByEmail = async (data) => {
   const { email } = data
@@ -55,18 +57,18 @@ const getUserByEmail = async (data) => {
 }
 
 /**
- * Update user by ID
- * @param {string} userId - User ID
- * @param {Object} updateBody - Update data
- * @returns {Promise<Object>} - Updated user object
- * @throws {ApiError} 404 - User not found
+ * Cập nhật thông tin người dùng theo ID
+ * @param {Object} data - Dữ liệu yêu cầu
+ * @param {string} data.userId - ID người dùng
+ * @param {Object} data.updateBody - Dữ liệu cập nhật
+ * @returns {Promise<Object>} - Thông tin người dùng đã cập nhật
+ * @throws {ApiError} - Nếu cập nhật thất bại
  */
 const updateUserById = async (data) => {
   const { userId, updateBody } = data
   try {
     const user = await getUserById({ id: userId })
 
-    // Check for duplicate email
     if (
       updateBody.email &&
       updateBody.email.trim().toLowerCase() !== user.email.trim().toLowerCase()
@@ -83,7 +85,6 @@ const updateUserById = async (data) => {
         .updateUser(userId, { email: updateBody.email.trim().toLowerCase() })
     }
 
-    // Hash password if provided
     const hashedPassword = updateBody.password
       ? await hashPassword(updateBody.password)
       : user.password
@@ -96,15 +97,15 @@ const updateUserById = async (data) => {
         ? updateBody.phoneNumber.trim()
         : user.phoneNumber,
       password: hashedPassword,
-      fullname: updateBody.fullname
-        ? updateBody.fullname.trim()
-        : user.fullname,
+      fullName: updateBody.fullName
+        ? updateBody.fullName.trim()
+        : user.fullName,
       role: updateBody.role || user.role,
       avatar: updateBody.avatar ? updateBody.avatar.trim() : user.avatar,
       preferences: updateBody.preferences || user.preferences,
       comments: updateBody.comments || user.comments,
       history: updateBody.history || user.history,
-      customId: user.customId, // Not allowed to update
+      customId: user.customId,
       isActive: user.isActive,
       updatedAt: admin.database.ServerValue.TIMESTAMP
     }
@@ -130,7 +131,7 @@ const updateUserById = async (data) => {
 const deleteUserById = async (data) => {
   const { userId } = data
   try {
-    await getUserById({ id: userId }) // Check if exists
+    await getUserById({ id: userId })
     await userModel.update(userId, {
       isActive: false,
       updatedAt: admin.database.ServerValue.TIMESTAMP
@@ -225,7 +226,6 @@ const getFavoriteBooks = async (data) => {
     }
 
     const favoriteBookIds = await userModel.getFavoriteBooks(userId)
-    // Lấy thông tin chi tiết của các sách yêu thích
     const booksResult = await bookService.getFavoriteBooksDetails({ bookIds: favoriteBookIds })
     return {
       success: true,
