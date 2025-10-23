@@ -91,7 +91,7 @@ public class SearchActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         // Sử dụng GridLayoutManager với 2 cột như trong ảnh demo
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
         rvSearchResults.setLayoutManager(gridLayoutManager);
         
         searchAdapter = new AllBooksAdapter(searchResults, this, categoryIdToName);

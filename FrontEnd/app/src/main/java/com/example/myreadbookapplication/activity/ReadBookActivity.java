@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 
@@ -57,6 +58,18 @@ public class ReadBookActivity extends AppCompatActivity {
     private PopupWindow menuPopup;
     private boolean isNightMode = false;
     private boolean isFavorite = false;
+    
+    // New UI elements
+    private TextView tvBookTitle;
+    private TextView tvAuthor;
+    private TextView tvCategory;
+    private ProgressBar progressBar;
+    private TextView tvProgressPercent;
+    private ImageView btnFontDecrease;
+    private ImageView btnFontIncrease;
+    
+    // Font size management
+    private int currentFontSize = 30; // Default font size
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +82,15 @@ public class ReadBookActivity extends AppCompatActivity {
         ImageView ivCover = findViewById(R.id.iv_cover);
         WebView webView = findViewById(R.id.web_view);
         ImageView menuInBook = findViewById(R.id.menu_in_book);
+        
+        // Initialize new UI elements
+        tvBookTitle = findViewById(R.id.tv_book_title);
+        tvAuthor = findViewById(R.id.tv_author);
+        tvCategory = findViewById(R.id.tv_category);
+        progressBar = findViewById(R.id.progress_bar);
+        tvProgressPercent = findViewById(R.id.tv_progress_percent);
+        btnFontDecrease = findViewById(R.id.btn_font_decrease);
+        btnFontIncrease = findViewById(R.id.btn_font_increase);
         
         // Load saved states
         loadSavedStates();
@@ -86,17 +108,30 @@ public class ReadBookActivity extends AppCompatActivity {
         String txtUrl = getIntent().getStringExtra("txt_url");
         String bookUrl = getIntent().getStringExtra("book_url");
         String epubUrl = getIntent().getStringExtra("epub_url");
+        String author = getIntent().getStringExtra("author");
+        String category = getIntent().getStringExtra("category");
         this.currentBookId = getIntent().getStringExtra("book_id");
 
+        // Setup header title
         tvTitle.setText(title != null ? title : "");
-        if (coverUrl != null && !coverUrl.isEmpty()) {
-            Glide.with(this).load(coverUrl).into(ivCover);
-        }
+        setupTitleScrolling(tvTitle, title);
+        
+        // Setup book info
+        setupBookInfo(title, author, category, coverUrl);
+        
+        // Setup font controls
+        setupFontControls();
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+        settings.setSupportZoom(true);
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
         webView.setBackgroundColor(Color.TRANSPARENT);
+        webView.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -111,10 +146,14 @@ public class ReadBookActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                
                 // Restore scroll position if available
                 restoreScrollPosition();
                 // Start auto-save scroll position
                 startAutoSaveScrollPosition();
+                
+                // Apply initial font size
+                updateWebViewFontSize();
             }
         });
 
@@ -616,6 +655,101 @@ public class ReadBookActivity extends AppCompatActivity {
             }
         } catch (Exception ignored) {}
     }
+
+    /**
+     * Setup title scrolling for long titles
+     * @param titleView TextView to setup scrolling
+     * @param title Title text
+     */
+    private void setupTitleScrolling(TextView titleView, String title) {
+        if (title == null || title.isEmpty()) return;
+        
+        // Set the title
+        titleView.setText(title);
+        
+        // Enable marquee scrolling for long titles
+        titleView.post(() -> {
+            // Check if text is longer than available space
+            if (titleView.getLayout() != null && titleView.getText().length() > 0) {
+                // Enable marquee scrolling
+                titleView.setSelected(true);
+            }
+        });
+    }
+
+    /**
+     * Setup book information display
+     */
+    private void setupBookInfo(String title, String author, String category, String coverUrl) {
+        // Set book title
+        tvBookTitle.setText(title != null ? title : "Unknown Title");
+        
+        // Set author
+        tvAuthor.setText(author != null ? author : "Unknown Author");
+        
+        // Set category
+        if (category != null && !category.isEmpty()) {
+            tvCategory.setText(category);
+            tvCategory.setVisibility(View.VISIBLE);
+        } else {
+            tvCategory.setVisibility(View.GONE);
+        }
+        
+        // Load cover image
+        ImageView ivCover = findViewById(R.id.iv_cover);
+        if (coverUrl != null && !coverUrl.isEmpty()) {
+            Glide.with(this)
+                .load(coverUrl)
+                .placeholder(R.drawable.default_book_cover)
+                .error(R.drawable.default_book_cover)
+                .into(ivCover);
+        }
+        
+        // Setup reading progress (mock data for now)
+        updateReadingProgress(45); // 45% progress
+    }
+
+    /**
+     * Update reading progress
+     */
+    private void updateReadingProgress(int progress) {
+        progressBar.setProgress(progress);
+        tvProgressPercent.setText(progress + "%");
+    }
+
+    /**
+     * Setup font size controls
+     */
+    private void setupFontControls() {
+        btnFontDecrease.setOnClickListener(v -> {
+            if (currentFontSize > 20) {
+                currentFontSize -= 5;
+                updateWebViewFontSize();
+            }
+        });
+        
+        btnFontIncrease.setOnClickListener(v -> {
+            if (currentFontSize < 50) {
+                currentFontSize += 5;
+                updateWebViewFontSize();
+            }
+        });
+    }
+
+    /**
+     * Update WebView font size
+     */
+    private void updateWebViewFontSize() {
+        if (webViewRef != null) {
+            webViewRef.post(() -> {
+                webViewRef.evaluateJavascript(
+                    "document.body.style.fontSize='" + currentFontSize + "px'", null);
+            });
+        }
+    }
+
+
+
 }
 
 

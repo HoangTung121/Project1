@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -21,6 +22,7 @@ import com.example.myreadbookapplication.model.ReadingHistoryResponse;
 import com.example.myreadbookapplication.model.BooksResponse;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.PaginationManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,14 @@ public class HistoryActivity extends AppCompatActivity {
     private ProgressBar progressBarHistoryBooks;
     private CategoryBookAdapter historyBookAdapter;
     private ApiService apiService;
+    
+    // Pagination
+    private PaginationManager paginationManager;
+    private FrameLayout paginationContainer;
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private int totalItems = 0;
+    private int itemsPerPage = 20; // Tăng từ 50 lên 20 để có nhiều trang hơn
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,15 +56,32 @@ public class HistoryActivity extends AppCompatActivity {
         backIconHistory = findViewById(R.id.back_history_book_icon);
         rvHistoryBooks = findViewById(R.id.rv_history_books);
         progressBarHistoryBooks = findViewById(R.id.progressBar_history_books);
+        paginationContainer = findViewById(R.id.pagination_container);
         apiService = RetrofitClient.getApiService();
 
         backIconHistory.setOnClickListener(v -> finish());
 
+        // Initialize pagination
+        initPagination();
+
         loadHistoryBooks();
+    }
+
+    private void initPagination() {
+        paginationManager = new PaginationManager(this, paginationContainer);
+        paginationManager.setOnPageChangeListener(page -> {
+            currentPage = page;
+            loadHistoryBooks();
+        });
+        paginationManager.setOnPageJumpListener(page -> {
+            currentPage = page;
+            loadHistoryBooks();
+        });
     }
 
     private void loadHistoryBooks() {
         progressBarHistoryBooks.setVisibility(View.VISIBLE);
+        
         SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
         String userId = prefs.getString("user_id", null);
         if (userId != null) {
@@ -71,8 +98,8 @@ public class HistoryActivity extends AppCompatActivity {
         Call<ApiResponse<ReadingHistoryResponse>> call = apiService.getReadingHistory(
                 userId,
                 "Bearer " + token,
-                1,
-                50,
+                currentPage,
+                itemsPerPage,
                 "lastReadAt",
                 "desc"
         );
@@ -81,9 +108,19 @@ public class HistoryActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<ApiResponse<ReadingHistoryResponse>> call, Response<ApiResponse<ReadingHistoryResponse>> response) {
                 progressBarHistoryBooks.setVisibility(View.GONE);
+                
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     ReadingHistoryResponse data = response.body().getData();
                     List<HistoryItem> items = (data != null) ? data.getHistories() : null;
+                    
+                    // Update pagination info
+                    if (data != null && data.getPagination() != null) {
+                        totalPages = data.getPagination().getTotalPages();
+                        totalItems = data.getPagination().getTotal();
+                        paginationManager.setPaginationData(currentPage, totalPages, totalItems, itemsPerPage);
+                        paginationManager.setVisible(totalPages > 1);
+                    }
+                    
                     List<Book> books = new ArrayList<>();
                     List<String> missingIds = new ArrayList<>();
                     if (items != null) {
@@ -133,6 +170,7 @@ public class HistoryActivity extends AppCompatActivity {
                 } else {
                     Log.e(TAG, "History API failed: " + (response.code()));
                     Toast.makeText(HistoryActivity.this, "Không tải được lịch sử", Toast.LENGTH_SHORT).show();
+                    paginationManager.setVisible(false);
                 }
             }
 
@@ -141,6 +179,7 @@ public class HistoryActivity extends AppCompatActivity {
                 progressBarHistoryBooks.setVisibility(View.GONE);
                 Log.e(TAG, "History API error: " + t.getMessage());
                 Toast.makeText(HistoryActivity.this, "Lỗi mạng", Toast.LENGTH_SHORT).show();
+                paginationManager.setVisible(false);
             }
         });
     }

@@ -100,6 +100,8 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
                 intent.putExtra("book_url", book.getBookUrl());
                 intent.putExtra("epub_url", book.getEpubUrl());
                 intent.putExtra("book_id", book.getId());
+                intent.putExtra("author", book.getAuthor());
+                intent.putExtra("category", categoryName != null ? categoryName : book.getCategoryName());
                 context.startActivity(intent);
             }
         });

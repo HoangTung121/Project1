@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -26,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.PaginationManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -39,6 +41,17 @@ public class FavoriteActivity extends AppCompatActivity {
     private ProgressBar progressBarFavoriteBooks;
     private CategoryBookAdapter favoriteBookAdapter;
     private ApiService apiService;
+    
+    // Pagination
+    private PaginationManager paginationManager;
+    private android.widget.FrameLayout paginationContainer;
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private int totalItems = 0;
+    private int itemsPerPage = 20;
+    
+    // Frontend pagination data
+    private List<Book> allFavorites = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,17 +62,40 @@ public class FavoriteActivity extends AppCompatActivity {
         backIconFavoriteBook = findViewById(R.id.back_favorite_book_icon);
         rvFavoriteBooks = findViewById(R.id.rv_favorite_books);
         progressBarFavoriteBooks = findViewById(R.id.progressBar_favorite_books);
+        paginationContainer = findViewById(R.id.pagination_container);
         apiService = RetrofitClient.getApiService();
 
         // Back click
         backIconFavoriteBook.setOnClickListener(v -> finish());
 
+        // Initialize pagination
+        initPagination();
+
         // Load favorites
         setupFavoriteBooks();
     }
 
+    private void initPagination() {
+        paginationManager = new PaginationManager(this, paginationContainer);
+        paginationManager.setOnPageChangeListener(page -> {
+            currentPage = page;
+            // Chỉ cần update UI với data đã có
+            if (!allFavorites.isEmpty()) {
+                setupFrontendPagination(allFavorites);
+            }
+        });
+        paginationManager.setOnPageJumpListener(page -> {
+            currentPage = page;
+            // Chỉ cần update UI với data đã có
+            if (!allFavorites.isEmpty()) {
+                setupFrontendPagination(allFavorites);
+            }
+        });
+    }
+
     private void setupFavoriteBooks() {
         progressBarFavoriteBooks.setVisibility(View.VISIBLE);
+        
         SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
         String userId = prefs.getString("user_id", null);
         if (userId != null) {
@@ -75,15 +111,21 @@ public class FavoriteActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<ApiResponse<com.example.myreadbookapplication.model.FavoritesResponse>> call, Response<ApiResponse<com.example.myreadbookapplication.model.FavoritesResponse>> response) {
                     progressBarFavoriteBooks.setVisibility(View.GONE);
+                    
                     if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                         com.example.myreadbookapplication.model.FavoritesResponse data = response.body().getData();
-                        List<Book> favorites = (data != null) ? data.getFavoriteBooks() : null;
-                        if (favorites != null && !favorites.isEmpty()) {
-                            favoriteBookAdapter = new CategoryBookAdapter(favorites, FavoriteActivity.this, "Favorites");
-                            rvFavoriteBooks.setLayoutManager(new GridLayoutManager(FavoriteActivity.this, 3));
-                            rvFavoriteBooks.setAdapter(favoriteBookAdapter);
+                        List<Book> allFavorites = (data != null) ? data.getFavoriteBooks() : null;
+                        
+                        if (allFavorites != null && !allFavorites.isEmpty()) {
+                            // Lưu trữ tất cả favorites để dùng cho pagination
+                            FavoriteActivity.this.allFavorites.clear();
+                            FavoriteActivity.this.allFavorites.addAll(allFavorites);
+                            
+                            // Frontend pagination - chia nhỏ danh sách favorites
+                            setupFrontendPagination(FavoriteActivity.this.allFavorites);
                         } else {
                             Toast.makeText(FavoriteActivity.this, "No favorite books", Toast.LENGTH_SHORT).show();
+                            paginationManager.setVisible(false);
                         }
                         // Sync local cache of ids
                         if (data != null && data.getFavoriteBookIds() != null) {
@@ -92,6 +134,7 @@ public class FavoriteActivity extends AppCompatActivity {
                         }
                     } else {
                         Toast.makeText(FavoriteActivity.this, "Load favorites failed", Toast.LENGTH_SHORT).show();
+                        paginationManager.setVisible(false);
                         loadFavoritesFromLocal();
                     }
                 }
@@ -100,13 +143,36 @@ public class FavoriteActivity extends AppCompatActivity {
                 public void onFailure(Call<ApiResponse<com.example.myreadbookapplication.model.FavoritesResponse>> call, Throwable t) {
                     progressBarFavoriteBooks.setVisibility(View.GONE);
                     Log.e(TAG, "Favorites failure: " + t.getMessage());
+                    paginationManager.setVisible(false);
                     loadFavoritesFromLocal();
                 }
             });
         } else {
             Log.d(TAG, "No token/userId, fallback to local cache");
+            paginationManager.setVisible(false);
             loadFavoritesFromLocal();
         }
+    }
+
+    private void setupFrontendPagination(List<Book> allFavorites) {
+        // Tính toán pagination cho frontend
+        totalItems = allFavorites.size();
+        totalPages = (int) Math.ceil((double) totalItems / itemsPerPage);
+        
+        // Update pagination UI
+        paginationManager.setPaginationData(currentPage, totalPages, totalItems, itemsPerPage);
+        paginationManager.setVisible(totalPages > 1);
+        
+        // Lấy items cho trang hiện tại
+        int startIndex = (currentPage - 1) * itemsPerPage;
+        int endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+        
+        List<Book> pageFavorites = allFavorites.subList(startIndex, endIndex);
+        
+        // Hiển thị favorites cho trang hiện tại
+        favoriteBookAdapter = new CategoryBookAdapter(pageFavorites, FavoriteActivity.this, "Favorites");
+        rvFavoriteBooks.setLayoutManager(new GridLayoutManager(FavoriteActivity.this, 3));
+        rvFavoriteBooks.setAdapter(favoriteBookAdapter);
     }
 
     private void loadFavoritesFromLocal() {
@@ -117,6 +183,7 @@ public class FavoriteActivity extends AppCompatActivity {
         List<String> favoriteBookIds = gson.fromJson(favoriteBooksJson, type);
         if (favoriteBookIds == null || favoriteBookIds.isEmpty()) {
             Toast.makeText(this, "No favorite books yet", Toast.LENGTH_SHORT).show();
+            paginationManager.setVisible(false);
             return;
         }
         String idsQuery = String.join(",", favoriteBookIds);
@@ -125,18 +192,24 @@ public class FavoriteActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
                 progressBarFavoriteBooks.setVisibility(View.GONE);
+                
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     BooksResponse bookResp = response.body().getData();
                     List<Book> favoritesList = (bookResp != null) ? bookResp.getBooks() : null;
                     if (favoritesList != null && !favoritesList.isEmpty()) {
-                        favoriteBookAdapter = new CategoryBookAdapter(favoritesList, FavoriteActivity.this, "Favorites");
-                        rvFavoriteBooks.setLayoutManager(new GridLayoutManager(FavoriteActivity.this, 3));
-                        rvFavoriteBooks.setAdapter(favoriteBookAdapter);
+                        // Lưu trữ tất cả favorites để dùng cho pagination
+                        FavoriteActivity.this.allFavorites.clear();
+                        FavoriteActivity.this.allFavorites.addAll(favoritesList);
+                        
+                        // Frontend pagination
+                        setupFrontendPagination(FavoriteActivity.this.allFavorites);
                     } else {
                         Toast.makeText(FavoriteActivity.this, "No favorite books found", Toast.LENGTH_SHORT).show();
+                        paginationManager.setVisible(false);
                     }
                 } else {
                     Toast.makeText(FavoriteActivity.this, "Load favorites failed", Toast.LENGTH_SHORT).show();
+                    paginationManager.setVisible(false);
                 }
             }
 
@@ -144,6 +217,7 @@ public class FavoriteActivity extends AppCompatActivity {
             public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
                 progressBarFavoriteBooks.setVisibility(View.GONE);
                 Toast.makeText(FavoriteActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+                paginationManager.setVisible(false);
             }
         });
     }

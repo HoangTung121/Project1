@@ -58,6 +58,10 @@ public class HomeActivity extends AppCompatActivity {
     private ApiService apiService;
     private List<Category> categoriesList; // Lưu danh sách categories để map
 
+    private TextView profileEmail;
+    private ImageView editProfileIcon;
+    private View headerView;
+
     // Banner slider components
     private ViewPager2 bannerViewPager;
     private LinearLayout indicatorLayout;
@@ -68,10 +72,6 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Đặt ngay sau super.onCreate() và trước setContentView
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
-                           WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
@@ -102,13 +102,28 @@ public class HomeActivity extends AppCompatActivity {
 
         //set email động vào header menu
         SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String userEmail = prefs.getString("user_email", "guest@example.com"); // đặt làm email mặc định nếu không có
+        String userEmail = prefs.getString("user_email", "Guest@example.com"); // đặt làm email mặc định nếu không có
         Log.d("HomeActivity", "Loaded email from prefs: " + userEmail);
 
-        View headerView = navigationView.getHeaderView(0);  // Lấy headerView (nav_header_xml)
-        TextView profileEmail = headerView.findViewById(R.id.profile_email);
+        headerView = navigationView.getHeaderView(0);  // Lấy headerView (nav_header_xml)
+        profileEmail = headerView.findViewById(R.id.profile_email);
+        editProfileIcon = headerView.findViewById(R.id.edit_profile_icon);
+        
         if(profileEmail != null){
             profileEmail.setText(userEmail);
+        }
+        
+        // Xử lý click edit profile icon
+        if(editProfileIcon != null){
+            Log.d("HomeActivity", "Edit profile icon found, setting click listener");
+            editProfileIcon.setOnClickListener(v -> {
+                Log.d("HomeActivity", "Edit profile icon clicked");
+                Intent intent = new Intent(HomeActivity.this, ProfileActivity.class);
+                startActivity(intent);
+                drawerLayout.closeDrawer(GravityCompat.START);
+            });
+        } else {
+            Log.w("HomeActivity", "Edit profile icon not found in header");
         }
 
         // Xử lý menu items
