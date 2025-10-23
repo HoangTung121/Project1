@@ -110,6 +110,8 @@ public class NewBookAdapter extends RecyclerView.Adapter<NewBookAdapter.ViewHold
                 intent.putExtra("book_url", book.getBookUrl());
                 intent.putExtra("epub_url", book.getEpubUrl());
                 intent.putExtra("book_id", book.getId());
+                intent.putExtra("author", book.getAuthor());
+                intent.putExtra("category", book.getCategoryName());
                 context.startActivity(intent);
             }
         });
