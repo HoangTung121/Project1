@@ -72,10 +72,6 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Đặt ngay sau super.onCreate() và trước setContentView
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
-                           WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
@@ -106,7 +102,7 @@ public class HomeActivity extends AppCompatActivity {
 
         //set email động vào header menu
         SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String userEmail = prefs.getString("user_email", "guest@example.com"); // đặt làm email mặc định nếu không có
+        String userEmail = prefs.getString("user_email", "Guest@example.com"); // đặt làm email mặc định nếu không có
         Log.d("HomeActivity", "Loaded email from prefs: " + userEmail);
 
         headerView = navigationView.getHeaderView(0);  // Lấy headerView (nav_header_xml)
