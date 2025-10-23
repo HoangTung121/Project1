@@ -81,6 +81,8 @@ public class AllBooksAdapter extends RecyclerView.Adapter<AllBooksAdapter.ViewHo
 
         holder.ivFavorite.setOnClickListener(v -> toggleFavorite(bookIdStr, holder.ivFavorite));
 
+        // Create final variable for lambda
+        final String finalCatName = catName;
         holder.itemView.setOnClickListener(v -> {
             android.content.Intent intent = new android.content.Intent(context, ReadBookActivity.class);
             intent.putExtra("title", book.getTitle());
@@ -89,6 +91,8 @@ public class AllBooksAdapter extends RecyclerView.Adapter<AllBooksAdapter.ViewHo
             intent.putExtra("book_url", book.getBookUrl());
             intent.putExtra("epub_url", book.getEpubUrl());
             intent.putExtra("book_id", book.getId());
+            intent.putExtra("author", book.getAuthor());
+            intent.putExtra("category", finalCatName);
             context.startActivity(intent);
         });
 

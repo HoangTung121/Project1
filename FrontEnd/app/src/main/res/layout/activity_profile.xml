@@ -59,6 +59,15 @@
 
     </LinearLayout>
 
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:visibility="gone" />
+
     <!-- Profile Content -->
     <ScrollView
         android:layout_width="match_parent"
@@ -112,7 +121,7 @@
                     android:id="@+id/tv_user_email"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="vtien5033@gmail.com"
+                    android:text="Guest123@example.com"
                     android:textColor="#000000"
                     android:textSize="@dimen/text_size_body" />
 

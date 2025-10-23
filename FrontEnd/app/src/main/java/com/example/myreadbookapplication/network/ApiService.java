@@ -5,12 +5,16 @@ import com.example.myreadbookapplication.model.Book;
 import com.example.myreadbookapplication.model.BooksResponse;
 import com.example.myreadbookapplication.model.CategoriesResponse;
 import com.example.myreadbookapplication.model.Category;
+import com.example.myreadbookapplication.model.HistoryItem;
+import com.example.myreadbookapplication.model.ReadingHistoryResponse;
 import com.example.myreadbookapplication.model.SignInRequest;
 import com.example.myreadbookapplication.model.SignUpRequest;
 import com.example.myreadbookapplication.model.VerifyOtpRequest;
 import com.example.myreadbookapplication.model.ResendOtpRequest;
 import com.example.myreadbookapplication.model.ResetPasswordRequest;
 import com.example.myreadbookapplication.model.ForgotPasswordRequest;
+import com.example.myreadbookapplication.model.User;
+import com.example.myreadbookapplication.model.UpdateUserRequest;
 
 import java.util.List;
 
@@ -31,6 +35,7 @@ import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterConten
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentRequest;
 import retrofit2.http.DELETE;
 import retrofit2.http.Header;
+import retrofit2.http.PUT;
 
 public interface ApiService {
 
@@ -105,7 +110,7 @@ public interface ApiService {
 
     // history
     @GET("api/history/{userId}")
-    Call<ApiResponse<com.example.myreadbookapplication.model.ReadingHistoryResponse>> getReadingHistory(
+    Call<ApiResponse<ReadingHistoryResponse>> getReadingHistory(
             @Path("userId") String userId,
             @Header("Authorization") String authorization,
             @Query("page") Integer page,
@@ -115,7 +120,7 @@ public interface ApiService {
     );
 
     @GET("api/history/{userId}/bookmark/{bookId}")
-    Call<ApiResponse<com.example.myreadbookapplication.model.HistoryItem>> getBookmark(
+    Call<ApiResponse<HistoryItem>> getBookmark(
             @Path("userId") String userId,
             @Path("bookId") String bookId,
             @Header("Authorization") String authorization
@@ -143,5 +148,25 @@ public interface ApiService {
 
     @POST("api/epub/chapter-content")
     Call<ApiResponse<EpubChapterContentData>> getEpubChapterContent(@Body EpubChapterContentRequest request);
+
+    // User Profile APIs
+    @GET("api/users/{userId}")
+    Call<ApiResponse<User>> getUserProfile(
+            @Path("userId") String userId,
+            @Header("Authorization") String authorization
+    );
+
+    @PUT("api/users/{userId}")
+    Call<ApiResponse<User>> updateUserProfile(
+            @Path("userId") String userId,
+            @Body UpdateUserRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @GET("api/users")
+    Call<ApiResponse<User>> getUserByEmail(
+            @Query("email") String email,
+            @Header("Authorization") String authorization
+    );
 
 }
