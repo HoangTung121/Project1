@@ -145,11 +145,20 @@ public class HomeActivity extends AppCompatActivity {
                     drawerLayout.closeDrawer(GravityCompat.START);
                     return true;
                 } else if (id == R.id.nav_feedback) {
-                    Toast.makeText(HomeActivity.this, "Feedback clicked", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(HomeActivity.this, FeedbackActivity.class);
+                    startActivity(intent);
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                    return true;
                 } else if (id == R.id.nav_contact) {
-                    Toast.makeText(HomeActivity.this, "Contact clicked", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(HomeActivity.this, ContactActivity.class);
+                    startActivity(intent);
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                    return true;
                 } else if (id == R.id.nav_change_password) {
-                    Toast.makeText(HomeActivity.this, "Change password clicked", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(HomeActivity.this, ChangePasswordActivity.class);
+                    startActivity(intent);
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                    return true;
                 } else if (id == R.id.nav_sign_out) {
                     Toast.makeText(HomeActivity.this, "Sign out clicked", Toast.LENGTH_SHORT).show();
                 }
