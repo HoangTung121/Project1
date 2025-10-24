@@ -278,6 +278,67 @@ const userValidation = {
         'any.required': 'ID người dùng là bắt buộc'
       })
     })
+  },
+
+  /**
+   * Đánh giá app
+   * @param {Object} body - request body
+   * @param {string} body.userId - user id
+   *
+   * @param {string} body.comment - comment
+   * @return {Object} Joi validation schema
+   */
+
+  addRatingApp: {
+    body: Joi.object().keys({
+      userId: Joi.string().required().messages({
+        'any.required': 'ID người dùng là bắt buộc'
+      }),
+      fullName: Joi.string().required().messages({
+        'any.required': 'Họ tên là bắt buộc'
+      }),
+      phoneNumber: Joi.string().pattern(/^[0-9]{10,11}$/).messages({
+        'string.pattern.base': 'Số điện thoại phải có 10-11 chữ số'
+      }),
+      email: Joi.string().email().messages({
+        'string.email': 'Email không hợp lệ'
+      }),
+      comment: Joi.string().required().messages({
+        'any.required': 'Bình luận là bắt buộc'
+      })
+    })
+  },
+
+  /**
+   * Lấy danh sách đánh giá app của người dùng
+   * @param {Object} params - URL parameters
+   * @param {string} params.userId - User ID (required)
+   * @return {Object} Joi validation schema
+   */
+  getRatingApp: {
+    params: Joi.object().keys({
+      userId: Joi.string().required().messages({
+        'any.required': 'ID người dùng là bắt buộc'
+      })
+    })
+  },
+
+  /**
+   * Xóa đánh giá app của người dùng
+   * @param {Object} params - URL parameters
+   * @param {string} params.userId - User ID (required)
+   * @param {string} params.ratingId - Rating ID (required)
+   * @return {Object} Joi validation schema
+   */
+  deleteRatingApp: {
+    params: Joi.object().keys({
+      userId: Joi.string().required().messages({
+        'any.required': 'ID người dùng là bắt buộc'
+      }),
+      commentId: Joi.string().required().messages({
+        'any.required': 'ID bình luận là bắt buộc'
+      })
+    })
   }
 }
 
