@@ -146,12 +146,10 @@ public class ReadBookActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                
                 // Restore scroll position if available
                 restoreScrollPosition();
                 // Start auto-save scroll position
                 startAutoSaveScrollPosition();
-                
                 // Apply initial font size
                 updateWebViewFontSize();
             }
@@ -185,7 +183,6 @@ public class ReadBookActivity extends AppCompatActivity {
             // No epub url; fallback to prior behavior for book/txt urls
             fallbackDirectLoad(webView, bookUrl, txtUrl, null);
         }
-
         backIcon.setOnClickListener(v -> handleBack());
     }
 
