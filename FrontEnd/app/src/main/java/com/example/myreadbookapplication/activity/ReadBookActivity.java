@@ -146,6 +146,7 @@ public class ReadBookActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                
                 // Restore scroll position if available
                 restoreScrollPosition();
                 // Start auto-save scroll position
