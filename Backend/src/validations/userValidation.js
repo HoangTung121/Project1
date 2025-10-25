@@ -278,7 +278,6 @@ const userValidation = {
         'any.required': 'ID người dùng là bắt buộc'
       })
     })
-  }
+  },
 }
-
 module.exports = userValidation

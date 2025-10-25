@@ -13,8 +13,13 @@ import com.example.myreadbookapplication.model.VerifyOtpRequest;
 import com.example.myreadbookapplication.model.ResendOtpRequest;
 import com.example.myreadbookapplication.model.ResetPasswordRequest;
 import com.example.myreadbookapplication.model.ForgotPasswordRequest;
+import com.example.myreadbookapplication.model.LogoutRequest;
 import com.example.myreadbookapplication.model.User;
 import com.example.myreadbookapplication.model.UpdateUserRequest;
+import com.example.myreadbookapplication.model.FeedbackRequest;
+import com.example.myreadbookapplication.model.UpdateFeedbackRequest;
+import com.example.myreadbookapplication.model.Feedback;
+import com.example.myreadbookapplication.model.FeedbackResponse;
 
 import java.util.List;
 
@@ -56,6 +61,9 @@ public interface ApiService {
 
     @POST("api/auth/reset-password")
     Call<ApiResponse> resetPassword(@Body ResetPasswordRequest request);
+
+    @POST("api/auth/logout")
+    Call<ApiResponse> logout(@Body LogoutRequest request);
 
     //category
     @GET("api/categories")
@@ -166,6 +174,39 @@ public interface ApiService {
     @GET("api/users")
     Call<ApiResponse<User>> getUserByEmail(
             @Query("email") String email,
+            @Header("Authorization") String authorization
+    );
+
+    // Feedback APIs
+    @POST("api/feedback")
+    Call<ApiResponse> createFeedback(
+            @Body FeedbackRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @GET("api/feedback/my-feedbacks")
+    Call<ApiResponse<FeedbackResponse>> getMyFeedbacks(
+            @Header("Authorization") String authorization,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit
+    );
+
+    @GET("api/feedback/{id}")
+    Call<ApiResponse<Feedback>> getFeedbackById(
+            @Path("id") String id,
+            @Header("Authorization") String authorization
+    );
+
+    @PUT("api/feedback/{id}")
+    Call<ApiResponse<Feedback>> updateFeedback(
+            @Path("id") String id,
+            @Body UpdateFeedbackRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @DELETE("api/feedback/{id}")
+    Call<ApiResponse> deleteFeedback(
+            @Path("id") String id,
             @Header("Authorization") String authorization
     );
 
