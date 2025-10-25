@@ -1,7 +1,6 @@
 package com.example.myreadbookapplication.activity;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -35,6 +34,8 @@ import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
 import com.google.android.material.navigation.NavigationView;
 import com.example.myreadbookapplication.adapter.BannerAdapter;
+import com.example.myreadbookapplication.utils.AuthManager;
+import com.example.myreadbookapplication.utils.LogoutManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +58,8 @@ public class HomeActivity extends AppCompatActivity {
     private NewBookAdapter newBookAdapter;
     private ApiService apiService;
     private List<Category> categoriesList; // Lưu danh sách categories để map
+    private AuthManager authManager;
+    private LogoutManager logoutManager;
 
     private TextView profileEmail;
     private ImageView editProfileIcon;
@@ -89,6 +92,8 @@ public class HomeActivity extends AppCompatActivity {
         indicatorLayout = findViewById(R.id.indicatorLayout);
 
         apiService = RetrofitClient.getApiService();
+        authManager = AuthManager.getInstance(this);
+        logoutManager = new LogoutManager(this);
 
 
         // xử lý click menu
@@ -101,9 +106,24 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         //set email động vào header menu
-        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String userEmail = prefs.getString("user_email", "Guest@example.com"); // đặt làm email mặc định nếu không có
-        Log.d("HomeActivity", "Loaded email from prefs: " + userEmail);
+        // Load user info từ AuthManager
+        String userEmail = authManager.getUserEmail();
+        String userFullName = authManager.getUserFullName();
+        
+        if (userEmail == null || userEmail.isEmpty()) {
+            userEmail = "Guest@example.com"; // đặt làm email mặc định nếu không có
+        }
+        if (userFullName == null || userFullName.isEmpty()) {
+            userFullName = "Guest User"; // đặt làm tên mặc định nếu không có
+        }
+        
+        Log.d("HomeActivity", "Loaded email from AuthManager: " + userEmail);
+        Log.d("HomeActivity", "Loaded fullName from AuthManager: " + userFullName);
+        Log.d("HomeActivity", "AuthManager isLoggedIn: " + authManager.isLoggedIn());
+        Log.d("HomeActivity", "AuthManager userId: " + authManager.getUserId());
+        
+        // Update navigation header với thông tin user
+        updateNavigationHeader(userEmail, userFullName);
 
         headerView = navigationView.getHeaderView(0);  // Lấy headerView (nav_header_xml)
         profileEmail = headerView.findViewById(R.id.profile_email);
@@ -160,7 +180,24 @@ public class HomeActivity extends AppCompatActivity {
                     drawerLayout.closeDrawer(GravityCompat.START);
                     return true;
                 } else if (id == R.id.nav_sign_out) {
-                    Toast.makeText(HomeActivity.this, "Sign out clicked", Toast.LENGTH_SHORT).show();
+                    Log.d("HomeActivity", "Sign out clicked - Starting logout process");
+                    Toast.makeText(HomeActivity.this, "Đang đăng xuất...", Toast.LENGTH_SHORT).show();
+                    
+                    if (logoutManager == null) {
+                        Log.e("HomeActivity", "LogoutManager is null!");
+                        Toast.makeText(HomeActivity.this, "Lỗi: LogoutManager không được khởi tạo", Toast.LENGTH_LONG).show();
+                        return true;
+                    }
+                    
+                    logoutManager.logout(new LogoutManager.LogoutCallback() {
+                        @Override
+                        public void onLogoutSuccess() {
+                            // Logout thành công, LogoutManager đã tự động chuyển về SignInActivity
+                            Log.d("HomeActivity", "Logout completed successfully");
+                        }
+                    });
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                    return true;
                 }
 
                 // Đóng drawer sau khi click
@@ -425,5 +462,29 @@ public class HomeActivity extends AppCompatActivity {
                 Toast.makeText(HomeActivity.this, "Network error", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /**
+     * Cập nhật thông tin user trong navigation header
+     */
+    private void updateNavigationHeader(String email, String fullName) {
+        try {
+            View headerView = navigationView.getHeaderView(0);
+            if (headerView != null) {
+                TextView profileEmail = headerView.findViewById(R.id.profile_email);
+                TextView profileName = headerView.findViewById(R.id.profile_name);
+                
+                if (profileEmail != null) {
+                    profileEmail.setText(email);
+                }
+                if (profileName != null) {
+                    profileName.setText(fullName);
+                }
+                
+                Log.d("HomeActivity", "Navigation header updated with: " + email + ", " + fullName);
+            }
+        } catch (Exception e) {
+            Log.e("HomeActivity", "Error updating navigation header", e);
+        }
     }
 }
