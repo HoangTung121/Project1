@@ -35,7 +35,8 @@
             android:exported="false" />
         <activity
             android:name=".activity.HomeActivity"
-            android:exported="false"/>
+            android:exported="false">
+        </activity>
         <activity
             android:name=".activity.SearchActivity"
             android:exported="false" />
@@ -60,6 +61,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".activity.ProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.EditProfileActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

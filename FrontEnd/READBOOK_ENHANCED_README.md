@@ -238,3 +238,6 @@ ReadBookActivity giờ đây có:
 - ✅ **Backend Sync**: Đồng bộ với server
 
 Người dùng sẽ có trải nghiệm đọc sách tốt hơn với các tính năng cá nhân hóa! 📚✨
+
+
+

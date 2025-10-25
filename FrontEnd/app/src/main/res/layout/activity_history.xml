@@ -16,7 +16,7 @@
         android:layout_marginBottom="27dp"
         android:orientation="vertical">
 
-        <!-- Header content với layout cân đối -->
+        <!-- Header content-->
         <RelativeLayout
             android:id="@+id/header_content"
             android:layout_width="match_parent"
@@ -24,7 +24,7 @@
             android:layout_marginBottom="20dp"
             android:paddingHorizontal="16dp">
 
-            <!-- Nút back ở bên trái -->
+            <!-- Nút backở bên trái -->
             <ImageView
                 android:id="@+id/back_history_book_icon"
                 android:layout_width="24dp"
@@ -38,7 +38,7 @@
                 android:focusable="true"
                 android:contentDescription="Back" />
 
-            <!-- Tiêu đề ở giữa -->
+            <!-- Tiêu đề -->
             <TextView
                 android:id="@+id/tv_history_book_title"
                 android:layout_width="wrap_content"
@@ -96,6 +96,12 @@
         </LinearLayout>
 
     </ScrollView>
+
+    <!-- Pagination Footer Container -->
+    <FrameLayout
+        android:id="@+id/pagination_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>
 
