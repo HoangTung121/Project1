@@ -182,19 +182,17 @@
         android:paddingBottom="24dp"
         android:gravity="center">
 
-        <TextView
+        <Button
             android:id="@+id/btn_send"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/rounded_button"
-            android:gravity="center"
-            android:paddingVertical="16dp"
+            android:layout_height="56dp"
             android:text="Send"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/white"
             android:textSize="@dimen/text_size_body"
             android:textStyle="bold"
-            android:clickable="true"
-            android:focusable="true" />
+            android:backgroundTint="@color/ping"
+            android:elevation="4dp"
+            android:stateListAnimator="@null" />
 
     </LinearLayout>
 

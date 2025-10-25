@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -71,9 +72,9 @@ public class ContactActivity extends AppCompatActivity {
         });
 
         // Social media buttons
-        TextView btnFacebook = findViewById(R.id.btn_facebook);
-        TextView btnTwitter = findViewById(R.id.btn_twitter);
-        TextView btnInstagram = findViewById(R.id.btn_instagram);
+        Button btnFacebook = findViewById(R.id.btn_facebook);
+        Button btnTwitter = findViewById(R.id.btn_twitter);
+        Button btnInstagram = findViewById(R.id.btn_instagram);
 
         btnFacebook.setOnClickListener(v -> {
             // TODO: Open Facebook page
@@ -91,7 +92,7 @@ public class ContactActivity extends AppCompatActivity {
         });
 
         // Feedback button
-        TextView btnFeedback = findViewById(R.id.btn_feedback);
+        Button btnFeedback = findViewById(R.id.btn_feedback);
         btnFeedback.setOnClickListener(v -> {
             Intent intent = new Intent(this, FeedbackActivity.class);
             startActivity(intent);

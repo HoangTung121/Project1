@@ -336,53 +336,41 @@
                         android:orientation="horizontal"
                         android:gravity="center">
 
-                        <TextView
+                        <Button
                             android:id="@+id/btn_facebook"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
                             android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
-                            android:background="@drawable/button_facebook_background"
-                            android:gravity="center"
-                            android:paddingVertical="12dp"
                             android:text="Facebook"
                             android:textColor="@color/white"
                             android:textSize="@dimen/text_follow_us"
-                            android:textStyle="bold"
-                            android:clickable="true"
-                            android:focusable="true" />
+                            android:backgroundTint="#3B5998"
+                            android:layout_marginEnd="8dp"
+                            android:stateListAnimator="@null" />
 
-                        <TextView
+                        <Button
                             android:id="@+id/btn_twitter"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
                             android:layout_weight="1"
-                            android:layout_marginHorizontal="4dp"
-                            android:background="@drawable/button_twitter_background"
-                            android:gravity="center"
-                            android:paddingVertical="12dp"
                             android:text="Twitter"
                             android:textColor="@color/white"
                             android:textSize="@dimen/text_follow_us"
-                            android:textStyle="bold"
-                            android:clickable="true"
-                            android:focusable="true" />
+                            android:backgroundTint="#1DA1F2"
+                            android:layout_marginHorizontal="4dp"
+                            android:stateListAnimator="@null" />
 
-                        <TextView
+                        <Button
                             android:id="@+id/btn_instagram"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
                             android:layout_weight="1"
-                            android:layout_marginStart="8dp"
-                            android:background="@drawable/button_instagram_background"
-                            android:gravity="center"
-                            android:paddingVertical="12dp"
                             android:text="Instagram"
                             android:textColor="@color/white"
                             android:textSize="@dimen/text_follow_us"
-                            android:textStyle="bold"
-                            android:clickable="true"
-                            android:focusable="true" />
+                            android:backgroundTint="#E4405F"
+                            android:layout_marginStart="8dp"
+                            android:stateListAnimator="@null" />
 
                     </LinearLayout>
 
@@ -390,20 +378,18 @@
             </androidx.cardview.widget.CardView>
 
             <!-- Feedback Button -->
-            <TextView
+            <Button
                 android:id="@+id/btn_feedback"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/rounded_button"
-                android:gravity="center"
-                android:paddingVertical="16dp"
+                android:layout_height="56dp"
                 android:text="Send Feedback"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:textSize="@dimen/text_size_body"
                 android:textStyle="bold"
-                android:layout_marginBottom="24dp"
-                android:clickable="true"
-                android:focusable="true" />
+                android:backgroundTint="@color/ping"
+                android:elevation="4dp"
+                android:stateListAnimator="@null"
+                android:layout_marginBottom="24dp" />
 
         </LinearLayout>
     </ScrollView>

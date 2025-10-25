@@ -20,6 +20,7 @@ import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.SignInRequest;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.AuthManager;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -37,6 +38,7 @@ public class SignInActivity extends AppCompatActivity {
     private EditText etEmailSignIn;
     private EditText etPasswordSignIn;
     private TextView tvForgotPassword;
+    private AuthManager authManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +52,8 @@ public class SignInActivity extends AppCompatActivity {
         etEmailSignIn = findViewById(R.id.et_email_sign_in);
         etPasswordSignIn = findViewById(R.id.et_password_sign_in);
         tvForgotPassword = findViewById(R.id.tv_forgot_password);
+        
+        authManager = AuthManager.getInstance(this);
 
         // bắt sự kiện và xử lý
 
@@ -103,15 +107,19 @@ public class SignInActivity extends AppCompatActivity {
                                 }
                             }
                             Log.d(TAG, "Login success, email: " + userEmail);
-                            //luu email, userId, accessToken vao sharedPreference
-                            SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+                            
+                            // Lưu thông tin đăng nhập vào AuthManager
                             String userId = "";
                             String accessToken = "";
+                            String refreshToken = "";
+                            String fullName = "";
+                            
                             try{
                                 Gson gson = new Gson();
                                 String dataJson = gson.toJson(apiResponse.getData());
                                 JsonObject jsonData = JsonParser.parseString(dataJson).getAsJsonObject();
                                 JsonObject user = jsonData.getAsJsonObject("user");
+                                
                                 if (user != null && user.get("_id") != null) {
                                     try {
                                         if (user.get("_id").isJsonPrimitive() && user.get("_id").getAsJsonPrimitive().isNumber()) {
@@ -124,17 +132,30 @@ public class SignInActivity extends AppCompatActivity {
                                         userId = user.get("_id").getAsString();
                                     }
                                 }
+                                
+                                if (user != null && user.get("fullName") != null) {
+                                    fullName = user.get("fullName").getAsString();
+                                }
+                                
                                 if (jsonData.get("accessToken") != null) {
                                     accessToken = jsonData.get("accessToken").getAsString();
+                                }
+                                
+                                if (jsonData.get("refreshToken") != null) {
+                                    refreshToken = jsonData.get("refreshToken").getAsString();
                                 }
                             }catch (Exception e){
                                 Log.e(TAG, "Parse tokens failed", e);
                             }
-                            prefs.edit()
-                                    .putString("user_email", userEmail)
-                                    .putString("user_id", userId != null ? userId.replace(".0", "") : null)
-                                    .putString("access_token", accessToken)
-                                    .apply();
+                            
+                            // Sử dụng AuthManager để lưu thông tin
+                            authManager.saveLoginData(accessToken, refreshToken, userEmail, userId, fullName);
+                            
+                            // Debug log
+                            Log.d(TAG, "AuthManager saveLoginData called");
+                            Log.d(TAG, "Saved email: " + userEmail);
+                            Log.d(TAG, "Saved userId: " + userId);
+                            Log.d(TAG, "AuthManager isLoggedIn after save: " + authManager.isLoggedIn());
 
                             // Optional: seed local favorite ids from backend user.favoriteBooks for correct icon state
                             try {
@@ -144,7 +165,8 @@ public class SignInActivity extends AppCompatActivity {
                                 JsonObject userObj = jsonData.getAsJsonObject("user");
                                 if (userObj != null && userObj.get("favoriteBooks") != null && userObj.get("favoriteBooks").isJsonArray()) {
                                     String favoritesJson = userObj.get("favoriteBooks").toString();
-                                    // Persist as list of strings
+                                    // Persist as list of strings - sử dụng AuthManager context
+                                    SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
                                     prefs.edit().putString("favorite_books", favoritesJson).apply();
                                 }
                             } catch (Exception e2) {
