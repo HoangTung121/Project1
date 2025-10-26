@@ -134,6 +134,13 @@ public interface ApiService {
             @Header("Authorization") String authorization
     );
 
+    @DELETE("api/history/{userId}/bookmark/{bookId}")
+    Call<ApiResponse> deleteBookmark(
+            @Path("userId") String userId,
+            @Path("bookId") String bookId,
+            @Header("Authorization") String authorization
+    );
+
     @FormUrlEncoded
     @POST("api/history/bookmark")
     Call<ApiResponse> saveBookmark(
