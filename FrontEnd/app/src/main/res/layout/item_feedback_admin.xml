@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp"
+    android:elevation="2dp">
+
+    <!-- User Icon -->
+    <ImageView
+        android:id="@+id/iv_user_icon"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@android:drawable/ic_menu_myplaces"
+        android:background="@android:drawable/button_onoff_indicator_off"
+        android:scaleType="centerInside"
+        android:tint="#CCCCCC"
+        android:layout_marginEnd="12dp"
+        tools:ignore="ContentDescription" />
+
+    <!-- Feedback Content -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Email -->
+        <TextView
+            android:id="@+id/tv_email"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="user@example.com"
+            android:textSize="16sp"
+            android:textColor="#0066CC"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp"
+            tools:text="abc@gmail.com" />
+
+        <!-- Feedback Message -->
+        <TextView
+            android:id="@+id/tv_feedback_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="This is a sample feedback message from the user..."
+            android:textSize="14sp"
+            android:textColor="#333333"
+            android:lineSpacingExtra="2dp"
+            tools:text="App can phat trien them tinh nang moi!!!" />
+
+    </LinearLayout>
+
+</LinearLayout>
+
