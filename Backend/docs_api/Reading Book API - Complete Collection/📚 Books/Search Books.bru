@@ -5,21 +5,18 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/books/search?q=harry potter&page=1&limit=10
+  url: http://0.0.0.0:8000/api/books/search?page=1&limit=10
   body: none
   auth: inherit
 }
 
 params:query {
-  q: harry potter
   page: 1
   limit: 10
-}
-
-headers {
-  Authorization: Bearer {{authToken}}
+  ~q: 2
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }
