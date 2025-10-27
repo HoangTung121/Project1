@@ -10,6 +10,7 @@ const config = require('./config/config')
 const logger = require('./config/logger')
 const { successHandler, errorHandler } = require('./config/morgan')
 const { authRoute, userRoute, categoriesRoute, bookRoute, epubRoute, historyRoute, feedbackRoute } = require('./routes/index')
+const adminRoutes = require('../admin/routes/index')
 const { firebaseStrategy } = require('./config/passport')
 
 const app = express()
@@ -84,12 +85,40 @@ passport.use('firebase', firebaseStrategy)
 
 // HEALTH CHECK
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Server is running normally',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  })
+  try {
+    res.status(200).json({
+      success: true,
+      message: 'Server is running normally',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: config.env || 'unknown'
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Health check failed',
+      error: error.message
+    })
+  }
+})
+
+// API HEALTH CHECK
+app.get('/api/health', (req, res) => {
+  try {
+    res.status(200).json({
+      success: true,
+      message: 'Server is running normally',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: config.env || 'unknown'
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Health check failed',
+      error: error.message
+    })
+  }
 })
 
 // API ROUTES
@@ -101,9 +130,12 @@ app.use('/api/epub', epubRoute)
 app.use('/api/history', historyRoute)
 app.use('/api/feedback', feedbackRoute)
 
+// ADMIN ROUTES
+app.use('/api/admin', adminRoutes)
+
 
 // ERROR HANDLER
-app.use((error, req, res, next) => { // eslint-disable-line no-unused-vars
+app.use((error, req, res, next) => {
   logger.error('Unhandled error:', error)
 
   let statusCode = error.status || error.statusCode || httpStatus.status.INTERNAL_SERVER_ERROR

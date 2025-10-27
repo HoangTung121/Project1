@@ -1,0 +1,25 @@
+meta {
+  name: Get Feedbacks by Status - Pending
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/admin/feedbacks?status=pending&page=1&limit=20
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: pending
+  page: 1
+  limit: 20
+}
+
+headers {
+  Authorization: Bearer {{authToken}}
+}
+
+settings {
+  encodeUrl: true
+}

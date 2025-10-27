@@ -20,6 +20,7 @@ import com.example.myreadbookapplication.model.UpdateUserRequest;
 import com.example.myreadbookapplication.model.User;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.AuthManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -39,6 +40,7 @@ public class EditProfileActivity extends AppCompatActivity {
     
     private ApiService apiService;
     private User currentUser;
+    private AuthManager authManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +59,11 @@ public class EditProfileActivity extends AppCompatActivity {
 
         // Initialize API service
         apiService = RetrofitClient.getApiService();
+        authManager = AuthManager.getInstance(this);
+
+        // Make email field non-editable (backend doesn't allow email updates)
+        etEmail.setEnabled(false);
+        etEmail.setFocusable(false);
 
         // Load thông tin user hiện tại
         loadCurrentUserInfo();
@@ -80,9 +87,8 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void loadCurrentUserInfo() {
-        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String userId = prefs.getString("user_id", null);
-        String token = prefs.getString("access_token", null);
+        String userId = authManager.getUserId();
+        String token = authManager.getAccessToken();
 
         if (userId == null || token == null || token.isEmpty()) {
             Toast.makeText(this, "Bạn cần đăng nhập để chỉnh sửa thông tin", Toast.LENGTH_SHORT).show();
@@ -126,49 +132,34 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void loadUserInfoFromPrefs() {
-        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String email = prefs.getString("user_email", "");
-        String name = prefs.getString("user_name", "");
-        String phone = prefs.getString("user_phone", "");
+        String email = authManager.getUserEmail();
+        String name = authManager.getUserFullName();
         
-        // Hiển thị thông tin từ SharedPreferences
-        etName.setText(name);
-        etEmail.setText(email);
-        etPhone.setText(phone);
+        // Hiển thị thông tin từ AuthManager
+        etName.setText(name != null ? name : "");
+        etEmail.setText(email != null ? email : "");
+        // Phone number is not stored in AuthManager, so leave it empty
     }
 
     private boolean validateInput() {
         String name = etName.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
 
         if (name.isEmpty()) {
-            Toast.makeText(this, "Please enter your name", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Vui lòng nhập tên của bạn", Toast.LENGTH_SHORT).show();
             etName.requestFocus();
             return false;
         }
 
-        if (email.isEmpty()) {
-            Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show();
-            etEmail.requestFocus();
-            return false;
-        }
-
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, "Please enter a valid email", Toast.LENGTH_SHORT).show();
-            etEmail.requestFocus();
-            return false;
-        }
-
         if (phone.isEmpty()) {
-            Toast.makeText(this, "Please enter your phone number", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Vui lòng nhập số điện thoại", Toast.LENGTH_SHORT).show();
             etPhone.requestFocus();
             return false;
         }
 
         // Validate phone number format (10-11 digits)
         if (!phone.matches("^[0-9]{10,11}$")) {
-            Toast.makeText(this, "Phone number must be 10-11 digits", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Số điện thoại phải có 10-11 chữ số", Toast.LENGTH_SHORT).show();
             etPhone.requestFocus();
             return false;
         }
@@ -178,12 +169,10 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private void saveUserInfo() {
         String name = etName.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
 
-        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String userId = prefs.getString("user_id", null);
-        String token = prefs.getString("access_token", null);
+        String userId = authManager.getUserId();
+        String token = authManager.getAccessToken();
 
         if (userId == null || token == null || token.isEmpty()) {
             Toast.makeText(this, "Bạn cần đăng nhập để cập nhật thông tin", Toast.LENGTH_SHORT).show();
@@ -194,8 +183,10 @@ public class EditProfileActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         btnSave.setEnabled(false);
 
-        // Create update request
-        UpdateUserRequest updateRequest = new UpdateUserRequest(name, email, phone);
+        // Create update request - only send name and phoneNumber (not email)
+        UpdateUserRequest updateRequest = new UpdateUserRequest();
+        updateRequest.setFullName(name);
+        updateRequest.setPhoneNumber(phone);
 
         // Call API to update user profile
         Call<ApiResponse<User>> call = apiService.updateUserProfile(userId, updateRequest, "Bearer " + token);
@@ -208,18 +199,23 @@ public class EditProfileActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     User updatedUser = response.body().getData();
                     
-                    // Update SharedPreferences with new data
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("user_email", updatedUser.getEmail());
-                    editor.putString("user_name", updatedUser.getFullName());
-                    editor.putString("user_phone", updatedUser.getPhoneNumber());
-                    editor.apply();
+                    // Update AuthManager with new data
+                    authManager.saveUserData(updatedUser);
                     
                     Toast.makeText(EditProfileActivity.this, "Cập nhật thông tin thành công!", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
                     Log.e(TAG, "Failed to update user profile: " + response.code());
-                    Toast.makeText(EditProfileActivity.this, "Không thể cập nhật thông tin", Toast.LENGTH_SHORT).show();
+                    String errorMessage = "Không thể cập nhật thông tin";
+                    if (response.errorBody() != null) {
+                        try {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error body: " + errorBody);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error reading error body", e);
+                        }
+                    }
+                    Toast.makeText(EditProfileActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
                 }
             }
 
