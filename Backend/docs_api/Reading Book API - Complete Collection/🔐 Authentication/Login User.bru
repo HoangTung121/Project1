@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/auth/login
+  url: http://0.0.0.0:8000/api/auth/login
   body: json
   auth: inherit
 }
@@ -16,11 +16,12 @@ headers {
 
 body:json {
   {
-    "email": "user@example.com",
-    "password": "password123"
+    "email": "taagnes3110@gmail.com",
+    "password": "663110ak"
   }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

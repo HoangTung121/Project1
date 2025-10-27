@@ -1,5 +1,6 @@
 package com.example.myreadbookapplication.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,9 +23,7 @@ import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
 import com.example.myreadbookapplication.utils.AuthManager;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,17 +85,15 @@ public class AdminFeedbackActivity extends AppCompatActivity {
 
         // Bottom navigation
         navCategory.setOnClickListener(v -> {
-            // Navigate to admin category management
-            // Intent intent = new Intent(this, AdminCategoryActivity.class);
-            // startActivity(intent);
-            Toast.makeText(this, "Category feature coming soon", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, AdminCategoryActivity.class);
+            startActivity(intent);
+            finish();
         });
 
         navBook.setOnClickListener(v -> {
-            // Navigate to admin book management
-            // Intent intent = new Intent(this, AdminBookActivity.class);
-            // startActivity(intent);
-            Toast.makeText(this, "Book management feature coming soon", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, AdminBookActivity.class);
+            startActivity(intent);
+            finish();
         });
 
         navFeedback.setOnClickListener(v -> {
@@ -104,10 +101,9 @@ public class AdminFeedbackActivity extends AppCompatActivity {
         });
 
         navAccount.setOnClickListener(v -> {
-            // Navigate to admin account
-            // Intent intent = new Intent(this, AdminAccountActivity.class);
-            // startActivity(intent);
-            Toast.makeText(this, "Account management feature coming soon", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, AdminAccountActivity.class);
+            startActivity(intent);
+            finish();
         });
     }
 
@@ -135,61 +131,91 @@ public class AdminFeedbackActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         layoutEmpty.setVisibility(View.GONE);
 
-        // TODO: Use admin API endpoint to get all feedbacks
-        // For now, using user's feedback endpoint as placeholder
-        // In production, you need a separate admin endpoint: GET /api/feedback/admin/all
-        Call<ApiResponse> call = apiService.getMyFeedbacks("Bearer " + accessToken, 1, 100);
+        // Use admin API endpoint to get all feedbacks
+        Call<ApiResponse<FeedbackResponse>> call = apiService.getAllFeedbacks("Bearer " + accessToken, 1, 100);
         
-        call.enqueue(new Callback<ApiResponse>() {
+        call.enqueue(new Callback<ApiResponse<FeedbackResponse>>() {
             @Override
-            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+            public void onResponse(Call<ApiResponse<FeedbackResponse>> call, Response<ApiResponse<FeedbackResponse>> response) {
                 progressBar.setVisibility(View.GONE);
 
+                Log.d(TAG, "=== API RESPONSE START ===");
+                Log.d(TAG, "Response code: " + response.code());
+                Log.d(TAG, "Response isSuccessful: " + response.isSuccessful());
+                
                 if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse apiResponse = response.body();
+                    ApiResponse<FeedbackResponse> apiResponse = response.body();
+                    Log.d(TAG, "API Response success: " + apiResponse.isSuccess());
+                    Log.d(TAG, "API Response message: " + apiResponse.getMessage());
+                    
                     if (apiResponse.isSuccess()) {
                         try {
-                            // Parse feedbacks from response
+                            // Backend returns data as array directly
                             Object dataObj = apiResponse.getData();
+                            Log.d(TAG, "Data object type: " + (dataObj != null ? dataObj.getClass().getName() : "null"));
+                            
                             if (dataObj != null) {
                                 Gson gson = new Gson();
-                                String dataJson = gson.toJson(dataObj);
-                                JsonArray feedbackArray = JsonParser.parseString(dataJson).getAsJsonArray();
-
-                                feedbackList.clear();
-                                for (int i = 0; i < feedbackArray.size(); i++) {
-                                    JsonObject feedbackJson = feedbackArray.get(i).getAsJsonObject();
-                                    Feedback feedback = gson.fromJson(feedbackJson, Feedback.class);
-                                    feedbackList.add(feedback);
-                                }
-
-                                adapter.setFeedbackList(feedbackList);
+                                String json = gson.toJson(dataObj);
+                                Log.d(TAG, "Data JSON: " + json);
                                 
-                                if (feedbackList.isEmpty()) {
-                                    layoutEmpty.setVisibility(View.VISIBLE);
-                                    rvFeedback.setVisibility(View.GONE);
+                                if (json != null && !json.isEmpty()) {
+                                    TypeToken<List<Feedback>> token = new TypeToken<List<Feedback>>() {};
+                                    List<Feedback> feedbacksList = gson.fromJson(json, token.getType());
+                                    
+                                    Log.d(TAG, "Parsed feedbacks count: " + (feedbacksList != null ? feedbacksList.size() : 0));
+                                    
+                                    if (feedbacksList != null && !feedbacksList.isEmpty()) {
+                                        feedbackList = feedbacksList;
+                                        Log.d(TAG, "✓ Feedbacks loaded successfully: " + feedbackList.size());
+                                        
+                                        // Show first feedback as sample
+                                        if (!feedbackList.isEmpty()) {
+                                            Feedback first = feedbackList.get(0);
+                                            Log.d(TAG, "First feedback - Email: " + first.getEmail() + ", Comment: " + first.getComment());
+                                        }
+                                        
+                                        adapter.setFeedbackList(feedbackList);
+                                        layoutEmpty.setVisibility(View.GONE);
+                                        rvFeedback.setVisibility(View.VISIBLE);
+                                    } else {
+                                        Log.w(TAG, "⚠ Feedbacks list is empty after parsing");
+                                        showEmptyState();
+                                    }
                                 } else {
-                                    layoutEmpty.setVisibility(View.GONE);
-                                    rvFeedback.setVisibility(View.VISIBLE);
+                                    Log.e(TAG, "JSON string is empty");
+                                    showEmptyState();
                                 }
                             } else {
+                                Log.e(TAG, "✗ Data object is null");
                                 showEmptyState();
                             }
                         } catch (Exception e) {
-                            Log.e(TAG, "Error parsing feedbacks: " + e.getMessage());
+                            Log.e(TAG, "✗ Error parsing feedbacks: " + e.getMessage(), e);
+                            e.printStackTrace();
                             showEmptyState();
                         }
                     } else {
+                        Log.e(TAG, "✗ API Response not successful");
                         showEmptyState();
                     }
                 } else {
-                    Log.e(TAG, "Failed to load feedbacks: " + response.code());
+                    Log.e(TAG, "✗ Response failed. Code: " + response.code());
+                    if (response.errorBody() != null) {
+                        try {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error body: " + errorBody);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error reading error body", e);
+                        }
+                    }
                     showEmptyState();
                 }
+                Log.d(TAG, "=== API RESPONSE END ===");
             }
 
             @Override
-            public void onFailure(Call<ApiResponse> call, Throwable t) {
+            public void onFailure(Call<ApiResponse<FeedbackResponse>> call, Throwable t) {
                 progressBar.setVisibility(View.GONE);
                 Log.e(TAG, "Error loading feedbacks: " + t.getMessage());
                 Toast.makeText(AdminFeedbackActivity.this, "Failed to load feedbacks", Toast.LENGTH_SHORT).show();
@@ -203,4 +229,5 @@ public class AdminFeedbackActivity extends AppCompatActivity {
         rvFeedback.setVisibility(View.GONE);
     }
 }
+
 
