@@ -1,0 +1,33 @@
+meta {
+  name: Create user
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://0.0.0.0:8000/api/admin/users/
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MTQ5NTIwNiwiZXhwIjoxNzYxNDk4ODA2fQ.seZoBEiINQl9RL6YJ6gKYkOE_j1pVQwdOg92CNdVWGM
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "user@example.com",
+    "password": "password123",
+    "confirmPassword": "password123",
+    "fullName": "Tên đầy đủ",
+    "phoneNumber": "0123456789",
+    "role": "user",
+    "isActive": true
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

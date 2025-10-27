@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/auth/register
+  url: http://0.0.0.0:8000/api/auth/register
   body: json
   auth: inherit
 }
@@ -16,14 +16,15 @@ headers {
 
 body:json {
   {
-    "email": "user@example.com",
-    "password": "password123",
-    "fullName": "Nguyễn Văn A",
-    "username": "nguyenvana",
-    "phoneNumber": "0123456789"
+    "email": "taaagnes3110@gmail.com",
+    "password": "663110ak",
+    "confirmPassword": "663110ak",
+    "fullName": "TAAgnes",
+    "phoneNumber": "0936992346"
   }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }
