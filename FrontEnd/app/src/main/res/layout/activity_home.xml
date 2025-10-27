@@ -273,6 +273,13 @@
         android:layout_gravity="start"
         app:headerLayout="@layout/nav_header"
         app:itemTextAppearance="@style/MenuTitleAppearance"
-        app:menu="@menu/nav_menu"/>
+        app:itemIconTint="@color/text_primary"
+        app:itemBackground="@drawable/nav_menu_item_background"
+        app:itemTextColor="@color/text_primary"
+        app:subheaderTextAppearance="@style/SectionHeaderStyle"
+        app:menu="@menu/nav_menu"
+        android:background="@color/white"
+        android:elevation="8dp"
+        android:outlineProvider="bounds"/>
 
 </androidx.drawerlayout.widget.DrawerLayout>

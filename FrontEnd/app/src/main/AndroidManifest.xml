@@ -67,6 +67,15 @@
         <activity
             android:name=".activity.EditProfileActivity"
             android:exported="false" />
+        <activity
+            android:name=".activity.FeedbackActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.ContactActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.ChangePasswordActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
