@@ -62,6 +62,15 @@ public interface ApiService {
     @POST("api/auth/reset-password")
     Call<ApiResponse> resetPassword(@Body ResetPasswordRequest request);
 
+    @FormUrlEncoded
+    @POST("api/auth/change-password")
+    Call<ApiResponse> changePassword(
+            @Field("oldPassword") String oldPassword,
+            @Field("newPassword") String newPassword,
+            @Field("confirmPassword") String confirmPassword,
+            @Header("Authorization") String authorization
+    );
+
     @POST("api/auth/logout")
     Call<ApiResponse> logout(@Body LogoutRequest request);
 
@@ -86,6 +95,13 @@ public interface ApiService {
             @Query("page") Integer page
     );
     
+    // Admin - Get all books
+    @GET("api/books")
+    Call<ApiResponse<BooksResponse>> getAllBooks(
+            @Header("Authorization") String authorization,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit
+    );
 
     //Search book
     @GET("api/books/search")
@@ -134,12 +150,18 @@ public interface ApiService {
             @Header("Authorization") String authorization
     );
 
+    @DELETE("api/history/{userId}/bookmark/{bookId}")
+    Call<ApiResponse> deleteBookmark(
+            @Path("userId") String userId,
+            @Path("bookId") String bookId,
+            @Header("Authorization") String authorization
+    );
+
     @FormUrlEncoded
     @POST("api/history/bookmark")
     Call<ApiResponse> saveBookmark(
             @Field("userId") String userId,
             @Field("bookId") String bookId,
-            @Field("page") int page,
             @Field("chapterId") String chapterId,
             @Header("Authorization") String authorization
     );
@@ -208,6 +230,14 @@ public interface ApiService {
     Call<ApiResponse> deleteFeedback(
             @Path("id") String id,
             @Header("Authorization") String authorization
+    );
+
+    // Admin APIs
+    @GET("api/admin/feedbacks")
+    Call<ApiResponse<FeedbackResponse>> getAllFeedbacks(
+            @Header("Authorization") String authorization,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit
     );
 
 }

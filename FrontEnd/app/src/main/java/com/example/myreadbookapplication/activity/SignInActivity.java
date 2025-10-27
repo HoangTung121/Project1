@@ -5,6 +5,7 @@ import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -39,6 +40,8 @@ public class SignInActivity extends AppCompatActivity {
     private EditText etPasswordSignIn;
     private TextView tvForgotPassword;
     private AuthManager authManager;
+    private ImageView ivPasswordEye;
+    private boolean isPasswordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +55,12 @@ public class SignInActivity extends AppCompatActivity {
         etEmailSignIn = findViewById(R.id.et_email_sign_in);
         etPasswordSignIn = findViewById(R.id.et_password_sign_in);
         tvForgotPassword = findViewById(R.id.tv_forgot_password);
+        ivPasswordEye = findViewById(R.id.iv_password_eye);
         
         authManager = AuthManager.getInstance(this);
+        
+        // Setup password eye icon
+        ivPasswordEye.setOnClickListener(v -> togglePasswordVisibility());
 
         // bắt sự kiện và xử lý
 
@@ -113,6 +120,7 @@ public class SignInActivity extends AppCompatActivity {
                             String accessToken = "";
                             String refreshToken = "";
                             String fullName = "";
+                            String role = "user"; // Default role
                             
                             try{
                                 Gson gson = new Gson();
@@ -137,6 +145,10 @@ public class SignInActivity extends AppCompatActivity {
                                     fullName = user.get("fullName").getAsString();
                                 }
                                 
+                                if (user != null && user.get("role") != null) {
+                                    role = user.get("role").getAsString();
+                                }
+                                
                                 if (jsonData.get("accessToken") != null) {
                                     accessToken = jsonData.get("accessToken").getAsString();
                                 }
@@ -148,8 +160,8 @@ public class SignInActivity extends AppCompatActivity {
                                 Log.e(TAG, "Parse tokens failed", e);
                             }
                             
-                            // Sử dụng AuthManager để lưu thông tin
-                            authManager.saveLoginData(accessToken, refreshToken, userEmail, userId, fullName);
+                            // Sử dụng AuthManager để lưu thông tin với role
+                            authManager.saveLoginData(accessToken, refreshToken, userEmail, userId, fullName, role);
                             
                             // Debug log
                             Log.d(TAG, "AuthManager saveLoginData called");
@@ -173,8 +185,17 @@ public class SignInActivity extends AppCompatActivity {
                                 Log.w(TAG, "Unable to seed favorites from login response", e2);
                             }
 
-                            // chuyen sang homeActivity
-                            Intent intent = new Intent(SignInActivity.this, HomeActivity.class);
+                            // Kiểm tra role và redirect
+                            Intent intent;
+                            if ("admin".equalsIgnoreCase(role)) {
+                                // Chuyển đến AdminActivity nếu là admin
+                                intent = new Intent(SignInActivity.this, AdminMainActivity.class);
+                                Log.d(TAG, "Redirecting to AdminMainActivity for admin user");
+                            } else {
+                                // Chuyển đến HomeActivity nếu là user
+                                intent = new Intent(SignInActivity.this, HomeActivity.class);
+                                Log.d(TAG, "Redirecting to HomeActivity for regular user");
+                            }
                             startActivity(intent);
                             finish(); // ket thuc intent de khong quay lai man hinh splash
                         }
@@ -239,5 +260,21 @@ public class SignInActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+    
+    private void togglePasswordVisibility() {
+        if (isPasswordVisible) {
+            // Hide password
+            etPasswordSignIn.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            ivPasswordEye.setImageResource(R.drawable.ic_eye_off);
+            isPasswordVisible = false;
+        } else {
+            // Show password
+            etPasswordSignIn.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            ivPasswordEye.setImageResource(R.drawable.ic_eye);
+            isPasswordVisible = true;
+        }
+        // Move cursor to end
+        etPasswordSignIn.setSelection(etPasswordSignIn.getText().length());
     }
 }

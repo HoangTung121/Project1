@@ -31,6 +31,7 @@ import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterConten
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentRequest;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.AuthManager;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -376,10 +377,11 @@ public class ReadBookActivity extends AppCompatActivity {
     private void resumeFromBookmarkIfAny() {
         try {
             if (currentBookId == null || currentBookId.isEmpty()) return;
-            android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-            String userId = prefs.getString("user_id", null);
-            if (userId != null) userId = userId.replace(".0", "");
-            String token = prefs.getString("access_token", null);
+            
+            AuthManager authManager = AuthManager.getInstance(this);
+            String userId = authManager.getUserId();
+            String token = authManager.getAccessToken();
+            
             if (userId == null || token == null || token.isEmpty()) return;
             if (apiRef == null) apiRef = RetrofitClient.getApiService();
 
@@ -410,10 +412,11 @@ public class ReadBookActivity extends AppCompatActivity {
     private void saveBookmarkAndFinish() {
         try {
             if (currentBookId == null || currentBookId.isEmpty()) { finish(); return; }
-            android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-            String userId = prefs.getString("user_id", null);
-            if (userId != null) userId = userId.replace(".0", "");
-            String token = prefs.getString("access_token", null);
+            
+            AuthManager authManager = AuthManager.getInstance(this);
+            String userId = authManager.getUserId();
+            String token = authManager.getAccessToken();
+            
             if (userId == null || token == null || token.isEmpty()) { finish(); return; }
             if (apiRef == null) apiRef = RetrofitClient.getApiService();
 
@@ -421,8 +424,14 @@ public class ReadBookActivity extends AppCompatActivity {
             saveCurrentScrollPosition();
 
             String chapterIdToSave = currentChapterId;
-            int pageToSave = currentPage <= 0 ? 1 : currentPage;
-            apiRef.saveBookmark(userId, currentBookId, pageToSave, chapterIdToSave, "Bearer " + token)
+            if (chapterIdToSave == null || chapterIdToSave.isEmpty()) {
+                chapterIdToSave = "chapter1"; // Default chapter
+            }
+            
+            // Log để debug
+            android.util.Log.d("ReadBookActivity", "Saving bookmark - userId: " + userId + ", bookId: " + currentBookId + ", chapterId: " + chapterIdToSave);
+            
+            apiRef.saveBookmark(userId, currentBookId, chapterIdToSave, "Bearer " + token)
                     .enqueue(new Callback<ApiResponse>() {
                         @Override
                         public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
@@ -619,10 +628,9 @@ public class ReadBookActivity extends AppCompatActivity {
     
     private void syncFavoriteWithBackend() {
         try {
-            SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-            String userId = prefs.getString("user_id", null);
-            if (userId != null) userId = userId.replace(".0", "");
-            String token = prefs.getString("access_token", null);
+            AuthManager authManager = AuthManager.getInstance(this);
+            String userId = authManager.getUserId();
+            String token = authManager.getAccessToken();
             
             if (userId != null && token != null && !token.isEmpty()) {
                 ApiService api = RetrofitClient.getApiService();

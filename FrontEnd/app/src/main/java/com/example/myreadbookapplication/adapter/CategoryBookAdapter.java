@@ -1,5 +1,6 @@
 package com.example.myreadbookapplication.adapter;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
@@ -105,6 +106,17 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
                 context.startActivity(intent);
             }
         });
+
+        // Long click để xóa bookmark (chỉ trong History)
+        if ("History".equals(categoryName)) {
+            holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    showDeleteBookmarkDialog(book);
+                    return true;
+                }
+            });
+        }
     }
 
     // toggleFavorite: Nhận String bookId, dùng List<String>
@@ -172,6 +184,34 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
     @Override
     public int getItemCount() {
         return books.size();
+    }
+
+    /**
+     * Hiển thị dialog xác nhận xóa bookmark
+     */
+    private void showDeleteBookmarkDialog(Book book) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Xóa Bookmark");
+        builder.setMessage("Bạn có chắc muốn xóa bookmark của cuốn sách \"" + book.getTitle() + "\"?");
+        
+        builder.setPositiveButton("Xóa", (dialog, which) -> {
+            try {
+                int bookId = Integer.parseInt(book.getId());
+                // Gọi HistoryActivity để xóa bookmark
+                if (context instanceof com.example.myreadbookapplication.activity.HistoryActivity) {
+                    ((com.example.myreadbookapplication.activity.HistoryActivity) context).deleteBookmark(bookId);
+                }
+            } catch (NumberFormatException e) {
+                Log.e("CategoryBookAdapter", "Invalid book ID: " + book.getId());
+                Toast.makeText(context, "Lỗi: ID sách không hợp lệ", Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        builder.setNegativeButton("Hủy", (dialog, which) -> {
+            dialog.dismiss();
+        });
+        
+        builder.show();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

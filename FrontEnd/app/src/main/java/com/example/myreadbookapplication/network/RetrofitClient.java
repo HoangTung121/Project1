@@ -14,6 +14,11 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
 
     private static Retrofit retrofit; //singleton instance
+    private static Context applicationContext;
+
+    public static void init(Context context) {
+        applicationContext = context.getApplicationContext();
+    }
 
     public static ApiService getApiService() {
         if (retrofit == null) {
@@ -27,10 +32,24 @@ public class RetrofitClient {
                 httpClient.addInterceptor(logging);
             }
 
-            // Interceptor thêm Authorization nếu có token
+            // Interceptor thêm Authorization tự động nếu có token
             httpClient.addInterceptor(chain -> {
                 okhttp3.Request original = chain.request();
-                // Không có context toàn cục, nên giữ nguyên - caller có thể thêm Header thủ công khi gọi
+                
+                // Lấy token từ SharedPreferences
+                String token = null;
+                if (applicationContext != null) {
+                    SharedPreferences prefs = applicationContext.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE);
+                    token = prefs.getString("access_token", null);
+                }
+                
+                // Nếu có token và request chưa có Authorization header
+                if (token != null && !token.isEmpty() && original.header("Authorization") == null) {
+                    okhttp3.Request.Builder requestBuilder = original.newBuilder()
+                            .header("Authorization", "Bearer " + token);
+                    return chain.proceed(requestBuilder.build());
+                }
+                
                 return chain.proceed(original);
             });
 

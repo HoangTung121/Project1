@@ -1,0 +1,25 @@
+meta {
+  name: Get Feedbacks by Status - Resolved
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/admin/feedbacks?status=resolved&page=1&limit=20
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: resolved
+  page: 1
+  limit: 20
+}
+
+headers {
+  Authorization: Bearer {{authToken}}
+}
+
+settings {
+  encodeUrl: true
+}

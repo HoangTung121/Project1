@@ -116,12 +116,6 @@ public class HomeActivity extends AppCompatActivity {
         if (userFullName == null || userFullName.isEmpty()) {
             userFullName = "Guest User"; // đặt làm tên mặc định nếu không có
         }
-        
-        Log.d("HomeActivity", "Loaded email from AuthManager: " + userEmail);
-        Log.d("HomeActivity", "Loaded fullName from AuthManager: " + userFullName);
-        Log.d("HomeActivity", "AuthManager isLoggedIn: " + authManager.isLoggedIn());
-        Log.d("HomeActivity", "AuthManager userId: " + authManager.getUserId());
-        
         // Update navigation header với thông tin user
         updateNavigationHeader(userEmail, userFullName);
 
