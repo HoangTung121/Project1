@@ -14,7 +14,6 @@ router.get(
 
 router.get(
   '/:categoryId',
-  auth,
   validate(categoriesValidation.getById),
   categoriesController.getById
 )
