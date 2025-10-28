@@ -23,17 +23,16 @@ router.get(
   bookController.getLatest
 )
 
+router.get(
+  '/search',
+  validate(bookValidation.quickSearch),
+  bookController.search
+)
 
 router.get(
   '/:id',
   validate(bookValidation.getById),
   bookController.getById
-)
-
-router.get(
-  '/search',
-  validate(bookValidation.quickSearch),
-  bookController.search
 )
 
 module.exports = router

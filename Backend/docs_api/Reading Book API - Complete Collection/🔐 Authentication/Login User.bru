@@ -1,11 +1,11 @@
 meta {
   name: Login User
   type: http
-  seq: 2
+  seq: 4
 }
 
 post {
-  url: http://0.0.0.0:8000/api/auth/login
+  url: {{baseUrl}}/auth/login
   body: json
   auth: inherit
 }
@@ -16,12 +16,11 @@ headers {
 
 body:json {
   {
-    "email": "taagnes3110@gmail.com",
-    "password": "663110ak"
+    "email": "user@example.com",
+    "password": "password123"
   }
 }
 
 settings {
   encodeUrl: true
-  timeout: 0
 }

@@ -1,11 +1,11 @@
 meta {
-  name: Delete User
+  name: Delete Category (Hard)
   type: http
   seq: 4
 }
 
 delete {
-  url: {{baseUrl}}/admin/users/{{userId}}
+  url: {{baseUrl}}/admin/categories/{{categoryId}}/hard
   body: none
   auth: inherit
 }
