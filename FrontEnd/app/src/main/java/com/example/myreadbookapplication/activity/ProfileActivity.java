@@ -140,11 +140,12 @@ public class ProfileActivity extends AppCompatActivity {
     private void loadUserInfoFromPrefs() {
         String email = authManager.getUserEmail();
         String name = authManager.getUserFullName();
+        String phone = authManager.getUserPhone();
 
         // Hiển thị thông tin từ AuthManager
         tvUserEmail.setText(email != null ? email : "Chưa cập nhật");
         tvUserName.setText(name != null ? name : "Chưa cập nhật");
-        tvUserPhone.setText("Chưa cập nhật");
+        tvUserPhone.setText(phone != null ? phone : "Chưa cập nhật");
         tvAccountCreated.setText("Chưa xác định");
     }
 
