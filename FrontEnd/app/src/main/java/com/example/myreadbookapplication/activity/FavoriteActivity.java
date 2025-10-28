@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.AuthManager;
 import com.example.myreadbookapplication.utils.PaginationManager;
 
 import retrofit2.Call;
@@ -96,12 +97,9 @@ public class FavoriteActivity extends AppCompatActivity {
     private void setupFavoriteBooks() {
         progressBarFavoriteBooks.setVisibility(View.VISIBLE);
         
-        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String userId = prefs.getString("user_id", null);
-        if (userId != null) {
-            userId = userId.replace(".0", "");
-        }
-        String token = prefs.getString("access_token", null);
+        AuthManager authManager = AuthManager.getInstance(this);
+        String userId = authManager.getUserId();
+        String token = authManager.getAccessToken();
 
         if (userId != null && token != null && !token.isEmpty()) {
             Log.d(TAG, "Fetching favorites from backend for user: " + userId);
@@ -130,6 +128,7 @@ public class FavoriteActivity extends AppCompatActivity {
                         // Sync local cache of ids
                         if (data != null && data.getFavoriteBookIds() != null) {
                             Gson gson = new Gson();
+                            SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
                             prefs.edit().putString("favorite_books", gson.toJson(data.getFavoriteBookIds())).apply();
                         }
                     } else {

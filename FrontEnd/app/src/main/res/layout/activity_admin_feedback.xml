@@ -12,7 +12,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
+        android:background="#8B4513"
         android:orientation="vertical"
         android:padding="16dp">
 
@@ -20,23 +20,13 @@
             android:id="@+id/tv_back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="←"
-            android:textSize="24sp"
-            android:textColor="#000000"
+            android:text="← Admin Feedback"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
             android:clickable="true"
             android:focusable="true"
-            tools:ignore="HardcodedText" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="Admin feedback"
-            android:textSize="20sp"
-            android:textColor="#0066CC"
-            android:textStyle="bold"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="8dp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -44,7 +34,7 @@
             android:layout_gravity="center_horizontal"
             android:text="Read Book App"
             android:textSize="16sp"
-            android:textColor="#666666" />
+            android:textColor="#FFFFFF" />
 
     </LinearLayout>
 
@@ -76,31 +66,31 @@
         android:orientation="vertical"
         android:gravity="center"
         android:layout_gravity="center"
-        android:padding="32dp"
+        android:padding="48dp"
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@android:drawable/ic_menu_info_details"
-            android:backgroundTint="#CCCCCC"
-            android:layout_marginBottom="16dp" />
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@android:drawable/ic_dialog_info"
+            android:tint="#CCCCCC"
+            android:layout_marginBottom="24dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="No feedback yet"
-            android:textSize="18sp"
-            android:textColor="#666666"
+            android:text="Chưa có phản hồi nào"
+            android:textSize="20sp"
+            android:textColor="#999999"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="When users submit feedback, it will appear here"
+            android:text="Khi người dùng gửi phản hồi, chúng sẽ xuất hiện ở đây"
             android:textSize="14sp"
-            android:textColor="#999999"
-            android:layout_marginTop="8dp"
+            android:textColor="#BBBBBB"
+            android:layout_marginTop="12dp"
             android:gravity="center" />
 
     </LinearLayout>

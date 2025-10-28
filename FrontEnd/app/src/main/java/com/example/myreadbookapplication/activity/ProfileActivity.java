@@ -18,6 +18,7 @@ import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.User;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.AuthManager;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -41,6 +42,7 @@ public class ProfileActivity extends AppCompatActivity {
     
     private ApiService apiService;
     private User currentUser;
+    private AuthManager authManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +61,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Initialize API service
         apiService = RetrofitClient.getApiService();
+        authManager = AuthManager.getInstance(this);
 
         // Load thông tin user từ API
         loadUserInfo();
@@ -76,9 +79,8 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void loadUserInfo() {
-        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String userId = prefs.getString("user_id", null);
-        String token = prefs.getString("access_token", null);
+        String userId = authManager.getUserId();
+        String token = authManager.getAccessToken();
 
         if (userId == null || token == null || token.isEmpty()) {
             Toast.makeText(this, "Bạn cần đăng nhập để xem thông tin cá nhân", Toast.LENGTH_SHORT).show();
@@ -136,15 +138,14 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void loadUserInfoFromPrefs() {
-        SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
-        String email = prefs.getString("user_email", "Guest@example.com");
-        String name = prefs.getString("user_name", "Chưa cập nhật");
-        String phone = prefs.getString("user_phone", "Chưa cập nhật");
+        String email = authManager.getUserEmail();
+        String name = authManager.getUserFullName();
+        String phone = authManager.getUserPhone();
 
-        // Hiển thị thông tin từ SharedPreferences
-        tvUserEmail.setText(email);
-        tvUserName.setText(name);
-        tvUserPhone.setText(phone);
+        // Hiển thị thông tin từ AuthManager
+        tvUserEmail.setText(email != null ? email : "Chưa cập nhật");
+        tvUserName.setText(name != null ? name : "Chưa cập nhật");
+        tvUserPhone.setText(phone != null ? phone : "Chưa cập nhật");
         tvAccountCreated.setText("Chưa xác định");
     }
 

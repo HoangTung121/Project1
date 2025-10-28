@@ -76,6 +76,24 @@
         <activity
             android:name=".activity.ChangePasswordActivity"
             android:exported="false" />
+        <activity
+            android:name=".activity.AdminMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminBookActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminAddEditBookActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminFeedbackActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminAccountActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

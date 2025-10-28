@@ -13,6 +13,8 @@ public class AuthManager {
     private static final String KEY_USER_EMAIL = "user_email";
     private static final String KEY_USER_ID = "user_id";
     private static final String KEY_USER_FULL_NAME = "user_full_name";
+    private static final String KEY_USER_PHONE = "user_phone";
+    private static final String KEY_USER_ROLE = "user_role";
     private static final String KEY_IS_LOGGED_IN = "is_logged_in";
     
     private static AuthManager instance;
@@ -48,6 +50,23 @@ public class AuthManager {
     }
     
     /**
+     * Lưu thông tin đăng nhập với role
+     */
+    public void saveLoginData(String accessToken, String refreshToken, String email, String userId, String fullName, String role) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(KEY_ACCESS_TOKEN, accessToken);
+        editor.putString(KEY_REFRESH_TOKEN, refreshToken);
+        editor.putString(KEY_USER_EMAIL, email);
+        editor.putString(KEY_USER_ID, userId);
+        editor.putString(KEY_USER_FULL_NAME, fullName);
+        editor.putString(KEY_USER_ROLE, role);
+        editor.putBoolean(KEY_IS_LOGGED_IN, true);
+        editor.apply();
+        
+        Log.d("AuthManager", "Login data saved for user: " + email + ", role: " + role);
+    }
+    
+    /**
      * Lưu thông tin user
      */
     public void saveUserData(User user) {
@@ -55,9 +74,19 @@ public class AuthManager {
         editor.putString(KEY_USER_EMAIL, user.getEmail());
         editor.putString(KEY_USER_ID, user.getId());
         editor.putString(KEY_USER_FULL_NAME, user.getFullName());
+        if (user.getPhoneNumber() != null) {
+            editor.putString(KEY_USER_PHONE, user.getPhoneNumber());
+        }
         editor.apply();
         
-        Log.d("AuthManager", "User data saved: " + user.getEmail());
+        Log.d("AuthManager", "User data saved: " + user.getEmail() + ", phone: " + user.getPhoneNumber());
+    }
+    
+    /**
+     * Lấy số điện thoại người dùng
+     */
+    public String getUserPhone() {
+        return prefs.getString(KEY_USER_PHONE, null);
     }
     
     /**
@@ -105,6 +134,20 @@ public class AuthManager {
     }
     
     /**
+     * Lấy role người dùng
+     */
+    public String getUserRole() {
+        return prefs.getString(KEY_USER_ROLE, "user");
+    }
+    
+    /**
+     * Kiểm tra có phải admin không
+     */
+    public boolean isAdmin() {
+        return "admin".equalsIgnoreCase(getUserRole());
+    }
+    
+    /**
      * Tạo Authorization header
      */
     public String getAuthorizationHeader() {
@@ -122,6 +165,8 @@ public class AuthManager {
         editor.remove(KEY_USER_EMAIL);
         editor.remove(KEY_USER_ID);
         editor.remove(KEY_USER_FULL_NAME);
+        editor.remove(KEY_USER_PHONE);
+        editor.remove(KEY_USER_ROLE);
         editor.putBoolean(KEY_IS_LOGGED_IN, false);
         editor.apply();
         
