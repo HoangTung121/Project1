@@ -18,11 +18,13 @@ import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.adapter.AdminFeedbackAdapter;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.Feedback;
-import com.example.myreadbookapplication.model.FeedbackResponse;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
 import com.example.myreadbookapplication.utils.AuthManager;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
@@ -121,7 +123,12 @@ public class AdminFeedbackActivity extends AppCompatActivity {
     private void loadFeedbacks() {
         String accessToken = authManager.getAccessToken();
         
+        Log.d(TAG, "=== LOAD FEEDBACKS START ===");
+        Log.d(TAG, "Access token exists: " + (accessToken != null && !accessToken.isEmpty()));
+        Log.d(TAG, "Is admin: " + authManager.isAdmin());
+        
         if (accessToken == null || accessToken.isEmpty()) {
+            Log.e(TAG, "✗ No access token");
             Toast.makeText(this, "Please login as admin", Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -131,94 +138,141 @@ public class AdminFeedbackActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         layoutEmpty.setVisibility(View.GONE);
 
-        // Use admin API endpoint to get all feedbacks
-        Call<ApiResponse<FeedbackResponse>> call = apiService.getAllFeedbacks("Bearer " + accessToken, 1, 100);
+        // Use admin API endpoint to get ALL feedbacks (without status parameter)
+        // Note: Not sending status parameter ensures we get ALL feedbacks regardless of status
+        // Backend validation only allows limit <= 100, so use 100
+        String authHeader = "Bearer " + accessToken;
+        int page = 1;
+        int limit = 100; // Backend max limit is 100
+        Log.d(TAG, "Calling API: GET /api/admin/feedbacks?page=" + page + "&limit=" + limit);
+        Log.d(TAG, "Authorization header: " + (authHeader.length() > 50 ? authHeader.substring(0, 50) + "..." : authHeader));
         
-        call.enqueue(new Callback<ApiResponse<FeedbackResponse>>() {
+        Call<ApiResponse> call = apiService.getAllFeedbacks(authHeader, page, limit);
+        
+        call.enqueue(new Callback<ApiResponse>() {
             @Override
-            public void onResponse(Call<ApiResponse<FeedbackResponse>> call, Response<ApiResponse<FeedbackResponse>> response) {
+            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
                 progressBar.setVisibility(View.GONE);
-
-                Log.d(TAG, "=== API RESPONSE START ===");
+                
+                Log.d(TAG, "=== API CALLBACK START ===");
                 Log.d(TAG, "Response code: " + response.code());
                 Log.d(TAG, "Response isSuccessful: " + response.isSuccessful());
                 
                 if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<FeedbackResponse> apiResponse = response.body();
+                    ApiResponse apiResponse = response.body();
                     Log.d(TAG, "API Response success: " + apiResponse.isSuccess());
                     Log.d(TAG, "API Response message: " + apiResponse.getMessage());
                     
                     if (apiResponse.isSuccess()) {
-                        try {
-                            // Backend returns data as array directly
-                            Object dataObj = apiResponse.getData();
-                            Log.d(TAG, "Data object type: " + (dataObj != null ? dataObj.getClass().getName() : "null"));
-                            
-                            if (dataObj != null) {
+                        Object dataObj = apiResponse.getData();
+                        Log.d(TAG, "Data object: " + (dataObj != null ? dataObj.getClass().getName() : "NULL"));
+                        
+                        if (dataObj != null) {
+                            try {
                                 Gson gson = new Gson();
-                                String json = gson.toJson(dataObj);
-                                Log.d(TAG, "Data JSON: " + json);
                                 
-                                if (json != null && !json.isEmpty()) {
+                                // Convert object to JSON string
+                                String json = gson.toJson(dataObj);
+                                Log.d(TAG, "Data JSON length: " + json.length());
+                                Log.d(TAG, "Data JSON preview: " + (json.length() > 200 ? json.substring(0, 200) + "..." : json));
+                                
+                                // Parse as JSON array
+                                JsonElement jsonElement = JsonParser.parseString(json);
+                                
+                                if (jsonElement.isJsonArray()) {
+                                    JsonArray jsonArray = jsonElement.getAsJsonArray();
+                                    Log.d(TAG, "JSON Array size: " + jsonArray.size());
+                                    
                                     TypeToken<List<Feedback>> token = new TypeToken<List<Feedback>>() {};
-                                    List<Feedback> feedbacksList = gson.fromJson(json, token.getType());
+                                    List<Feedback> feedbacksList = gson.fromJson(jsonArray, token.getType());
                                     
                                     Log.d(TAG, "Parsed feedbacks count: " + (feedbacksList != null ? feedbacksList.size() : 0));
                                     
                                     if (feedbacksList != null && !feedbacksList.isEmpty()) {
                                         feedbackList = feedbacksList;
-                                        Log.d(TAG, "✓ Feedbacks loaded successfully: " + feedbackList.size());
+                                        Log.d(TAG, "✓ Successfully loaded " + feedbackList.size() + " feedbacks");
                                         
-                                        // Show first feedback as sample
-                                        if (!feedbackList.isEmpty()) {
-                                            Feedback first = feedbackList.get(0);
-                                            Log.d(TAG, "First feedback - Email: " + first.getEmail() + ", Comment: " + first.getComment());
-                                        }
+                                        // Show sample feedback
+                                        Feedback first = feedbackList.get(0);
+                                        Log.d(TAG, "Sample feedback - ID: " + first.getId() + 
+                                              ", Email: " + (first.getEmail() != null ? first.getEmail() : "null") +
+                                              ", Comment: " + (first.getComment() != null ? first.getComment().substring(0, Math.min(50, first.getComment().length())) : "null"));
                                         
+                                        // Update UI
                                         adapter.setFeedbackList(feedbackList);
                                         layoutEmpty.setVisibility(View.GONE);
                                         rvFeedback.setVisibility(View.VISIBLE);
+                                        
+                                        Log.d(TAG, "✓ UI Updated - RecyclerView visible");
                                     } else {
-                                        Log.w(TAG, "⚠ Feedbacks list is empty after parsing");
+                                        Log.w(TAG, "⚠ Feedbacks list is null or empty");
                                         showEmptyState();
                                     }
                                 } else {
-                                    Log.e(TAG, "JSON string is empty");
+                                    Log.e(TAG, "✗ Data is NOT a JSON array. Type: " + jsonElement.getClass().getName());
                                     showEmptyState();
                                 }
-                            } else {
-                                Log.e(TAG, "✗ Data object is null");
+                            } catch (Exception e) {
+                                Log.e(TAG, "✗ EXCEPTION parsing: " + e.getMessage(), e);
+                                e.printStackTrace();
                                 showEmptyState();
                             }
-                        } catch (Exception e) {
-                            Log.e(TAG, "✗ Error parsing feedbacks: " + e.getMessage(), e);
-                            e.printStackTrace();
+                        } else {
+                            Log.e(TAG, "✗ Data object is NULL");
                             showEmptyState();
                         }
                     } else {
-                        Log.e(TAG, "✗ API Response not successful");
+                        Log.e(TAG, "✗ API success = false: " + apiResponse.getMessage());
                         showEmptyState();
                     }
                 } else {
-                    Log.e(TAG, "✗ Response failed. Code: " + response.code());
+                    int statusCode = response.code();
+                    Log.e(TAG, "✗ Response failed. HTTP Code: " + statusCode);
+                    
+                    if (statusCode == 401) {
+                        Log.e(TAG, "✗ 401 Unauthorized - Token invalid or expired");
+                        Toast.makeText(AdminFeedbackActivity.this, "Unauthorized. Please login again.", Toast.LENGTH_SHORT).show();
+                    } else if (statusCode == 403) {
+                        Log.e(TAG, "✗ 403 Forbidden - No permission (may need getUsers permission)");
+                        Toast.makeText(AdminFeedbackActivity.this, "Access denied. Admin permission required.", Toast.LENGTH_SHORT).show();
+                    } else if (statusCode == 404) {
+                        Log.e(TAG, "✗ 404 Not Found - API endpoint not found");
+                        Toast.makeText(AdminFeedbackActivity.this, "API endpoint not found", Toast.LENGTH_SHORT).show();
+                    }
+                    
                     if (response.errorBody() != null) {
                         try {
                             String errorBody = response.errorBody().string();
                             Log.e(TAG, "Error body: " + errorBody);
                         } catch (Exception e) {
-                            Log.e(TAG, "Error reading error body", e);
+                            Log.e(TAG, "Cannot read error body", e);
                         }
                     }
                     showEmptyState();
                 }
-                Log.d(TAG, "=== API RESPONSE END ===");
+                Log.d(TAG, "=== API CALLBACK END ===");
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<FeedbackResponse>> call, Throwable t) {
+            public void onFailure(Call<ApiResponse> call, Throwable t) {
                 progressBar.setVisibility(View.GONE);
-                Log.e(TAG, "Error loading feedbacks: " + t.getMessage());
-                Toast.makeText(AdminFeedbackActivity.this, "Failed to load feedbacks", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "✗ API CALL FAILED");
+                Log.e(TAG, "Error message: " + t.getMessage());
+                Log.e(TAG, "Error class: " + t.getClass().getName());
+                t.printStackTrace();
+                
+                String errorMsg = "Network error";
+                if (t.getMessage() != null) {
+                    if (t.getMessage().contains("Unable to resolve host")) {
+                        errorMsg = "Cannot connect to server";
+                    } else if (t.getMessage().contains("timeout")) {
+                        errorMsg = "Request timeout";
+                    } else {
+                        errorMsg = t.getMessage();
+                    }
+                }
+                
+                Toast.makeText(AdminFeedbackActivity.this, "Failed: " + errorMsg, Toast.LENGTH_LONG).show();
                 showEmptyState();
             }
         });

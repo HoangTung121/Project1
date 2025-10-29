@@ -4,7 +4,9 @@ import android.util.Log;
 
 import com.google.gson.annotations.SerializedName;
 
-public class Book {
+import java.io.Serializable;
+
+public class Book implements Serializable {
     @SerializedName("_id")
     private String _id;
     private String title;

@@ -1,18 +1,13 @@
 meta {
-  name: Get All Users
+  name: Delete Book (Hard)
   type: http
-  seq: 1
+  seq: 4
 }
 
-get {
-  url: {{baseUrl}}/admin/users?page=1&limit=10
+delete {
+  url: {{baseUrl}}/admin/books/{{bookId}}/hard
   body: none
   auth: inherit
-}
-
-params:query {
-  page: 1
-  limit: 10
 }
 
 headers {

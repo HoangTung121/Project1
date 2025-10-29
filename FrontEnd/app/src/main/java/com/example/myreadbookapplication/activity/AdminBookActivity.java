@@ -1,9 +1,11 @@
 package com.example.myreadbookapplication.activity;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -15,12 +17,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myreadbookapplication.R;
+import com.example.myreadbookapplication.adapter.AdminBookAdapter;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.BooksResponse;
 import com.example.myreadbookapplication.model.Book;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
 import com.example.myreadbookapplication.utils.AuthManager;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +36,8 @@ import retrofit2.Response;
 public class AdminBookActivity extends AppCompatActivity {
 
     private static final String TAG = "AdminBookActivity";
+    private static final int REQUEST_ADD_BOOK = 1;
+    private static final int REQUEST_EDIT_BOOK = 2;
 
     private TextView tvBack;
     private RecyclerView rvBook;
@@ -41,10 +47,12 @@ public class AdminBookActivity extends AppCompatActivity {
     private LinearLayout navBook;
     private LinearLayout navFeedback;
     private LinearLayout navAccount;
+    private FloatingActionButton fabAddBook;
 
     private ApiService apiService;
     private AuthManager authManager;
     private List<Book> bookList = new ArrayList<>();
+    private AdminBookAdapter bookAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,16 +73,35 @@ public class AdminBookActivity extends AppCompatActivity {
         rvBook = findViewById(R.id.rv_book);
         layoutEmpty = findViewById(R.id.layout_empty);
         progressBar = findViewById(R.id.progress_bar);
+        fabAddBook = findViewById(R.id.fab_add_book);
         
         // Bottom navigation
         navCategory = findViewById(R.id.nav_category);
         navBook = findViewById(R.id.nav_book);
         navFeedback = findViewById(R.id.nav_feedback);
         navAccount = findViewById(R.id.nav_account);
+
+        // Setup RecyclerView
+        bookAdapter = new AdminBookAdapter(this, bookList);
+        bookAdapter.setOnBookActionListener(new AdminBookAdapter.OnBookActionListener() {
+            @Override
+            public void onEditClick(Book book) {
+                openEditBook(book);
+            }
+
+            @Override
+            public void onDeleteClick(Book book) {
+                showDeleteConfirmDialog(book);
+            }
+        });
+        rvBook.setLayoutManager(new LinearLayoutManager(this));
+        rvBook.setAdapter(bookAdapter);
     }
 
     private void setupClickListeners() {
         tvBack.setOnClickListener(v -> finish());
+
+        fabAddBook.setOnClickListener(v -> openAddBook());
 
         navCategory.setOnClickListener(v -> {
             Intent intent = new Intent(this, AdminCategoryActivity.class);
@@ -97,6 +124,61 @@ public class AdminBookActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+    }
+
+    private void openAddBook() {
+        Intent intent = new Intent(this, AdminAddEditBookActivity.class);
+        startActivityForResult(intent, REQUEST_ADD_BOOK);
+    }
+
+    private void openEditBook(Book book) {
+        Intent intent = new Intent(this, AdminAddEditBookActivity.class);
+        intent.putExtra(AdminAddEditBookActivity.EXTRA_BOOK, book);
+        startActivityForResult(intent, REQUEST_EDIT_BOOK);
+    }
+
+    private void showDeleteConfirmDialog(Book book) {
+        Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_confirm_delete);
+
+        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
+        Button btnYes = dialog.findViewById(R.id.btn_yes);
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnYes.setOnClickListener(v -> {
+            deleteBook(book);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void deleteBook(Book book) {
+        // TODO: Call API to delete book
+        // For now, just simulate success
+        Toast.makeText(this, "Book deleted successfully! (API call pending)", Toast.LENGTH_SHORT).show();
+        
+        // Remove from list and update UI
+        bookList.remove(book);
+        bookAdapter.updateBookList(bookList);
+        
+        if (bookList.isEmpty()) {
+            showEmptyState();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == REQUEST_ADD_BOOK && resultCode == AdminAddEditBookActivity.RESULT_BOOK_ADDED) {
+            Toast.makeText(this, "Book added!", Toast.LENGTH_SHORT).show();
+            loadBooks(); // Reload the book list
+        } else if (requestCode == REQUEST_EDIT_BOOK && resultCode == AdminAddEditBookActivity.RESULT_BOOK_UPDATED) {
+            Toast.makeText(this, "Book updated!", Toast.LENGTH_SHORT).show();
+            loadBooks(); // Reload the book list
+        }
     }
 
     private void loadBooks() {
@@ -125,7 +207,7 @@ public class AdminBookActivity extends AppCompatActivity {
                             BooksResponse booksResponse = apiResponse.getData();
                             if (booksResponse != null && booksResponse.getBooks() != null) {
                                 bookList = booksResponse.getBooks();
-                                // TODO: Setup RecyclerView adapter
+                                bookAdapter.updateBookList(bookList);
                                 
                                 if (bookList.isEmpty()) {
                                     layoutEmpty.setVisibility(View.VISIBLE);

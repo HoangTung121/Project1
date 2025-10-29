@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://0.0.0.0:8000/api/admin/feedbacks?page=1&limit=10&sortBy=createdAt&sortOrder=desc
+  url: {{baseUrl}}/admin/feedbacks?page=1&limit=10&sortBy=createdAt&sortOrder=desc
   body: none
   auth: inherit
 }
@@ -19,10 +19,9 @@ params:query {
 }
 
 headers {
-  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYxNDkyOTI1LCJleHAiOjE3NjE0OTY1MjV9.F744om0fP5A2RuJBR6MAAoOHoC4IOrvqxcY9Xzf3FrE
+  Authorization: Bearer {{authToken}}
 }
 
 settings {
   encodeUrl: true
-  timeout: 0
 }
