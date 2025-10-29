@@ -76,7 +76,7 @@ public class AdminAddEditBookActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        ivBack.setOnClickListener(v -> onBackPressed());
+        ivBack.setOnClickListener(v -> finish());
 
         etName.addTextChangedListener(new TextWatcher() {
             @Override
@@ -247,11 +247,6 @@ public class AdminAddEditBookActivity extends AppCompatActivity {
         resultIntent.putExtra(EXTRA_BOOK, currentBook);
         setResult(RESULT_BOOK_UPDATED, resultIntent);
         finish();
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
     }
 }
 
