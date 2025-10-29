@@ -232,12 +232,14 @@ public interface ApiService {
             @Header("Authorization") String authorization
     );
 
-    // Admin APIs
+    // Admin APIs - Get all feedbacks (without status filter to get all feedbacks)
+    // Backend returns: {success, message, data: [array], pagination: {...}}
     @GET("api/admin/feedbacks")
-    Call<ApiResponse<FeedbackResponse>> getAllFeedbacks(
+    Call<ApiResponse> getAllFeedbacks(
             @Header("Authorization") String authorization,
             @Query("page") Integer page,
             @Query("limit") Integer limit
+            // Note: Not sending status parameter to get ALL feedbacks
     );
 
 }
