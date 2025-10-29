@@ -13,6 +13,7 @@ public class AuthManager {
     private static final String KEY_USER_EMAIL = "user_email";
     private static final String KEY_USER_ID = "user_id";
     private static final String KEY_USER_FULL_NAME = "user_full_name";
+    private static final String KEY_USER_PHONE = "user_phone";
     private static final String KEY_USER_ROLE = "user_role";
     private static final String KEY_IS_LOGGED_IN = "is_logged_in";
     
@@ -73,9 +74,19 @@ public class AuthManager {
         editor.putString(KEY_USER_EMAIL, user.getEmail());
         editor.putString(KEY_USER_ID, user.getId());
         editor.putString(KEY_USER_FULL_NAME, user.getFullName());
+        if (user.getPhoneNumber() != null) {
+            editor.putString(KEY_USER_PHONE, user.getPhoneNumber());
+        }
         editor.apply();
         
-        Log.d("AuthManager", "User data saved: " + user.getEmail());
+        Log.d("AuthManager", "User data saved: " + user.getEmail() + ", phone: " + user.getPhoneNumber());
+    }
+    
+    /**
+     * Lấy số điện thoại người dùng
+     */
+    public String getUserPhone() {
+        return prefs.getString(KEY_USER_PHONE, null);
     }
     
     /**
@@ -154,6 +165,7 @@ public class AuthManager {
         editor.remove(KEY_USER_EMAIL);
         editor.remove(KEY_USER_ID);
         editor.remove(KEY_USER_FULL_NAME);
+        editor.remove(KEY_USER_PHONE);
         editor.remove(KEY_USER_ROLE);
         editor.putBoolean(KEY_IS_LOGGED_IN, false);
         editor.apply();

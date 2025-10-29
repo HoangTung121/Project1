@@ -28,6 +28,7 @@ import java.util.List;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.AuthManager;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -146,10 +147,9 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
 
     private void syncBackendFavorite(String bookId, boolean add) {
         try {
-            SharedPreferences prefs = context.getSharedPreferences("app_prefs", context.MODE_PRIVATE);
-            String userId = prefs.getString("user_id", null);
-            if (userId != null) userId = userId.replace(".0", "");
-            String token = prefs.getString("access_token", null);
+            AuthManager authManager = AuthManager.getInstance(context);
+            String userId = authManager.getUserId();
+            String token = authManager.getAccessToken();
             if (userId == null || token == null || token.isEmpty()) {
                 return; // not logged in; local only
             }
