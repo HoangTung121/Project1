@@ -1,11 +1,11 @@
 meta {
-  name: Delete Book
+  name: Get Deleted Books
   type: http
-  seq: 3
+  seq: 6
 }
 
-delete {
-  url: {{baseUrl}}/admin/books/{{bookId}}
+get {
+  url: {{baseUrl}}/admin/books/deleted
   body: none
   auth: inherit
 }
