@@ -4,6 +4,6 @@
     <solid android:color="#E3F2FD" />
     <stroke
         android:width="2dp"
-        android:color="#0066CC" />
+        android:color="@color/ping" />
 </shape>
 
