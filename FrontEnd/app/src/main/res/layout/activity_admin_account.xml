@@ -5,143 +5,156 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#4A4A4A"
+    android:background="#F5F5F5"
     android:orientation="vertical">
 
     <!-- Header -->
-    <TextView
-        android:id="@+id/tv_back"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="← Admin Account"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:clickable="true"
-        android:focusable="true" />
+        android:background="@color/white"
+        android:paddingTop="60dp"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:paddingHorizontal="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="Account"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="@color/black"
+            android:orientation="vertical" />
+    </LinearLayout>
 
     <!-- Main Content -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_margin="16dp"
-        android:background="#FFFFFF"
+        android:layout_margin="0dp"
         android:orientation="vertical">
 
-        <!-- App Title -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="24dp"
-            android:text="Read Book App"
-            android:textColor="#000000"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <!-- User Info Section -->
-        <LinearLayout
+        <!-- Card: User Info -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:layout_marginHorizontal="16dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="16dp">
+            android:layout_margin="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
 
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_myplaces"
-                android:tint="#666666" />
-
-            <TextView
-                android:id="@+id/tv_email"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="16dp"
-                android:text="TienVu@admin.com"
-                android:textColor="#000000"
-                android:textSize="16sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_edit"
-                android:tint="#999999" />
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_myplaces"
+                    android:tint="#666666" />
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/tv_email"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:text="TienVu@admin.com"
+                    android:textColor="#000000"
+                    android:textSize="16sp" />
 
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginHorizontal="16dp"
-            android:background="#E0E0E0" />
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_edit"
+                    android:tint="#999999" />
 
-        <!-- Change Password -->
-        <LinearLayout
-            android:id="@+id/tv_change_password"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_preferences"
-                android:tint="#666666" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="16dp"
-                android:text="Change password"
-                android:textColor="#000000"
-                android:textSize="16sp" />
-
-        </LinearLayout>
-
-        <!-- Sign Out -->
-        <LinearLayout
-            android:id="@+id/tv_sign_out"
+        <!-- Card: Actions -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground">
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:tint="#666666" />
-
-            <TextView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/tv_change_password"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="16dp"
-                android:text="Sign out"
-                android:textColor="#000000"
-                android:textSize="16sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
 
-        </LinearLayout>
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_preferences"
+                    android:tint="#666666" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:text="Change password"
+                    android:textColor="#000000"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/tv_sign_out"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:tint="#666666" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:text="Sign out"
+                    android:textColor="#000000"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
 
     </LinearLayout>
 
@@ -149,14 +162,14 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#8B4513"
+        android:background="@color/admin_footer"
         android:orientation="horizontal"
-        android:paddingVertical="12dp"
+        android:paddingVertical="25dp"
         android:paddingHorizontal="8dp">
 
         <!-- Category -->
         <LinearLayout
-            android:id="@+id/nav_category"
+            android:id="@+id/nav_category_in_account"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -169,22 +182,21 @@
             <ImageView
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_menu_manage"
-                android:tint="#FFFFFF" />
+                android:src="@drawable/ic_category" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Category"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:layout_marginTop="4dp" />
 
         </LinearLayout>
 
         <!-- Book -->
         <LinearLayout
-            android:id="@+id/nav_book"
+            android:id="@+id/nav_book_in_account"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -197,22 +209,21 @@
             <ImageView
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_menu_view"
-                android:tint="#FFFFFF" />
+                android:src="@drawable/ic_book" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Book"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:layout_marginTop="4dp" />
 
         </LinearLayout>
 
         <!-- Feedback -->
         <LinearLayout
-            android:id="@+id/nav_feedback"
+            android:id="@+id/nav_feedback_in_account"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -225,45 +236,43 @@
             <ImageView
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_dialog_info"
-                android:tint="#FFFFFF" />
+                android:src="@drawable/ic_feedback"
+                android:tint="@color/white"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="FeedBack"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:layout_marginTop="4dp" />
 
         </LinearLayout>
 
         <!-- Account -->
-        <LinearLayout
-            android:id="@+id/nav_account"
+            <LinearLayout
+            android:id="@+id/nav_account_in_account"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
-            android:background="#FFA500"
-            android:padding="4dp"
-            android:layout_marginHorizontal="4dp"
+                android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_menu_preferences"
-                android:tint="#FFFFFF" />
+                android:src="@drawable/ic_account"
+                android:tint="@color/admin_footer_text_color" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Account"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/admin_footer_text_color"
                 android:textStyle="bold"
                 android:layout_marginTop="4dp" />
 
