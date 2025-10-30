@@ -17,7 +17,6 @@
 - 🛡️ **Admin Panel**: Quản lý hệ thống cho admin
 - 🔄 **Real-time**: Socket.io cho tính năng real-time
 - 📧 **Email Service**: Gửi email OTP, thông báo
-- 🐳 **Docker Support**: Containerization hoàn chỉnh
 
 ## 📋 Mục lục
 
@@ -25,7 +24,6 @@
 - [Cài đặt](#-cài-đặt)
 - [Cấu hình](#-cấu-hình)
 - [Chạy ứng dụng](#-chạy-ứng-dụng)
-- [Docker](#-docker)
 - [API Documentation](#-api-documentation)
 - [Cấu trúc dự án](#-cấu-trúc-dự-án)
 - [Security](#-security)
@@ -37,8 +35,8 @@
 - **Node.js**: >= 18.x
 - **npm**: >= 9.x
 - **Firebase Project**: Cho Authentication và Firestore
-- **Email Service**: SMTP server (Gmail, SendGrid, etc.)
-- **Database**: Firebase Firestore (hoặc MySQL/PostgreSQL)
+- **Resend Account**: Miễn phí để gửi email (thay thế SMTP)
+- **Render Account**: Để deploy miễn phí (không cần credit card)
 
 ## 🚀 Cài đặt
 
@@ -79,11 +77,9 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY----
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
 
 # Email Configuration (BẮT BUỘC)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-EMAIL_FROM=your-email@gmail.com
+# Sử dụng Resend API (miễn phí, không bị chặn trên Render)
+RESEND_API_KEY=re_xxxxxxxxxxxx
+EMAIL_FROM=onboarding@resend.dev
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-here
@@ -104,11 +100,16 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:3001
 3. Tạo service account và download JSON key
 4. Cập nhật các biến `FIREBASE_*` trong `.env`
 
-### Cấu hình Email
+### Cấu hình Email (Resend API)
 
-1. **Gmail**: Sử dụng App Password (không phải mật khẩu thường)
-2. **SendGrid**: Sử dụng API key
-3. **SMTP khác**: Cập nhật host, port, username, password
+1. Đăng ký miễn phí tại: https://resend.com/signup
+2. Lấy API Key tại: https://resend.com/api-keys
+3. Copy API key và thêm vào file `.env`:
+   ```env
+   RESEND_API_KEY=re_xxxxxxxxxxxx
+   EMAIL_FROM=onboarding@resend.dev
+   ```
+4. **Free tier**: 100 emails/ngày, 3,000 emails/tháng
 
 ## 🏃‍♂️ Chạy ứng dụng
 
@@ -139,49 +140,11 @@ npm run build          # Build Babel
 npm run test           # Chạy tests
 ```
 
-## 🐳 Docker
-
-### Docker Compose (Khuyến nghị)
-
-```bash
-# Development
-npm run docker:dev
-
-# Production
-npm run docker:prod
-
-# Dừng services
-npm run docker:down
-
-# Xem logs
-npm run docker:logs
-```
-
-### Docker Commands
-
-```bash
-# Build image
-npm run docker:build
-
-# Chạy container
-npm run docker:run
-
-# Xem logs
-docker logs reading-book-api
-```
-
-### Docker Configuration
-
-- **Development**: `docker-compose.dev.yml`
-- **Production**: `docker-compose.prod.yml`
-- **Port mặc định**: 9000 (Docker), 3000 (local)
-
 ## 📖 API Documentation
 
 ### Base URLs
 
 - **Development**: `http://localhost:3000/api`
-- **Docker**: `http://localhost:9000/api`
 - **Production**: `https://your-domain.com/api`
 
 ### API Endpoints
@@ -373,15 +336,7 @@ be-readingbook/
 │   └── 📄 SOFT_DELETE_STRATEGY.md  # Soft delete strategy
 ├── 📁 uploads/                      # Uploaded files
 ├── 📄 package.json                 # Dependencies và scripts
-├── 📄 Dockerfile                   # Docker configuration
-├── 📄 docker-compose.yml           # Docker compose
-├── 📄 docker-compose.dev.yml       # Development compose
-├── 📄 docker-compose.prod.yml      # Production compose
-├── 📄 nginx.conf                   # Nginx configuration
-├── 📄 nginx.production.conf        # Production nginx
-├── 📄 deploy.sh                    # Deployment script
 ├── 📄 env.example                  # Environment variables example
-├── 📄 env.docker.example           # Docker environment example
 └── 📄 README.md                    # This file
 ```
 
@@ -408,52 +363,60 @@ be-readingbook/
 
 ## 📦 Deployment
 
-### Environment Variables (Production)
+### 🚀 Deploy lên Render.com (ĐỀ XUẤT - Miễn phí)
+
+Dự án này được cấu hình tối ưu để deploy lên **Render.com** - nền tảng miễn phí, không cần credit card.
+
+**Xem hướng dẫn chi tiết:** [DEPLOYMENT.md](DEPLOYMENT.md)
+
+#### Quick Start
+
+1. **Đăng ký Render**: https://render.com (Miễn phí)
+2. **Lấy Resend API Key**: https://resend.com/signup (Miễn phí)
+3. **Deploy**:
+   - New Web Service → Connect GitHub repo
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+   - Add Environment Variables (xem DEPLOYMENT.md)
+
+#### Environment Variables cần thiết
 
 ```env
+# Node Environment
 NODE_ENV=production
-APP_HOST=0.0.0.0
-APP_PORT=9000
-LOG_LEVEL=warn
 
-# Firebase Production
-FIREBASE_PROJECT_ID=your-production-project-id
+# Email via Resend (BẮT BUỘC)
+RESEND_API_KEY=re_xxxxxxxxxxxx
+EMAIL_FROM=onboarding@resend.dev
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRY=24h
+
+# Firebase (BẮT BUỘC)
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_DATABASE_URL=https://your-project.firebaseio.com
+FIREBASE_WEB_API_KEY=your-api-key
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=your-service-account@your-project.iam.gserviceaccount.com
+# ... các biến Firebase khác
 
-# Email Production
-SMTP_HOST=smtp.sendgrid.net
-SMTP_USERNAME=apikey
-SMTP_PASSWORD=your-sendgrid-api-key
+# CORS
+CORS_ORIGIN=*
 ```
 
-### Docker Production
+#### Lưu ý về Render Free Tier
 
-```bash
-# Build production image
-docker build -t reading-book-api:latest .
+- ✅ Hoàn toàn miễn phí, không cần credit card
+- ✅ SSL certificate tự động
+- ⚠️ Server sleep sau 15 phút không hoạt động
+- ⚠️ Cold start ~30-60 giây
 
-# Run production container
-docker run -d \
-  --name reading-book-api \
-  -p 9000:9000 \
-  --env-file .env.production \
-  reading-book-api:latest
-```
+**Giải pháp cho sleep issue:**
+- Setup uptime monitoring (https://cron-job.org) để ping `/health` mỗi 10 phút
+- Hoặc upgrade lên Starter plan ($7/tháng) - không sleep
 
-### Nginx Configuration
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    location / {
-        proxy_pass http://localhost:9000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
+**Deployment URL:** `https://your-app-name.onrender.com`
 
 ## 🔧 Troubleshooting
 
@@ -480,12 +443,12 @@ npm run test:firebase
 
 #### Email không gửi được
 ```bash
-# Kiểm tra SMTP configuration
-echo $SMTP_HOST
-echo $SMTP_USERNAME
+# Kiểm tra Resend API key
+echo $RESEND_API_KEY
 
-# Test email service
-npm run test:email
+# Xem logs để kiểm tra
+# Logs nên hiển thị: "📧 Using Resend API for email delivery"
+# Nếu thấy lỗi SMTP, đảm bảo đã set RESEND_API_KEY
 ```
 
 #### JWT Token lỗi
@@ -505,9 +468,6 @@ npm run dev
 
 # Xem logs production
 npm run production
-
-# Xem Docker logs
-docker logs reading-book-api
 
 # Debug mode
 DEBUG=* npm run dev
