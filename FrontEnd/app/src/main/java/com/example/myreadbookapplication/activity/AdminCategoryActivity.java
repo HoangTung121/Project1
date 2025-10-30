@@ -32,8 +32,6 @@ import retrofit2.Response;
 public class AdminCategoryActivity extends AppCompatActivity {
 
     private static final String TAG = "AdminCategoryActivity";
-
-    private TextView tvBack;
     private RecyclerView rvCategory;
     private LinearLayout layoutEmpty;
     private ProgressBar progressBar;
@@ -61,7 +59,6 @@ public class AdminCategoryActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        tvBack = findViewById(R.id.tv_back);
         rvCategory = findViewById(R.id.rv_category);
         layoutEmpty = findViewById(R.id.layout_empty);
         progressBar = findViewById(R.id.progress_bar);
@@ -74,7 +71,6 @@ public class AdminCategoryActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        tvBack.setOnClickListener(v -> finish());
 
         navCategory.setOnClickListener(v -> {
             // Already on category screen

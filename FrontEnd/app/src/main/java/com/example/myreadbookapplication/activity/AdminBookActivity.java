@@ -10,6 +10,9 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.Color;
+import android.view.Window;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -38,8 +41,6 @@ public class AdminBookActivity extends AppCompatActivity {
     private static final String TAG = "AdminBookActivity";
     private static final int REQUEST_ADD_BOOK = 1;
     private static final int REQUEST_EDIT_BOOK = 2;
-
-    private TextView tvBack;
     private RecyclerView rvBook;
     private LinearLayout layoutEmpty;
     private ProgressBar progressBar;
@@ -69,17 +70,16 @@ public class AdminBookActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        tvBack = findViewById(R.id.tv_back);
         rvBook = findViewById(R.id.rv_book);
         layoutEmpty = findViewById(R.id.layout_empty);
         progressBar = findViewById(R.id.progress_bar);
         fabAddBook = findViewById(R.id.fab_add_book);
         
         // Bottom navigation
-        navCategory = findViewById(R.id.nav_category);
-        navBook = findViewById(R.id.nav_book);
-        navFeedback = findViewById(R.id.nav_feedback);
-        navAccount = findViewById(R.id.nav_account);
+        navCategory = findViewById(R.id.nav_category_in_book);
+        navBook = findViewById(R.id.nav_book_in_book);
+        navFeedback = findViewById(R.id.nav_feedback_in_book);
+        navAccount = findViewById(R.id.nav_account_in_book);
 
         // Setup RecyclerView
         bookAdapter = new AdminBookAdapter(this, bookList);
@@ -99,7 +99,6 @@ public class AdminBookActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        tvBack.setOnClickListener(v -> finish());
 
         fabAddBook.setOnClickListener(v -> openAddBook());
 
@@ -127,22 +126,26 @@ public class AdminBookActivity extends AppCompatActivity {
     }
 
     private void openAddBook() {
-        Intent intent = new Intent(this, AdminAddEditBookActivity.class);
+        Intent intent = new Intent(this, AdminAddBookActivity.class);
         startActivityForResult(intent, REQUEST_ADD_BOOK);
     }
 
     private void openEditBook(Book book) {
-        Intent intent = new Intent(this, AdminAddEditBookActivity.class);
-        intent.putExtra(AdminAddEditBookActivity.EXTRA_BOOK, book);
+        Intent intent = new Intent(this, AdminEditBookActivity.class);
+        intent.putExtra(AdminEditBookActivity.EXTRA_BOOK, book);
         startActivityForResult(intent, REQUEST_EDIT_BOOK);
     }
 
     private void showDeleteConfirmDialog(Book book) {
         Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_confirm_delete);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
 
-        Button btnCancel = dialog.findViewById(R.id.btn_cancel);
-        Button btnYes = dialog.findViewById(R.id.btn_yes);
+        TextView btnCancel = dialog.findViewById(R.id.btn_cancel);
+        TextView btnYes = dialog.findViewById(R.id.btn_yes);
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
@@ -155,27 +158,48 @@ public class AdminBookActivity extends AppCompatActivity {
     }
 
     private void deleteBook(Book book) {
-        // TODO: Call API to delete book
-        // For now, just simulate success
-        Toast.makeText(this, "Book deleted successfully! (API call pending)", Toast.LENGTH_SHORT).show();
-        
-        // Remove from list and update UI
-        bookList.remove(book);
-        bookAdapter.updateBookList(bookList);
-        
-        if (bookList.isEmpty()) {
-            showEmptyState();
+        String accessToken = authManager.getAccessToken();
+        if (accessToken == null || accessToken.isEmpty()) {
+            Toast.makeText(this, "Please login as admin", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        progressBar.setVisibility(View.VISIBLE);
+
+        int bookId = book.getIdAsInt();
+        apiService.deleteBook(bookId, "Bearer " + accessToken).enqueue(new Callback<ApiResponse>() {
+            @Override
+            public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
+                progressBar.setVisibility(View.GONE);
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    Toast.makeText(AdminBookActivity.this, "Book deleted successfully!", Toast.LENGTH_SHORT).show();
+
+                    bookList.remove(book);
+                    bookAdapter.updateBookList(bookList);
+                    if (bookList.isEmpty()) {
+                        showEmptyState();
+                    }
+                } else {
+                    Toast.makeText(AdminBookActivity.this, "Delete failed", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(AdminBookActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         
-        if (requestCode == REQUEST_ADD_BOOK && resultCode == AdminAddEditBookActivity.RESULT_BOOK_ADDED) {
+        if (requestCode == REQUEST_ADD_BOOK && resultCode == AdminAddBookActivity.RESULT_BOOK_ADDED) {
             Toast.makeText(this, "Book added!", Toast.LENGTH_SHORT).show();
             loadBooks(); // Reload the book list
-        } else if (requestCode == REQUEST_EDIT_BOOK && resultCode == AdminAddEditBookActivity.RESULT_BOOK_UPDATED) {
+        } else if (requestCode == REQUEST_EDIT_BOOK && resultCode == AdminEditBookActivity.RESULT_BOOK_UPDATED) {
             Toast.makeText(this, "Book updated!", Toast.LENGTH_SHORT).show();
             loadBooks(); // Reload the book list
         }
