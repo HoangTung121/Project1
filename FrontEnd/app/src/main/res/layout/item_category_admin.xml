@@ -42,9 +42,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_marginEnd="8dp"
-            android:src="@android:drawable/ic_menu_edit"
-            android:tint="#0066CC"
-            android:background="?attr/selectableItemBackground"
+            android:src="@drawable/ic_admin_edit_book"
             android:clickable="true"
             android:focusable="true" />
 
@@ -53,9 +51,7 @@
             android:id="@+id/iv_delete"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_delete"
-            android:tint="#FF0000"
-            android:background="?attr/selectableItemBackground"
+            android:src="@drawable/ic_admin_delete_book"
             android:clickable="true"
             android:focusable="true" />
 

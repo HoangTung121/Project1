@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -37,8 +38,6 @@ import retrofit2.Response;
 public class AdminFeedbackActivity extends AppCompatActivity {
 
     private static final String TAG = "AdminFeedbackActivity";
-
-    private TextView tvBack;
     private RecyclerView rvFeedback;
     private LinearLayout layoutEmpty;
     private ProgressBar progressBar;
@@ -69,22 +68,18 @@ public class AdminFeedbackActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        tvBack = findViewById(R.id.tv_back);
         rvFeedback = findViewById(R.id.rv_feedback);
         layoutEmpty = findViewById(R.id.layout_empty);
         progressBar = findViewById(R.id.progress_bar);
         
         // Bottom navigation
-        navCategory = findViewById(R.id.nav_category);
-        navBook = findViewById(R.id.nav_book);
-        navFeedback = findViewById(R.id.nav_feedback);
-        navAccount = findViewById(R.id.nav_account);
+        navCategory = findViewById(R.id.nav_category_in_feedback);
+        navBook = findViewById(R.id.nav_book_in_feedback);
+        navFeedback = findViewById(R.id.nav_feedback_in_feedback);
+        navAccount = findViewById(R.id.nav_account_in_feedback);
     }
 
     private void setupClickListeners() {
-        // Back button
-        tvBack.setOnClickListener(v -> finish());
-
         // Bottom navigation
         navCategory.setOnClickListener(v -> {
             Intent intent = new Intent(this, AdminCategoryActivity.class);
@@ -123,10 +118,6 @@ public class AdminFeedbackActivity extends AppCompatActivity {
     private void loadFeedbacks() {
         String accessToken = authManager.getAccessToken();
         
-        Log.d(TAG, "=== LOAD FEEDBACKS START ===");
-        Log.d(TAG, "Access token exists: " + (accessToken != null && !accessToken.isEmpty()));
-        Log.d(TAG, "Is admin: " + authManager.isAdmin());
-        
         if (accessToken == null || accessToken.isEmpty()) {
             Log.e(TAG, "✗ No access token");
             Toast.makeText(this, "Please login as admin", Toast.LENGTH_SHORT).show();
@@ -138,14 +129,10 @@ public class AdminFeedbackActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         layoutEmpty.setVisibility(View.GONE);
 
-        // Use admin API endpoint to get ALL feedbacks (without status parameter)
-        // Note: Not sending status parameter ensures we get ALL feedbacks regardless of status
         // Backend validation only allows limit <= 100, so use 100
         String authHeader = "Bearer " + accessToken;
         int page = 1;
         int limit = 100; // Backend max limit is 100
-        Log.d(TAG, "Calling API: GET /api/admin/feedbacks?page=" + page + "&limit=" + limit);
-        Log.d(TAG, "Authorization header: " + (authHeader.length() > 50 ? authHeader.substring(0, 50) + "..." : authHeader));
         
         Call<ApiResponse> call = apiService.getAllFeedbacks(authHeader, page, limit);
         
@@ -154,18 +141,11 @@ public class AdminFeedbackActivity extends AppCompatActivity {
             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
                 progressBar.setVisibility(View.GONE);
                 
-                Log.d(TAG, "=== API CALLBACK START ===");
-                Log.d(TAG, "Response code: " + response.code());
-                Log.d(TAG, "Response isSuccessful: " + response.isSuccessful());
-                
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse apiResponse = response.body();
-                    Log.d(TAG, "API Response success: " + apiResponse.isSuccess());
-                    Log.d(TAG, "API Response message: " + apiResponse.getMessage());
                     
                     if (apiResponse.isSuccess()) {
                         Object dataObj = apiResponse.getData();
-                        Log.d(TAG, "Data object: " + (dataObj != null ? dataObj.getClass().getName() : "NULL"));
                         
                         if (dataObj != null) {
                             try {
@@ -185,7 +165,7 @@ public class AdminFeedbackActivity extends AppCompatActivity {
                                     
                                     TypeToken<List<Feedback>> token = new TypeToken<List<Feedback>>() {};
                                     List<Feedback> feedbacksList = gson.fromJson(jsonArray, token.getType());
-                                    
+
                                     Log.d(TAG, "Parsed feedbacks count: " + (feedbacksList != null ? feedbacksList.size() : 0));
                                     
                                     if (feedbacksList != null && !feedbacksList.isEmpty()) {

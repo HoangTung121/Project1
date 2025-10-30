@@ -2,6 +2,8 @@ package com.example.myreadbookapplication.network;
 
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.Book;
+import com.example.myreadbookapplication.model.CreateBookRequest;
+import com.example.myreadbookapplication.model.UpdateBookRequest;
 import com.example.myreadbookapplication.model.BooksResponse;
 import com.example.myreadbookapplication.model.CategoriesResponse;
 import com.example.myreadbookapplication.model.Category;
@@ -240,6 +242,58 @@ public interface ApiService {
             @Query("page") Integer page,
             @Query("limit") Integer limit
             // Note: Not sending status parameter to get ALL feedbacks
+    );
+
+    // Admin Book APIs
+    @POST("api/admin/books")
+    Call<ApiResponse<Book>> createBook(
+            @Body CreateBookRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @PUT("api/admin/books/{id}")
+    Call<ApiResponse<Book>> updateBook(
+            @Path("id") int id,
+            @Body UpdateBookRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @DELETE("api/admin/books/{id}")
+    Call<ApiResponse> deleteBook(
+            @Path("id") int id,
+            @Header("Authorization") String authorization
+    );
+
+    @DELETE("api/admin/books/{id}/hard")
+    Call<ApiResponse> hardDeleteBook(
+            @Path("id") int id,
+            @Header("Authorization") String authorization
+    );
+
+    @POST("api/admin/books/{id}/restore")
+    Call<ApiResponse<Book>> restoreBook(
+            @Path("id") int id,
+            @Header("Authorization") String authorization
+    );
+
+    @GET("api/admin/books/deleted")
+    Call<ApiResponse<BooksResponse>> getDeletedBooks(
+            @Header("Authorization") String authorization,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit,
+            @Query("sortBy") String sortBy,
+            @Query("sortOrder") String sortOrder
+    );
+
+    // Public book details
+    @GET("api/books/{id}")
+    Call<ApiResponse<Book>> getBookById(
+            @Path("id") String id
+    );
+
+    @GET("api/books/latest")
+    Call<ApiResponse<BooksResponse>> getLatestBooks(
+            @Query("limit") Integer limit
     );
 
 }
