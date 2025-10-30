@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -18,11 +19,9 @@ import com.example.myreadbookapplication.utils.LogoutManager;
 public class AdminAccountActivity extends AppCompatActivity {
 
     private static final String TAG = "AdminAccountActivity";
-
-    private TextView tvBack;
     private TextView tvEmail;
-    private TextView tvChangePassword;
-    private TextView tvSignOut;
+    private LinearLayout tvChangePassword;
+    private LinearLayout tvSignOut;
     private LinearLayout navCategory;
     private LinearLayout navBook;
     private LinearLayout navFeedback;
@@ -46,20 +45,18 @@ public class AdminAccountActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        tvBack = findViewById(R.id.tv_back);
         tvEmail = findViewById(R.id.tv_email);
         tvChangePassword = findViewById(R.id.tv_change_password);
         tvSignOut = findViewById(R.id.tv_sign_out);
         
         // Bottom navigation
-        navCategory = findViewById(R.id.nav_category);
-        navBook = findViewById(R.id.nav_book);
-        navFeedback = findViewById(R.id.nav_feedback);
-        navAccount = findViewById(R.id.nav_account);
+        navCategory = findViewById(R.id.nav_category_in_account);
+        navBook = findViewById(R.id.nav_book_in_account);
+        navFeedback = findViewById(R.id.nav_feedback_in_account);
+        navAccount = findViewById(R.id.nav_account_in_account);
     }
 
     private void setupClickListeners() {
-        tvBack.setOnClickListener(v -> finish());
 
         tvChangePassword.setOnClickListener(v -> {
             Intent intent = new Intent(this, ChangePasswordActivity.class);

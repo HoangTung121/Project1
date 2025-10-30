@@ -35,8 +35,7 @@
             android:exported="false" />
         <activity
             android:name=".activity.HomeActivity"
-            android:exported="false">
-        </activity>
+            android:exported="false" />
         <activity
             android:name=".activity.SearchActivity"
             android:exported="false" />
@@ -86,7 +85,10 @@
             android:name=".activity.AdminBookActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.AdminAddEditBookActivity"
+            android:name=".activity.AdminAddBookActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminEditBookActivity"
             android:exported="false" />
         <activity
             android:name=".activity.AdminFeedbackActivity"

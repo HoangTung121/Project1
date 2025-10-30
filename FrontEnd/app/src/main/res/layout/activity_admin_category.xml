@@ -5,42 +5,48 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#4A4A4A"
+    android:background="#F5F5F5"
     android:orientation="vertical">
 
     <!-- Header -->
-    <TextView
-        android:id="@+id/tv_back"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="← Admin Category"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:clickable="true"
-        android:focusable="true" />
+        android:background="@color/white"
+        android:paddingTop="60dp"
+        android:orientation="vertical">
 
-    <!-- Main Content -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:paddingHorizontal="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="Category"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="@color/black"
+            android:orientation="vertical" />
+    </LinearLayout>
+
+    <!-- Content area -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_margin="16dp"
-        android:background="#FFFFFF"
         android:orientation="vertical">
-
-        <!-- App Title -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="24dp"
-            android:text="Read Book App"
-            android:textColor="#000000"
-            android:textSize="20sp"
-            android:textStyle="bold" />
 
         <!-- Search Bar -->
         <androidx.cardview.widget.CardView
@@ -81,83 +87,86 @@
 
         </androidx.cardview.widget.CardView>
 
-        <!-- Progress Bar -->
-        <ProgressBar
-            android:id="@+id/progress_bar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="32dp"
-            android:visibility="visible"
-            style="?android:attr/progressBarStyleLarge" />
-
-        <!-- Category List -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_category"
+        <!-- Stack: list, empty, progress, FAB -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:padding="16dp"
-            android:clipToPadding="false"
-            tools:listitem="@layout/item_category_admin" />
+            android:layout_weight="1">
 
-        <!-- Empty State -->
-        <LinearLayout
-            android:id="@+id/layout_empty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:padding="32dp"
-            android:visibility="gone">
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_category"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="16dp"
+                android:paddingBottom="88dp"
+                android:clipToPadding="false"
+                android:visibility="visible"
+                tools:listitem="@layout/item_category_admin" />
 
-            <ImageView
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:src="@android:drawable/ic_menu_info_details"
-                android:backgroundTint="#CCCCCC"
-                android:layout_marginBottom="16dp" />
+            <LinearLayout
+                android:id="@+id/layout_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
 
-            <TextView
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:layout_marginBottom="24dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:tint="@color/gray_light" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chưa có danh mục nào"
+                    android:textSize="20sp"
+                    android:textColor="@color/gray_light"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:text="Thêm danh mục mới để bắt đầu quản lý"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray_light" />
+
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progress_bar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="No categories yet"
-                android:textSize="18sp"
-                android:textColor="#666666"
-                android:textStyle="bold" />
+                android:layout_gravity="center"
+                android:visibility="gone"
+                style="?android:attr/progressBarStyleLarge" />
 
-            <TextView
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_add_category"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Add a new category to get started"
-                android:textSize="14sp"
-                android:textColor="#999999"
-                android:layout_marginTop="8dp"
-                android:gravity="center" />
+                android:layout_gravity="end|bottom"
+                android:layout_margin="16dp"
+                android:src="@android:drawable/ic_input_add"
+                app:tint="#FFFFFF"
+                app:backgroundTint="@color/admin_footer" />
 
-        </LinearLayout>
+        </FrameLayout>
 
     </LinearLayout>
-
-    <!-- Floating Action Button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_category"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:layout_margin="16dp"
-        android:src="@android:drawable/ic_input_add"
-        app:tint="#FFFFFF"
-        app:backgroundTint="#8B4513" />
 
     <!-- Bottom Navigation -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#8B4513"
+        android:background="@color/admin_footer"
         android:orientation="horizontal"
-        android:paddingVertical="12dp"
+        android:paddingVertical="25dp"
         android:paddingHorizontal="8dp">
 
         <!-- Category -->
@@ -168,24 +177,22 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
-            android:background="#FFA500"
-            android:padding="4dp"
-            android:layout_marginHorizontal="4dp"
+            android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_menu_manage"
-                android:tint="#FFFFFF" />
+                android:src="@drawable/ic_category"
+                android:tint="@color/admin_footer_text_color" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Category"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/admin_footer_text_color"
                 android:textStyle="bold"
                 android:layout_marginTop="4dp" />
 
@@ -206,15 +213,14 @@
             <ImageView
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_menu_view"
-                android:tint="#FFFFFF" />
+                android:src="@drawable/ic_book" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Book"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:layout_marginTop="4dp" />
 
         </LinearLayout>
@@ -234,15 +240,15 @@
             <ImageView
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_dialog_info"
-                android:tint="#FFFFFF" />
+                android:src="@drawable/ic_feedback"
+                android:tint="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="FeedBack"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:layout_marginTop="4dp" />
 
         </LinearLayout>
@@ -262,15 +268,14 @@
             <ImageView
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@android:drawable/ic_menu_preferences"
-                android:tint="#FFFFFF" />
+                android:src="@drawable/ic_account" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Account"
                 android:textSize="12sp"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:layout_marginTop="4dp" />
 
         </LinearLayout>
