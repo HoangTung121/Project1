@@ -49,11 +49,15 @@ public class AdminBookActivity extends AppCompatActivity {
     private LinearLayout navFeedback;
     private LinearLayout navAccount;
     private FloatingActionButton fabAddBook;
+    private android.widget.EditText etSearch;
 
     private ApiService apiService;
     private AuthManager authManager;
     private List<Book> bookList = new ArrayList<>();
+    private List<Book> allBooksList = new ArrayList<>(); // Store all books for reset
     private AdminBookAdapter bookAdapter;
+    private android.os.Handler searchHandler = new android.os.Handler();
+    private Runnable searchRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +78,7 @@ public class AdminBookActivity extends AppCompatActivity {
         layoutEmpty = findViewById(R.id.layout_empty);
         progressBar = findViewById(R.id.progress_bar);
         fabAddBook = findViewById(R.id.fab_add_book);
+        etSearch = findViewById(R.id.et_search);
         
         // Bottom navigation
         navCategory = findViewById(R.id.nav_category_in_book);
@@ -99,6 +104,7 @@ public class AdminBookActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        setupSearchListener();
 
         fabAddBook.setOnClickListener(v -> openAddBook());
 
@@ -205,6 +211,193 @@ public class AdminBookActivity extends AppCompatActivity {
         }
     }
 
+    private void setupSearchListener() {
+        etSearch.setOnEditorActionListener((v, actionId, event) -> {
+            performSearch();
+            return true;
+        });
+
+        etSearch.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Cancel previous search
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
+
+                // Debounce search - wait 500ms after user stops typing
+                searchRunnable = () -> performSearch();
+                searchHandler.postDelayed(searchRunnable, 500);
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+    }
+
+    private void performSearch() {
+        String query = etSearch.getText().toString().trim();
+        
+        if (query.isEmpty()) {
+            // Show all books if search is empty
+            bookList = new ArrayList<>(allBooksList);
+            bookAdapter.updateBookList(bookList);
+            updateListView();
+            return;
+        }
+
+        // Call search API
+        searchBooks(query);
+    }
+
+    private void searchBooks(String query) {
+        progressBar.setVisibility(View.VISIBLE);
+        layoutEmpty.setVisibility(View.GONE);
+
+        apiService.searchBooks(query, 1, 100).enqueue(new Callback<ApiResponse<BooksResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
+                progressBar.setVisibility(View.GONE);
+                
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<BooksResponse> apiResponse = response.body();
+                    if (apiResponse.isSuccess()) {
+                        try {
+                            BooksResponse booksResponse = apiResponse.getData();
+                            if (booksResponse != null && booksResponse.getBooks() != null) {
+                                bookList = booksResponse.getBooks();
+                                bookAdapter.updateBookList(bookList);
+                                updateListView();
+                            } else {
+                                showEmptyState();
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error parsing search results: " + e.getMessage());
+                            showEmptyState();
+                        }
+                    } else {
+                        showEmptyState();
+                    }
+                } else {
+                    Log.e(TAG, "Search failed: " + response.code());
+                    showEmptyState();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
+                Log.e(TAG, "Search error: " + t.getMessage());
+                Toast.makeText(AdminBookActivity.this, "Search failed", Toast.LENGTH_SHORT).show();
+                showEmptyState();
+            }
+        });
+    }
+
+    private void updateListView() {
+        if (bookList.isEmpty()) {
+            layoutEmpty.setVisibility(View.VISIBLE);
+            rvBook.setVisibility(View.GONE);
+        } else {
+            layoutEmpty.setVisibility(View.GONE);
+            rvBook.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void loadAllBooks(String accessToken, int startPage) {
+        // Load page with max limit (100)
+        Call<ApiResponse<BooksResponse>> call = apiService.getAllBooks("Bearer " + accessToken, startPage, 100);
+        
+        call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
+                if (!response.isSuccessful() || response.body() == null || !response.body().isSuccess()) {
+                    progressBar.setVisibility(View.GONE);
+                    if (allBooksList.isEmpty()) {
+                        showEmptyState();
+                    } else {
+                        // At least show what we got
+                        bookList = new ArrayList<>(allBooksList);
+                        bookAdapter.updateBookList(bookList);
+                        updateListView();
+                    }
+                    return;
+                }
+
+                try {
+                    BooksResponse booksResponse = response.body().getData();
+                    if (booksResponse != null && booksResponse.getBooks() != null) {
+                        // Add books from this page
+                        allBooksList.addAll(booksResponse.getBooks());
+                        
+                        BooksResponse.Pagination pagination = booksResponse.getPagination();
+                        if (pagination != null) {
+                            int currentPage = pagination.getPage();
+                            int totalPages = pagination.getTotalPages();
+                            int total = pagination.getTotal();
+                            
+                            Log.d(TAG, "Loaded page " + currentPage + "/" + totalPages + " (" + allBooksList.size() + "/" + total + " books)");
+                            
+                            // Load next page if there are more
+                            if (currentPage < totalPages) {
+                                loadAllBooks(accessToken, currentPage + 1);
+                                return; // Don't update UI yet, wait for all pages
+                            } else {
+                                // All pages loaded
+                                Log.d(TAG, "All books loaded: " + allBooksList.size() + " total");
+                            }
+                        }
+                        
+                        // Update UI with all loaded books
+                        bookList = new ArrayList<>(allBooksList);
+                        bookAdapter.updateBookList(bookList);
+                        updateListView();
+                        progressBar.setVisibility(View.GONE);
+                    } else {
+                        progressBar.setVisibility(View.GONE);
+                        if (allBooksList.isEmpty()) {
+                            showEmptyState();
+                        } else {
+                            bookList = new ArrayList<>(allBooksList);
+                            bookAdapter.updateBookList(bookList);
+                            updateListView();
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing books: " + e.getMessage());
+                    progressBar.setVisibility(View.GONE);
+                    if (allBooksList.isEmpty()) {
+                        showEmptyState();
+                    } else {
+                        bookList = new ArrayList<>(allBooksList);
+                        bookAdapter.updateBookList(bookList);
+                        updateListView();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
+                Log.e(TAG, "Error loading books: " + t.getMessage());
+                
+                if (allBooksList.isEmpty()) {
+                    Toast.makeText(AdminBookActivity.this, "Failed to load books", Toast.LENGTH_SHORT).show();
+                    showEmptyState();
+                } else {
+                    // At least show what we got
+                    Toast.makeText(AdminBookActivity.this, "Loaded " + allBooksList.size() + " books (some may be missing)", Toast.LENGTH_LONG).show();
+                    bookList = new ArrayList<>(allBooksList);
+                    bookAdapter.updateBookList(bookList);
+                    updateListView();
+                }
+            }
+        });
+    }
+
     private void loadBooks() {
         String accessToken = authManager.getAccessToken();
         
@@ -216,54 +409,13 @@ public class AdminBookActivity extends AppCompatActivity {
 
         progressBar.setVisibility(View.VISIBLE);
         layoutEmpty.setVisibility(View.GONE);
-
-        Call<ApiResponse<BooksResponse>> call = apiService.getAllBooks("Bearer " + accessToken, 1, 100);
         
-        call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
-                progressBar.setVisibility(View.GONE);
+        // Clear previous data
+        allBooksList.clear();
+        bookList.clear();
 
-                if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<BooksResponse> apiResponse = response.body();
-                    if (apiResponse.isSuccess()) {
-                        try {
-                            BooksResponse booksResponse = apiResponse.getData();
-                            if (booksResponse != null && booksResponse.getBooks() != null) {
-                                bookList = booksResponse.getBooks();
-                                bookAdapter.updateBookList(bookList);
-                                
-                                if (bookList.isEmpty()) {
-                                    layoutEmpty.setVisibility(View.VISIBLE);
-                                    rvBook.setVisibility(View.GONE);
-                                } else {
-                                    layoutEmpty.setVisibility(View.GONE);
-                                    rvBook.setVisibility(View.VISIBLE);
-                                }
-                            } else {
-                                showEmptyState();
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error parsing books: " + e.getMessage());
-                            showEmptyState();
-                        }
-                    } else {
-                        showEmptyState();
-                    }
-                } else {
-                    Log.e(TAG, "Failed to load books: " + response.code());
-                    showEmptyState();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
-                progressBar.setVisibility(View.GONE);
-                Log.e(TAG, "Error loading books: " + t.getMessage());
-                Toast.makeText(AdminBookActivity.this, "Failed to load books", Toast.LENGTH_SHORT).show();
-                showEmptyState();
-            }
-        });
+        // Backend limits max to 100 per page, so we need to load multiple pages
+        loadAllBooks(accessToken, 1);
     }
 
     private void showEmptyState() {

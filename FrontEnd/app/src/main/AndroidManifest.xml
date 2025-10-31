@@ -82,6 +82,12 @@
             android:name=".activity.AdminCategoryActivity"
             android:exported="false" />
         <activity
+            android:name=".activity.AdminAddCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminEditCategoryActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.AdminBookActivity"
             android:exported="false" />
         <activity

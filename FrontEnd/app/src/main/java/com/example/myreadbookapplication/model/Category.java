@@ -2,7 +2,9 @@ package com.example.myreadbookapplication.model;
 
 import com.google.gson.annotations.SerializedName;
 
-public class Category {
+import java.io.Serializable;
+
+public class Category implements Serializable {
     @SerializedName("_id")
     private int id;
     private String name;
@@ -10,6 +12,9 @@ public class Category {
     private String imageUrl;
     private String status; //is active or not
     private String updatedAt; // timestamp
+
+    //Default constructor
+    public Category() {}
 
     //Constructor
     public Category(int id, String name, String imageUrl, String status, String updatedAt) {
