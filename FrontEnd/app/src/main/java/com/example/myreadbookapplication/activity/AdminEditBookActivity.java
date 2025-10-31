@@ -37,7 +37,6 @@ public class AdminEditBookActivity extends AppCompatActivity {
 
     public static final String EXTRA_BOOK = "book";
     public static final int RESULT_BOOK_UPDATED = 101;
-
     private ImageView ivBack;
     private TextView tvTitle;
     private EditText etName;
@@ -48,11 +47,9 @@ public class AdminEditBookActivity extends AppCompatActivity {
     private EditText etLinkPdf;
     private Button btnUpdate;
     private ProgressBar progressBar;
-
     private ApiService apiService;
     private AuthManager authManager;
     private Book currentBook;
-
     private final List<String> categoryNames = new ArrayList<>();
     private final List<Integer> categoryIds = new ArrayList<>();
 
