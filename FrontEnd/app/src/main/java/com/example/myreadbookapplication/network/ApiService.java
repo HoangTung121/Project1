@@ -4,6 +4,7 @@ import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.Book;
 import com.example.myreadbookapplication.model.CreateBookRequest;
 import com.example.myreadbookapplication.model.UpdateBookRequest;
+import com.example.myreadbookapplication.model.CreateCategoryRequest;
 import com.example.myreadbookapplication.model.BooksResponse;
 import com.example.myreadbookapplication.model.CategoriesResponse;
 import com.example.myreadbookapplication.model.Category;
@@ -294,6 +295,26 @@ public interface ApiService {
     @GET("api/books/latest")
     Call<ApiResponse<BooksResponse>> getLatestBooks(
             @Query("limit") Integer limit
+    );
+
+    // Admin Category APIs
+    @POST("api/admin/categories")
+    Call<ApiResponse<Category>> createCategory(
+            @Body CreateCategoryRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @PUT("api/admin/categories/{categoryId}")
+    Call<ApiResponse<Category>> updateCategory(
+            @Path("categoryId") int categoryId,
+            @Body CreateCategoryRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @DELETE("api/admin/categories/{categoryId}")
+    Call<ApiResponse> deleteCategory(
+            @Path("categoryId") int categoryId,
+            @Header("Authorization") String authorization
     );
 
 }
