@@ -8,6 +8,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.myreadbookapplication.R;
+import com.example.myreadbookapplication.network.RetrofitClient;
 
 public class IntroActivity extends AppCompatActivity {
 
@@ -18,6 +19,9 @@ public class IntroActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_intro);
+
+        // Initialize RetrofitClient với context
+        RetrofitClient.init(this);
 
         //delay 2 giây
         new Handler().postDelayed(new Runnable() {

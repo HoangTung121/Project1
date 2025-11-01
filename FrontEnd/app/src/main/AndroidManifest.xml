@@ -35,8 +35,7 @@
             android:exported="false" />
         <activity
             android:name=".activity.HomeActivity"
-            android:exported="false">
-        </activity>
+            android:exported="false" />
         <activity
             android:name=".activity.SearchActivity"
             android:exported="false" />
@@ -75,6 +74,33 @@
             android:exported="false" />
         <activity
             android:name=".activity.ChangePasswordActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminAddCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminEditCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminBookActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminAddBookActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminEditBookActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminFeedbackActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.AdminAccountActivity"
             android:exported="false" />
     </application>
 

@@ -58,6 +58,7 @@
                     android:layout_height="wrap_content"
                     android:hint="Enter your email"
                     android:inputType="textEmailAddress"
+                    android:fontFamily="sans-serif"
                     android:background="@drawable/edittext_background"
                     android:paddingVertical="18dp"
                     android:paddingLeft="24dp"
@@ -84,18 +85,39 @@
                     android:textSize="18sp"
                     android:textStyle="bold"/>
 
-                <EditText
-                    android:id="@+id/et_password_sign_in"
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Enter your password"
-                    android:inputType="textPassword"
-                    android:background="@drawable/edittext_background"
-                    android:paddingVertical="18dp"
-                    android:paddingLeft="24dp"
-                    android:paddingRight="48dp"
-                    android:textColor="#000000"
-                    android:textSize="18sp"/>
+                    android:background="@drawable/edittext_background">
+
+                    <EditText
+                        android:id="@+id/et_password_sign_in"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_toStartOf="@id/iv_password_eye"
+                        android:hint="Enter your password"
+                        android:inputType="textPassword"
+                        android:background="@null"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="18dp"
+                        android:paddingLeft="24dp"
+                        android:paddingRight="16dp"
+                        android:textColor="#000000"
+                        android:textSize="18sp"/>
+
+                    <ImageView
+                        android:id="@+id/iv_password_eye"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_eye_off"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:contentDescription="Show/Hide password" />
+                </RelativeLayout>
             </LinearLayout>
 
             <!-- Sign In button -->

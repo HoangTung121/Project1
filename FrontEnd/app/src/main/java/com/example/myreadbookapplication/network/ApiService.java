@@ -2,6 +2,9 @@ package com.example.myreadbookapplication.network;
 
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.Book;
+import com.example.myreadbookapplication.model.CreateBookRequest;
+import com.example.myreadbookapplication.model.UpdateBookRequest;
+import com.example.myreadbookapplication.model.CreateCategoryRequest;
 import com.example.myreadbookapplication.model.BooksResponse;
 import com.example.myreadbookapplication.model.CategoriesResponse;
 import com.example.myreadbookapplication.model.Category;
@@ -62,6 +65,15 @@ public interface ApiService {
     @POST("api/auth/reset-password")
     Call<ApiResponse> resetPassword(@Body ResetPasswordRequest request);
 
+    @FormUrlEncoded
+    @POST("api/auth/change-password")
+    Call<ApiResponse> changePassword(
+            @Field("oldPassword") String oldPassword,
+            @Field("newPassword") String newPassword,
+            @Field("confirmPassword") String confirmPassword,
+            @Header("Authorization") String authorization
+    );
+
     @POST("api/auth/logout")
     Call<ApiResponse> logout(@Body LogoutRequest request);
 
@@ -86,6 +98,13 @@ public interface ApiService {
             @Query("page") Integer page
     );
     
+    // Admin - Get all books
+    @GET("api/books")
+    Call<ApiResponse<BooksResponse>> getAllBooks(
+            @Header("Authorization") String authorization,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit
+    );
 
     //Search book
     @GET("api/books/search")
@@ -134,12 +153,18 @@ public interface ApiService {
             @Header("Authorization") String authorization
     );
 
+    @DELETE("api/history/{userId}/bookmark/{bookId}")
+    Call<ApiResponse> deleteBookmark(
+            @Path("userId") String userId,
+            @Path("bookId") String bookId,
+            @Header("Authorization") String authorization
+    );
+
     @FormUrlEncoded
     @POST("api/history/bookmark")
     Call<ApiResponse> saveBookmark(
             @Field("userId") String userId,
             @Field("bookId") String bookId,
-            @Field("page") int page,
             @Field("chapterId") String chapterId,
             @Header("Authorization") String authorization
     );
@@ -207,6 +232,88 @@ public interface ApiService {
     @DELETE("api/feedback/{id}")
     Call<ApiResponse> deleteFeedback(
             @Path("id") String id,
+            @Header("Authorization") String authorization
+    );
+
+    // Admin APIs - Get all feedbacks (without status filter to get all feedbacks)
+    // Backend returns: {success, message, data: [array], pagination: {...}}
+    @GET("api/admin/feedbacks")
+    Call<ApiResponse> getAllFeedbacks(
+            @Header("Authorization") String authorization,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit
+            // Note: Not sending status parameter to get ALL feedbacks
+    );
+
+    // Admin Book APIs
+    @POST("api/admin/books")
+    Call<ApiResponse<Book>> createBook(
+            @Body CreateBookRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @PUT("api/admin/books/{id}")
+    Call<ApiResponse<Book>> updateBook(
+            @Path("id") int id,
+            @Body UpdateBookRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @DELETE("api/admin/books/{id}")
+    Call<ApiResponse> deleteBook(
+            @Path("id") int id,
+            @Header("Authorization") String authorization
+    );
+
+    @DELETE("api/admin/books/{id}/hard")
+    Call<ApiResponse> hardDeleteBook(
+            @Path("id") int id,
+            @Header("Authorization") String authorization
+    );
+
+    @POST("api/admin/books/{id}/restore")
+    Call<ApiResponse<Book>> restoreBook(
+            @Path("id") int id,
+            @Header("Authorization") String authorization
+    );
+
+    @GET("api/admin/books/deleted")
+    Call<ApiResponse<BooksResponse>> getDeletedBooks(
+            @Header("Authorization") String authorization,
+            @Query("page") Integer page,
+            @Query("limit") Integer limit,
+            @Query("sortBy") String sortBy,
+            @Query("sortOrder") String sortOrder
+    );
+
+    // Public book details
+    @GET("api/books/{id}")
+    Call<ApiResponse<Book>> getBookById(
+            @Path("id") String id
+    );
+
+    @GET("api/books/latest")
+    Call<ApiResponse<BooksResponse>> getLatestBooks(
+            @Query("limit") Integer limit
+    );
+
+    // Admin Category APIs
+    @POST("api/admin/categories")
+    Call<ApiResponse<Category>> createCategory(
+            @Body CreateCategoryRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @PUT("api/admin/categories/{categoryId}")
+    Call<ApiResponse<Category>> updateCategory(
+            @Path("categoryId") int categoryId,
+            @Body CreateCategoryRequest request,
+            @Header("Authorization") String authorization
+    );
+
+    @DELETE("api/admin/categories/{categoryId}")
+    Call<ApiResponse> deleteCategory(
+            @Path("categoryId") int categoryId,
             @Header("Authorization") String authorization
     );
 
