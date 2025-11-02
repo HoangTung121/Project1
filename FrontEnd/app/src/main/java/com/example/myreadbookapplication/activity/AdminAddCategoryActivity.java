@@ -135,7 +135,7 @@ public class AdminAddCategoryActivity extends AppCompatActivity {
                     setResult(RESULT_CATEGORY_ADDED, resultIntent);
                     finish();
                 } else {
-                    String msg = "Add failed";
+                    String msg = "Add failed !";
                     try {
                         if (response.errorBody() != null) {
                             msg += ": " + response.errorBody().string();

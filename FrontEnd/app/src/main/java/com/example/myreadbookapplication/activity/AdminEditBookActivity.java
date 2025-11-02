@@ -25,6 +25,11 @@ import com.example.myreadbookapplication.model.Category;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
 import com.example.myreadbookapplication.utils.AuthManager;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,20 +143,52 @@ public class AdminEditBookActivity extends AppCompatActivity {
     }
 
     private void updateButtonState() {
-        boolean enabled = !etName.getText().toString().trim().isEmpty()
-                && !etAuthor.getText().toString().trim().isEmpty()
-                && !etImage.getText().toString().trim().isEmpty()
-                && !etLinkPdf.getText().toString().trim().isEmpty()
-                && spCategory.getSelectedItemPosition() >= 0;
-        btnUpdate.setEnabled(enabled);
+        if (btnUpdate == null) return;
+        
+        try {
+            // Backend only requires title and author, other fields are optional
+            boolean hasName = etName != null && !etName.getText().toString().trim().isEmpty();
+            boolean hasAuthor = etAuthor != null && !etAuthor.getText().toString().trim().isEmpty();
+            
+            // Category is optional in backend, but if categories are loaded, we need selection
+            boolean hasCategory = true;
+            if (spCategory != null && !categoryIds.isEmpty()) {
+                // Categories loaded, need valid selection
+                hasCategory = spCategory.getSelectedItemPosition() >= 0;
+            }
+            // If categories not loaded yet, allow button enabled (category will be optional in update)
+            
+            // Enable button if we have required fields (title and author)
+            boolean enabled = hasName && hasAuthor && hasCategory;
+            btnUpdate.setEnabled(enabled);
+            btnUpdate.setAlpha(enabled ? 1.0f : 0.5f); // Visual feedback
+            
+            // Debug log
+            android.util.Log.d("AdminEditBook", "Button state - Name: " + hasName + ", Author: " + hasAuthor + 
+                    ", Category: " + hasCategory + ", CategoryIds size: " + categoryIds.size() + 
+                    ", Selected position: " + (spCategory != null ? spCategory.getSelectedItemPosition() : -1) +
+                    ", Enabled: " + enabled);
+        } catch (Exception e) {
+            android.util.Log.e("AdminEditBook", "Error updating button state: " + e.getMessage(), e);
+            btnUpdate.setEnabled(true); // Enable by default to allow updates
+        }
     }
 
     private boolean validateInputs() {
-        if (etName.getText().toString().trim().isEmpty()) { etName.setError("Required"); return false; }
-        if (etAuthor.getText().toString().trim().isEmpty()) { etAuthor.setError("Required"); return false; }
-        if (spCategory.getSelectedItemPosition() < 0) { Toast.makeText(this, "Select category", Toast.LENGTH_SHORT).show(); return false; }
-        if (etImage.getText().toString().trim().isEmpty()) { etImage.setError("Required"); return false; }
-        if (etLinkPdf.getText().toString().trim().isEmpty()) { etLinkPdf.setError("Required"); return false; }
+        // Only title and author are required by backend, others are optional
+        if (etName.getText().toString().trim().isEmpty()) { 
+            etName.setError("Title is required"); 
+            return false; 
+        }
+        if (etAuthor.getText().toString().trim().isEmpty()) { 
+            etAuthor.setError("Author is required"); 
+            return false; 
+        }
+        // Category is optional, but if categories are loaded and none selected, warn
+        if (!categoryIds.isEmpty() && spCategory.getSelectedItemPosition() < 0) { 
+            Toast.makeText(this, "Please select a category", Toast.LENGTH_SHORT).show(); 
+            return false; 
+        }
         return true;
     }
 
@@ -230,11 +267,51 @@ public class AdminEditBookActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<com.example.myreadbookapplication.model.ApiResponse<CategoriesResponse>> call, Response<com.example.myreadbookapplication.model.ApiResponse<CategoriesResponse>> response) {
                 if (!response.isSuccessful() || response.body() == null || !response.body().isSuccess()) return;
+                // Try direct parse first (like CategoryActivity does)
                 CategoriesResponse data = response.body().getData();
-                if (data == null || data.getCategories() == null) return;
+                List<Category> parsedCategories = new ArrayList<>();
+                
+                if (data != null && data.getCategories() != null && !data.getCategories().isEmpty()) {
+                    parsedCategories = data.getCategories();
+                } else {
+                    // If direct parse fails, try parsing object format
+                    Object dataObj = response.body().getData();
+                    
+                    if (dataObj != null) {
+                        try {
+                            Gson gson = new Gson();
+                            String dataJson = gson.toJson(dataObj);
+                            JsonObject jsonData = JsonParser.parseString(dataJson).getAsJsonObject();
+                            JsonElement categoriesElement = jsonData.get("categories");
+                            
+                            if (categoriesElement != null && categoriesElement.isJsonObject()) {
+                                // Parse Firebase object format: {"1": {...}, "2": {...}}
+                                JsonObject categoriesObj = categoriesElement.getAsJsonObject();
+                                for (String key : categoriesObj.keySet()) {
+                                    try {
+                                        JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
+                                        Category category = gson.fromJson(catJson, Category.class);
+                                        if (category != null) {
+                                            category.setId(Integer.parseInt(key)); // Set ID từ key
+                                            parsedCategories.add(category);
+                                        }
+                                    } catch (Exception e) {
+                                        // Ignore parse errors
+                                    }
+                                }
+                            } else if (categoriesElement != null && categoriesElement.isJsonArray()) {
+                                // Parse as array
+                                parsedCategories = gson.fromJson(categoriesElement, new TypeToken<List<Category>>(){}.getType());
+                            }
+                        } catch (Exception e) {
+                            // Ignore parse errors
+                        }
+                    }
+                }
+                
                 categoryNames.clear();
                 categoryIds.clear();
-                for (Category c : data.getCategories()) {
+                for (Category c : parsedCategories) {
                     if (c == null) continue;
                     String name = c.getName();
                     int id;
@@ -247,6 +324,9 @@ public class AdminEditBookActivity extends AppCompatActivity {
                 adapter.notifyDataSetChanged();
                 int index = categoryIds.indexOf(currentCategoryId);
                 if (index >= 0) spCategory.setSelection(index); else if (!categoryIds.isEmpty()) spCategory.setSelection(0);
+                
+                // Update button state after categories are loaded
+                updateButtonState();
             }
 
             @Override

@@ -58,6 +58,7 @@ public class AdminBookActivity extends AppCompatActivity {
     private AdminBookAdapter bookAdapter;
     private android.os.Handler searchHandler = new android.os.Handler();
     private Runnable searchRunnable;
+    private java.util.Map<Integer, String> categoryMap = new java.util.HashMap<>(); // Map category ID → name
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +71,7 @@ public class AdminBookActivity extends AppCompatActivity {
 
         initViews();
         setupClickListeners();
+        loadCategories(); // Load categories first to map IDs to names
         loadBooks();
     }
 
@@ -173,7 +175,7 @@ public class AdminBookActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
 
         int bookId = book.getIdAsInt();
-        apiService.deleteBook(bookId, "Bearer " + accessToken).enqueue(new Callback<ApiResponse>() {
+        apiService.hardDeleteBook(bookId, "Bearer " + accessToken).enqueue(new Callback<ApiResponse>() {
             @Override
             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
                 progressBar.setVisibility(View.GONE);
@@ -351,6 +353,9 @@ public class AdminBookActivity extends AppCompatActivity {
                             }
                         }
                         
+                        // Map category IDs to names
+                        mapCategoryNamesToBooks(allBooksList);
+                        
                         // Update UI with all loaded books
                         bookList = new ArrayList<>(allBooksList);
                         bookAdapter.updateBookList(bookList);
@@ -396,6 +401,69 @@ public class AdminBookActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void loadCategories() {
+        apiService.getCategoriesRaw(null).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    try {
+                        Object dataObj = response.body().getData();
+                        if (dataObj != null) {
+                            com.google.gson.Gson gson = new com.google.gson.Gson();
+                            String dataJson = gson.toJson(dataObj);
+                            com.google.gson.JsonObject jsonData = com.google.gson.JsonParser.parseString(dataJson).getAsJsonObject();
+                            com.google.gson.JsonElement categoriesElement = jsonData.get("categories");
+                            
+                            if (categoriesElement != null && categoriesElement.isJsonObject()) {
+                                com.google.gson.JsonObject categoriesObj = categoriesElement.getAsJsonObject();
+                                categoryMap.clear();
+                                for (String key : categoriesObj.keySet()) {
+                                    try {
+                                        com.google.gson.JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
+                                        int categoryId = Integer.parseInt(key);
+                                        String categoryName = catJson.has("name") ? catJson.get("name").getAsString() : "Unknown";
+                                        categoryMap.put(categoryId, categoryName);
+                                    } catch (Exception e) {
+                                        // Skip invalid categories
+                                    }
+                                }
+                                Log.d(TAG, "Loaded " + categoryMap.size() + " categories for mapping");
+                                
+                                // If books are already loaded, update their category names
+                                if (!allBooksList.isEmpty()) {
+                                    mapCategoryNamesToBooks(allBooksList);
+                                    bookList = new ArrayList<>(allBooksList);
+                                    bookAdapter.updateBookList(bookList);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing categories: " + e.getMessage());
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+                Log.e(TAG, "Failed to load categories: " + t.getMessage());
+            }
+        });
+    }
+
+    private void mapCategoryNamesToBooks(List<Book> books) {
+        for (Book book : books) {
+            if (book != null) {
+                int categoryId = book.getCategory();
+                String categoryName = categoryMap.get(categoryId);
+                if (categoryName != null) {
+                    book.setCategoryName(categoryName);
+                } else {
+                    book.setCategoryName("Unknown Category (" + categoryId + ")");
+                }
+            }
+        }
     }
 
     private void loadBooks() {
