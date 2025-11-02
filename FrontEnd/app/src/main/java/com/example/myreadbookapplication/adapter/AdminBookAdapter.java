@@ -62,8 +62,8 @@ public class AdminBookAdapter extends RecyclerView.Adapter<AdminBookAdapter.Book
     class BookViewHolder extends RecyclerView.ViewHolder {
         private ImageView ivBookCover;
         private TextView tvBookTitle;
+        private TextView tvBookAuthor;
         private TextView tvBookCategory;
-        private TextView tvBookFeatured;
         private ImageView ivEdit;
         private ImageView ivDelete;
 
@@ -71,8 +71,8 @@ public class AdminBookAdapter extends RecyclerView.Adapter<AdminBookAdapter.Book
             super(itemView);
             ivBookCover = itemView.findViewById(R.id.iv_book_cover);
             tvBookTitle = itemView.findViewById(R.id.tv_book_title);
+            tvBookAuthor = itemView.findViewById(R.id.tv_book_author);
             tvBookCategory = itemView.findViewById(R.id.tv_book_category);
-            tvBookFeatured = itemView.findViewById(R.id.tv_book_featured);
             ivEdit = itemView.findViewById(R.id.iv_edit);
             ivDelete = itemView.findViewById(R.id.iv_delete);
         }
@@ -92,12 +92,21 @@ public class AdminBookAdapter extends RecyclerView.Adapter<AdminBookAdapter.Book
             // Set book title
             tvBookTitle.setText(book.getTitle() != null ? book.getTitle() : "Unknown");
 
-            // Set category
-            String categoryText = "Category: " + (book.getCategoryName() != null ? book.getCategoryName() : "N/A");
-            tvBookCategory.setText(categoryText);
+            // Set author with format "Author: [name]"
+            String author = book.getAuthor();
+            if (author == null || author.isEmpty()) {
+                author = "Unknown";
+            }
+            tvBookAuthor.setText("Author: " + author);
 
-            // Set featured status (assuming it's stored somewhere, for now just show "No")
-            tvBookFeatured.setText("Featured: No");
+            // Set category with format "Category: [name]"
+            String categoryName = book.getCategoryName();
+            if (categoryName == null || categoryName.isEmpty()) {
+                // Fallback to category ID if name not available
+                int categoryId = book.getCategory();
+                categoryName = categoryId > 0 ? "ID " + categoryId : "No Category";
+            }
+            tvBookCategory.setText("Category: " + categoryName);
 
             // Set up click listeners
             ivEdit.setOnClickListener(v -> {

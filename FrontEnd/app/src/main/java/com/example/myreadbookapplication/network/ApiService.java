@@ -80,6 +80,10 @@ public interface ApiService {
     //category
     @GET("api/categories")
     Call<ApiResponse<CategoriesResponse>> getCategories(@Query("status") String status); //status=active or inactive ?
+    
+    //category - raw response for manual parsing
+    @GET("api/categories")
+    Call<ApiResponse<Object>> getCategoriesRaw(@Query("status") String status);
 
     //book
     @GET("api/books")
@@ -313,6 +317,12 @@ public interface ApiService {
 
     @DELETE("api/admin/categories/{categoryId}")
     Call<ApiResponse> deleteCategory(
+            @Path("categoryId") int categoryId,
+            @Header("Authorization") String authorization
+    );
+    
+    @DELETE("api/admin/categories/{categoryId}/hard")
+    Call<ApiResponse> hardDeleteCategory(
             @Path("categoryId") int categoryId,
             @Header("Authorization") String authorization
     );
