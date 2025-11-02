@@ -1,40 +1,29 @@
-# Sử dụng Node.js 18 LTS Alpine để có kích thước nhỏ gọn
-FROM node:18-alpine
+# Base image
+FROM node:18-slim
 
-# Thiết lập thư mục làm việc
+# Set working directory
 WORKDIR /app
 
-# Cài đặt các dependencies cần thiết cho build
-RUN apk add --no-cache python3 make g++
-
-# Copy package files
+# Install dependencies first (better layer caching)
 COPY package*.json ./
-
-# Cài đặt dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev --no-audit --no-fund
 
 # Copy source code
 COPY . .
 
-# Build ứng dụng
-RUN npm run build
-
-# Tạo user không phải root để bảo mật
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
-
-# Tạo thư mục uploads và cấp quyền
-RUN mkdir -p uploads && chown -R nodejs:nodejs /app
-
-# Chuyển sang user nodejs
-USER nodejs
+# Environment variables
+ENV NODE_ENV=production \
+    PORT=3000 \
+    HOST=0.0.0.0
 
 # Expose port
-EXPOSE 9000
+EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:9000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
 
-# Start ứng dụng
+# Start application
 CMD ["npm", "start"]
+
+

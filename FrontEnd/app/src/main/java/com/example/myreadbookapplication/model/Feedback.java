@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class Feedback {
     @SerializedName("_id")
-    private String id;
+    private String id; // Backend returns string _id from Firebase keys
     
     @SerializedName("userId")
     private int userId;

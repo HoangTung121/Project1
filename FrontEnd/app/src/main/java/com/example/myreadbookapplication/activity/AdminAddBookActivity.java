@@ -1,9 +1,12 @@
 package com.example.myreadbookapplication.activity;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,6 +29,11 @@ import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
 import com.example.myreadbookapplication.utils.AuthManager;
 import com.example.myreadbookapplication.model.ApiResponse;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,20 +144,41 @@ public class AdminAddBookActivity extends AppCompatActivity {
     }
 
     private void updateButtonState() {
+        // Backend only requires title and author for createBook
         boolean hasName = !etName.getText().toString().trim().isEmpty();
         boolean hasAuthor = !etAuthor.getText().toString().trim().isEmpty();
-        boolean hasImage = !etImage.getText().toString().trim().isEmpty();
-        boolean hasLinkPdf = !etLinkPdf.getText().toString().trim().isEmpty();
-        boolean hasCategory = spCategory.getSelectedItemPosition() >= 0 && spCategory.getSelectedItemPosition() < categoryIds.size();
-        btnAdd.setEnabled(hasName && hasAuthor && hasImage && hasLinkPdf && hasCategory);
+        
+        // Category is optional but if categories loaded, we need selection
+        boolean hasCategory = true;
+        if (spCategory != null && !categoryIds.isEmpty()) {
+            hasCategory = spCategory.getSelectedItemPosition() >= 0 && spCategory.getSelectedItemPosition() < categoryIds.size();
+        }
+        
+        // Other fields are optional
+        btnAdd.setEnabled(hasName && hasAuthor && hasCategory);
+        btnAdd.setAlpha(btnAdd.isEnabled() ? 1.0f : 0.5f); // Visual feedback
     }
 
     private boolean validateInputs() {
-        if (etName.getText().toString().trim().isEmpty()) { etName.setError("Name is required"); etName.requestFocus(); return false; }
-        if (spCategory.getSelectedItemPosition() < 0 || spCategory.getSelectedItemPosition() >= categoryIds.size()) { Toast.makeText(this, "Please select category", Toast.LENGTH_SHORT).show(); return false; }
-        if (etImage.getText().toString().trim().isEmpty()) { etImage.setError("Image URL is required"); etImage.requestFocus(); return false; }
-        if (etAuthor.getText().toString().trim().isEmpty()) { etAuthor.setError("Author is required"); etAuthor.requestFocus(); return false; }
-        if (etLinkPdf.getText().toString().trim().isEmpty()) { etLinkPdf.setError("PDF Link is required"); etLinkPdf.requestFocus(); return false; }
+        // Only title and author are required by backend
+        if (etName.getText().toString().trim().isEmpty()) { 
+            etName.setError("Title is required"); 
+            etName.requestFocus(); 
+            return false; 
+        }
+        if (etAuthor.getText().toString().trim().isEmpty()) { 
+            etAuthor.setError("Author is required"); 
+            etAuthor.requestFocus(); 
+            return false; 
+        }
+        
+        // Category is optional, but if categories are loaded, we should select one
+        if (!categoryIds.isEmpty() && (spCategory.getSelectedItemPosition() < 0 || spCategory.getSelectedItemPosition() >= categoryIds.size())) { 
+            Toast.makeText(this, "Please select a category", Toast.LENGTH_SHORT).show(); 
+            return false; 
+        }
+        
+        // Image and LinkPdf are optional (backend allows empty)
         return true;
     }
 
@@ -169,20 +198,26 @@ public class AdminAddBookActivity extends AppCompatActivity {
         String image = etImage.getText().toString().trim();
         String linkPdf = etLinkPdf.getText().toString().trim();
 
-        Integer categoryId = categoryIds.get(spCategory.getSelectedItemPosition());
+        // Get category ID - handle case where categories not loaded yet
+        Integer categoryId = null;
+        if (!categoryIds.isEmpty() && spCategory.getSelectedItemPosition() >= 0 && spCategory.getSelectedItemPosition() < categoryIds.size()) {
+            categoryId = categoryIds.get(spCategory.getSelectedItemPosition());
+        }
 
         CreateBookRequest req = new CreateBookRequest();
         req.title = name;
         req.author = author;
-        req.category = categoryId;
-        req.description = description;
+        req.category = categoryId; // Can be null (optional)
+        req.description = description.isEmpty() ? "" : description;
         req.release_date = "";
-        req.cover_url = image;
+        req.cover_url = image.isEmpty() ? "" : image;
         req.txt_url = "";
-        req.book_url = linkPdf;
+        req.book_url = linkPdf.isEmpty() ? "" : linkPdf;
         req.epub_url = "";
         req.keywords = java.util.Collections.emptyList();
         req.status = "active";
+        
+        Log.d(TAG, "Creating book - Title: " + name + ", Author: " + author + ", Category: " + categoryId);
 
         apiService.createBook(req, "Bearer " + token).enqueue(new Callback<ApiResponse<Book>>() {
             @Override
@@ -195,15 +230,22 @@ public class AdminAddBookActivity extends AppCompatActivity {
                     setResult(RESULT_BOOK_ADDED, resultIntent);
                     finish();
                 } else {
-                    String msg = "Add failed";
+                    String msg = "Failed to add book";
                     try {
                         if (response.errorBody() != null) {
-                            msg += ": " + response.errorBody().string();
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Add book error: " + errorBody);
+                            msg += "\n" + errorBody;
                         } else if (response.body() != null) {
-                            msg += ": " + response.body().getMessage();
+                            String errorMsg = response.body().getMessage();
+                            Log.e(TAG, "Add book error message: " + errorMsg);
+                            msg += ": " + errorMsg;
                         }
-                    } catch (Exception ignored) {}
-                    Toast.makeText(AdminAddBookActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing error response: " + e.getMessage());
+                        msg += " (Code: " + response.code() + ")";
+                    }
+                    Toast.makeText(AdminAddBookActivity.this, msg, Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -226,14 +268,60 @@ public class AdminAddBookActivity extends AppCompatActivity {
                     Toast.makeText(AdminAddBookActivity.this, "Failed to load categories", Toast.LENGTH_SHORT).show();
                     return;
                 }
+                // Try direct parse first (like CategoryActivity does)
                 CategoriesResponse data = response.body().getData();
-                if (data == null || data.getCategories() == null || data.getCategories().isEmpty()) {
+                List<Category> parsedCategories = new ArrayList<>();
+                
+                if (data != null && data.getCategories() != null && !data.getCategories().isEmpty()) {
+                    parsedCategories = data.getCategories();
+                    Log.d(TAG, "Parsed categories as array: " + parsedCategories.size());
+                } else {
+                    // If direct parse fails, try parsing object format
+                    Log.d(TAG, "Direct parse failed, trying object format...");
+                    Object dataObj = response.body().getData();
+                    
+                    if (dataObj != null) {
+                        try {
+                            Gson gson = new Gson();
+                            String dataJson = gson.toJson(dataObj);
+                            Log.d(TAG, "Data JSON: " + dataJson);
+                            JsonObject jsonData = JsonParser.parseString(dataJson).getAsJsonObject();
+                            JsonElement categoriesElement = jsonData.get("categories");
+                            
+                            if (categoriesElement != null && categoriesElement.isJsonObject()) {
+                                // Parse Firebase object format: {"1": {...}, "2": {...}}
+                                Log.d(TAG, "Parsing as object format");
+                                JsonObject categoriesObj = categoriesElement.getAsJsonObject();
+                                for (String key : categoriesObj.keySet()) {
+                                    try {
+                                        JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
+                                        Category category = gson.fromJson(catJson, Category.class);
+                                        if (category != null) {
+                                            category.setId(Integer.parseInt(key)); // Set ID từ key
+                                            parsedCategories.add(category);
+                                        }
+                                    } catch (Exception e) {
+                                        Log.w(TAG, "Failed to parse category " + key);
+                                    }
+                                }
+                            } else if (categoriesElement != null && categoriesElement.isJsonArray()) {
+                                // Parse as array
+                                parsedCategories = gson.fromJson(categoriesElement, new TypeToken<List<Category>>(){}.getType());
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error parsing categories: " + e.getMessage());
+                        }
+                    }
+                }
+                
+                if (parsedCategories.isEmpty()) {
                     Toast.makeText(AdminAddBookActivity.this, "No categories", Toast.LENGTH_SHORT).show();
                     return;
                 }
+                
                 categoryNames.clear();
                 categoryIds.clear();
-                for (Category c : data.getCategories()) {
+                for (Category c : parsedCategories) {
                     if (c == null) continue;
                     String name = c.getName();
                     int id;
@@ -242,12 +330,19 @@ public class AdminAddBookActivity extends AppCompatActivity {
                     categoryNames.add(name);
                     categoryIds.add(id);
                 }
-                ArrayAdapter<String> adapter = (ArrayAdapter<String>) spCategory.getAdapter();
-                adapter.notifyDataSetChanged();
+                
+                // Update spinner adapter
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(AdminAddBookActivity.this, 
+                    android.R.layout.simple_spinner_dropdown_item, categoryNames);
+                spCategory.setAdapter(adapter);
+                
                 if (!categoryIds.isEmpty()) {
                     spCategory.setSelection(0);
                 }
+                
+                // Update button state after categories loaded
                 updateButtonState();
+                Log.d(TAG, "Categories loaded: " + categoryIds.size() + " categories");
             }
 
             @Override
