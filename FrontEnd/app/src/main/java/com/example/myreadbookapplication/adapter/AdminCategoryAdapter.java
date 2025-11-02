@@ -54,14 +54,15 @@ public class AdminCategoryAdapter extends RecyclerView.Adapter<AdminCategoryAdap
 
         holder.tvCategoryName.setText(category.getName());
 
-        // Load image using Glide
+        // Load image using Glide with error handling
         if (category.getImageUrl() != null && !category.getImageUrl().isEmpty()) {
             Glide.with(context)
                     .load(category.getImageUrl())
                     .placeholder(R.drawable.default_book_cover)
+                    .error(R.drawable.default_book_cover)
                     .into(holder.ivCategoryImage);
         } else {
-            holder.ivCategoryImage.setImageResource(android.R.drawable.ic_menu_gallery);
+            holder.ivCategoryImage.setImageResource(R.drawable.default_book_cover);
         }
 
         // Edit button

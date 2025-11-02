@@ -47,7 +47,10 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
             Glide.with(context)
                     .load(category.getImageUrl())
                     .placeholder(R.drawable.default_book_cover) // ảnh mặc định
+                    .error(R.drawable.default_book_cover) // ảnh khi lỗi
                     .into(holder.category_icon);
+        } else {
+            holder.category_icon.setImageResource(R.drawable.default_book_cover);
         }
         // Xử lý sự kiện click vào category
         holder.itemView.setOnClickListener(v -> listener.onCategoryClick(category));
