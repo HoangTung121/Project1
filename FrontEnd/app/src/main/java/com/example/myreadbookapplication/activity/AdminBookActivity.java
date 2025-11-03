@@ -35,6 +35,8 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import okhttp3.ResponseBody;
+import java.io.IOException;
 
 public class AdminBookActivity extends AppCompatActivity {
 
@@ -59,6 +61,7 @@ public class AdminBookActivity extends AppCompatActivity {
     private android.os.Handler searchHandler = new android.os.Handler();
     private Runnable searchRunnable;
     private java.util.Map<Integer, String> categoryMap = new java.util.HashMap<>(); // Map category ID → name
+    private boolean categoriesLoaded = false; // Flag to track if categories are loaded
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,8 +74,8 @@ public class AdminBookActivity extends AppCompatActivity {
 
         initViews();
         setupClickListeners();
-        loadCategories(); // Load categories first to map IDs to names
-        loadBooks();
+        // Load categories first, then load books after categories are loaded
+        loadCategories();
     }
 
     private void initViews() {
@@ -353,7 +356,8 @@ public class AdminBookActivity extends AppCompatActivity {
                             }
                         }
                         
-                        // Map category IDs to names
+                        // Always try to map category names (categoryMap may be populated by now)
+                        Log.d(TAG, "Mapping category names - map size: " + categoryMap.size() + ", categoriesLoaded: " + categoriesLoaded);
                         mapCategoryNamesToBooks(allBooksList);
                         
                         // Update UI with all loaded books
@@ -404,66 +408,217 @@ public class AdminBookActivity extends AppCompatActivity {
     }
 
     private void loadCategories() {
-        apiService.getCategoriesRaw(null).enqueue(new Callback<ApiResponse<Object>>() {
+        // Use getCategoriesRawBody(null) to get all categories
+        apiService.getCategoriesRawBody(null).enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful() && response.body() != null) {
                     try {
-                        Object dataObj = response.body().getData();
-                        if (dataObj != null) {
-                            com.google.gson.Gson gson = new com.google.gson.Gson();
-                            String dataJson = gson.toJson(dataObj);
-                            com.google.gson.JsonObject jsonData = com.google.gson.JsonParser.parseString(dataJson).getAsJsonObject();
-                            com.google.gson.JsonElement categoriesElement = jsonData.get("categories");
+                        String responseString = response.body().string();
+                        com.google.gson.Gson gson = new com.google.gson.Gson();
+                        com.google.gson.JsonObject jsonResponse = com.google.gson.JsonParser.parseString(responseString).getAsJsonObject();
+                        
+                        if (!jsonResponse.has("success") || !jsonResponse.get("success").getAsBoolean()) {
+                            Log.e(TAG, "Categories API returned success=false");
+                            loadBooks(); // Load books anyway
+                            return;
+                        }
+                        
+                        com.google.gson.JsonElement dataElement = jsonResponse.get("data");
+                        if (dataElement == null || !dataElement.isJsonObject()) {
+                            Log.w(TAG, "Data element is null or not an object");
+                            loadBooks(); // Load books anyway
+                            return;
+                        }
+                        
+                        com.google.gson.JsonObject dataObj = dataElement.getAsJsonObject();
+                        com.google.gson.JsonElement categoriesElement = dataObj.get("categories");
+                        
+                        if (categoriesElement != null && categoriesElement.isJsonObject()) {
+                            com.google.gson.JsonObject categoriesObj = categoriesElement.getAsJsonObject();
+                            categoryMap.clear();
                             
-                            if (categoriesElement != null && categoriesElement.isJsonObject()) {
-                                com.google.gson.JsonObject categoriesObj = categoriesElement.getAsJsonObject();
-                                categoryMap.clear();
-                                for (String key : categoriesObj.keySet()) {
-                                    try {
-                                        com.google.gson.JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
-                                        int categoryId = Integer.parseInt(key);
-                                        String categoryName = catJson.has("name") ? catJson.get("name").getAsString() : "Unknown";
-                                        categoryMap.put(categoryId, categoryName);
-                                    } catch (Exception e) {
-                                        // Skip invalid categories
+                            for (String key : categoriesObj.keySet()) {
+                                try {
+                                    com.google.gson.JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
+                                    int categoryId;
+                                    
+                                    // Try to get ID from _id field first, fallback to key
+                                    if (catJson.has("_id")) {
+                                        try {
+                                            com.google.gson.JsonElement idElement = catJson.get("_id");
+                                            if (idElement.isJsonPrimitive()) {
+                                                if (idElement.getAsJsonPrimitive().isNumber()) {
+                                                    categoryId = idElement.getAsInt();
+                                                } else {
+                                                    // Try parsing as string
+                                                    categoryId = Integer.parseInt(idElement.getAsString());
+                                                }
+                                            } else {
+                                                categoryId = Integer.parseInt(key);
+                                            }
+                                        } catch (Exception e) {
+                                            Log.w(TAG, "Failed to parse _id for key " + key + ", using key as ID: " + e.getMessage());
+                                            categoryId = Integer.parseInt(key);
+                                        }
+                                    } else {
+                                        categoryId = Integer.parseInt(key);
                                     }
-                                }
-                                Log.d(TAG, "Loaded " + categoryMap.size() + " categories for mapping");
-                                
-                                // If books are already loaded, update their category names
-                                if (!allBooksList.isEmpty()) {
-                                    mapCategoryNamesToBooks(allBooksList);
-                                    bookList = new ArrayList<>(allBooksList);
-                                    bookAdapter.updateBookList(bookList);
+                                    
+                                    String categoryName = null;
+                                    if (catJson.has("name")) {
+                                        com.google.gson.JsonElement nameElement = catJson.get("name");
+                                        if (!nameElement.isJsonNull()) {
+                                            categoryName = nameElement.getAsString();
+                                        }
+                                    }
+                                    
+                                    if (categoryName != null && !categoryName.isEmpty()) {
+                                        categoryMap.put(categoryId, categoryName);
+                                        Log.d(TAG, "✓ Category parsed: ID=" + categoryId + " (key=" + key + ") -> Name='" + categoryName + "'");
+                                    } else {
+                                        Log.w(TAG, "⚠ Category key=" + key + " has no name, skipping");
+                                    }
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Failed to parse category " + key + ": " + e.getMessage());
                                 }
                             }
+                            
+                            Log.d(TAG, "Loaded " + categoryMap.size() + " categories for mapping");
+                            Log.d(TAG, "Category IDs in map: " + categoryMap.keySet());
+                            categoriesLoaded = true;
+                        } else {
+                            Log.w(TAG, "Categories element is not an object or is null");
+                            categoriesLoaded = true; // Mark as loaded even if empty
                         }
+                        
+                        // Always load books after attempting to load categories
+                        if (!allBooksList.isEmpty()) {
+                            // Books already loaded, just update category names
+                            Log.d(TAG, "Books already loaded, mapping category names now...");
+                            Log.d(TAG, "Category map before mapping: " + categoryMap);
+                            mapCategoryNamesToBooks(allBooksList);
+                            // Force update adapter to refresh display
+                            bookList = new ArrayList<>(allBooksList);
+                            if (bookAdapter != null) {
+                                bookAdapter.updateBookList(bookList);
+                                updateListView();
+                            }
+                        } else {
+                            // Categories loaded (or failed), now load books
+                            Log.d(TAG, "Categories loaded (size: " + categoryMap.size() + "), now loading books...");
+                            loadBooks();
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error reading response body: " + e.getMessage());
+                        // Load books anyway
+                        loadBooks();
                     } catch (Exception e) {
                         Log.e(TAG, "Error parsing categories: " + e.getMessage());
+                        // Load books anyway
+                        loadBooks();
                     }
+                } else {
+                    Log.e(TAG, "Failed to load categories - HTTP " + response.code());
+                    // Load books anyway (they will show Unknown Category)
+                    loadBooks();
                 }
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.e(TAG, "Failed to load categories: " + t.getMessage());
+                // Even if categories fail, still load books (they will show Unknown Category)
+                Log.w(TAG, "Categories load failed, loading books anyway...");
+                loadBooks();
             }
         });
     }
 
     private void mapCategoryNamesToBooks(List<Book> books) {
+        Log.d(TAG, "=== Mapping category names ===");
+        Log.d(TAG, "Books to map: " + books.size());
+        Log.d(TAG, "Category map size: " + categoryMap.size());
+        Log.d(TAG, "Category map keys: " + categoryMap.keySet());
+        
+        int mappedCount = 0;
+        int unknownCount = 0;
+        
         for (Book book : books) {
             if (book != null) {
+                // Book có category ID (int), không phải category name
                 int categoryId = book.getCategory();
-                String categoryName = categoryMap.get(categoryId);
-                if (categoryName != null) {
+                
+                // Try multiple lookup strategies
+                String categoryName = null;
+                
+                // Strategy 1: Direct lookup by int key
+                categoryName = categoryMap.get(categoryId);
+                
+                // Strategy 2: If not found, try looking up by Integer object
+                if (categoryName == null || categoryName.isEmpty()) {
+                    categoryName = categoryMap.get(Integer.valueOf(categoryId));
+                }
+                
+                // Strategy 3: If still not found, iterate through all keys to find match
+                if ((categoryName == null || categoryName.isEmpty()) && !categoryMap.isEmpty()) {
+                    for (Integer key : categoryMap.keySet()) {
+                        if (key != null && key.intValue() == categoryId) {
+                            categoryName = categoryMap.get(key);
+                            Log.d(TAG, "Found category by iteration: key=" + key + ", value=" + categoryName);
+                            break;
+                        }
+                    }
+                }
+                
+                if (categoryName != null && !categoryName.isEmpty()) {
                     book.setCategoryName(categoryName);
+                    mappedCount++;
+                    Log.d(TAG, "✓ Book: '" + book.getTitle() + "' -> Category ID " + categoryId + " = '" + categoryName + "'");
                 } else {
-                    book.setCategoryName("Unknown Category (" + categoryId + ")");
+                    unknownCount++;
+                    // Log để debug
+                    Log.w(TAG, "✗ Category not found for book: '" + book.getTitle() + 
+                          "', categoryId: " + categoryId + 
+                          ", map size: " + categoryMap.size());
+                    if (!categoryMap.isEmpty()) {
+                        Log.d(TAG, "Available category IDs in map: " + categoryMap.keySet());
+                        Log.d(TAG, "Category ID " + categoryId + " type: " + (categoryId != 0 ? "non-zero int" : "zero"));
+                        // Check if there's type mismatch - try all possible matches
+                        boolean found = false;
+                        for (Integer key : categoryMap.keySet()) {
+                            if (key != null) {
+                                if (key.intValue() == categoryId) {
+                                    Log.d(TAG, "Found matching value: " + key + " (Integer) == " + categoryId + " (int)");
+                                    found = true;
+                                    // Force set the name if we found a match
+                                    String foundName = categoryMap.get(key);
+                                    if (foundName != null) {
+                                        book.setCategoryName(foundName);
+                                        mappedCount++;
+                                        unknownCount--;
+                                        Log.d(TAG, "✓ Force mapped: " + book.getTitle() + " -> " + foundName);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (!found) {
+                            Log.w(TAG, "Category ID " + categoryId + " does not exist in map. Map contents: " + categoryMap);
+                        }
+                    } else {
+                        Log.w(TAG, "Category map is EMPTY! Categories may not be loaded yet.");
+                    }
+                    // Don't set "Unknown Category" - leave it null so adapter can handle it
+                    // The adapter will show the category ID if name is not available
+                    if (book.getCategoryName() == null || book.getCategoryName().isEmpty() || book.getCategoryName().contains("Unknown")) {
+                        book.setCategoryName(null); // Set to null, not "Unknown Category"
+                    }
                 }
             }
         }
+        
+        Log.d(TAG, "=== Mapping complete: " + mappedCount + " mapped, " + unknownCount + " unknown ===");
     }
 
     private void loadBooks() {

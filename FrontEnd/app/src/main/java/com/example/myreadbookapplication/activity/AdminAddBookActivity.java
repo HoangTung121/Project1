@@ -41,6 +41,8 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import okhttp3.ResponseBody;
+import java.io.IOException;
 
 public class AdminAddBookActivity extends AppCompatActivity {
 
@@ -235,11 +237,11 @@ public class AdminAddBookActivity extends AppCompatActivity {
                         if (response.errorBody() != null) {
                             String errorBody = response.errorBody().string();
                             Log.e(TAG, "Add book error: " + errorBody);
-                            msg += "\n" + errorBody;
+                            msg += "\n Link ảnh không hợp lệ";
                         } else if (response.body() != null) {
                             String errorMsg = response.body().getMessage();
-                            Log.e(TAG, "Add book error message: " + errorMsg);
-                            msg += ": " + errorMsg;
+                            Log.e(TAG, "Add book error: " + errorMsg);
+                            msg += "\n Link sách không hợp ệ";
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "Error parsing error response: " + e.getMessage());
@@ -260,95 +262,144 @@ public class AdminAddBookActivity extends AppCompatActivity {
 
     private void loadCategories() {
         progressBar.setVisibility(View.VISIBLE);
-        apiService.getCategories("active").enqueue(new Callback<ApiResponse<CategoriesResponse>>() {
+        // Use getCategoriesRawBody to avoid Gson parse error with object format
+        apiService.getCategoriesRawBody("active").enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<ApiResponse<CategoriesResponse>> call, Response<ApiResponse<CategoriesResponse>> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 progressBar.setVisibility(View.GONE);
-                if (!response.isSuccessful() || response.body() == null || !response.body().isSuccess()) {
-                    Toast.makeText(AdminAddBookActivity.this, "Failed to load categories", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                // Try direct parse first (like CategoryActivity does)
-                CategoriesResponse data = response.body().getData();
-                List<Category> parsedCategories = new ArrayList<>();
                 
-                if (data != null && data.getCategories() != null && !data.getCategories().isEmpty()) {
-                    parsedCategories = data.getCategories();
-                    Log.d(TAG, "Parsed categories as array: " + parsedCategories.size());
-                } else {
-                    // If direct parse fails, try parsing object format
-                    Log.d(TAG, "Direct parse failed, trying object format...");
-                    Object dataObj = response.body().getData();
-                    
-                    if (dataObj != null) {
-                        try {
-                            Gson gson = new Gson();
-                            String dataJson = gson.toJson(dataObj);
-                            Log.d(TAG, "Data JSON: " + dataJson);
-                            JsonObject jsonData = JsonParser.parseString(dataJson).getAsJsonObject();
-                            JsonElement categoriesElement = jsonData.get("categories");
-                            
-                            if (categoriesElement != null && categoriesElement.isJsonObject()) {
-                                // Parse Firebase object format: {"1": {...}, "2": {...}}
-                                Log.d(TAG, "Parsing as object format");
-                                JsonObject categoriesObj = categoriesElement.getAsJsonObject();
-                                for (String key : categoriesObj.keySet()) {
-                                    try {
-                                        JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
-                                        Category category = gson.fromJson(catJson, Category.class);
-                                        if (category != null) {
-                                            category.setId(Integer.parseInt(key)); // Set ID từ key
+                if (response.isSuccessful() && response.body() != null) {
+                    try {
+                        String responseString = response.body().string();
+                        Log.d(TAG, "Response string length: " + responseString.length());
+                        
+                        Gson gson = new Gson();
+                        JsonObject jsonResponse = JsonParser.parseString(responseString).getAsJsonObject();
+                        
+                        // Check success
+                        if (!jsonResponse.has("success") || !jsonResponse.get("success").getAsBoolean()) {
+                            String errorMsg = jsonResponse.has("message") ? 
+                                jsonResponse.get("message").getAsString() : "Failed to load categories";
+                            Log.e(TAG, errorMsg);
+                            Toast.makeText(AdminAddBookActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        // Get data object
+                        JsonElement dataElement = jsonResponse.get("data");
+                        if (dataElement == null || !dataElement.isJsonObject()) {
+                            Log.w(TAG, "Data element is null or not an object");
+                            Toast.makeText(AdminAddBookActivity.this, "No categories data", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        JsonObject dataObj = dataElement.getAsJsonObject();
+                        JsonElement categoriesElement = dataObj.get("categories");
+                        
+                        List<Category> parsedCategories = new ArrayList<>();
+                        
+                        if (categoriesElement != null && categoriesElement.isJsonObject()) {
+                            // Parse Firebase object format: {"2": {...}, "3": {...}}
+                            Log.d(TAG, "Parsing categories as object format");
+                            JsonObject categoriesObj = categoriesElement.getAsJsonObject();
+                            for (String key : categoriesObj.keySet()) {
+                                try {
+                                    JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
+                                    Category category = gson.fromJson(catJson, Category.class);
+                                    if (category != null) {
+                                        // Set ID từ key nếu chưa có hoặc là 0
+                                        if (category.getId() == 0) {
+                                            try {
+                                                category.setId(Integer.parseInt(key));
+                                            } catch (NumberFormatException e) {
+                                                Log.w(TAG, "Cannot parse key as ID: " + key);
+                                                continue;
+                                            }
+                                        }
+                                        // Only add active categories
+                                        if ("active".equals(category.getStatus())) {
                                             parsedCategories.add(category);
                                         }
-                                    } catch (Exception e) {
-                                        Log.w(TAG, "Failed to parse category " + key);
                                     }
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Failed to parse category " + key + ": " + e.getMessage());
                                 }
-                            } else if (categoriesElement != null && categoriesElement.isJsonArray()) {
-                                // Parse as array
-                                parsedCategories = gson.fromJson(categoriesElement, new TypeToken<List<Category>>(){}.getType());
                             }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error parsing categories: " + e.getMessage());
+                            Log.d(TAG, "Parsed " + parsedCategories.size() + " categories from object format");
+                        } else if (categoriesElement != null && categoriesElement.isJsonArray()) {
+                            // Parse as array
+                            parsedCategories = gson.fromJson(categoriesElement, new TypeToken<List<Category>>(){}.getType());
+                            // Filter active only
+                            parsedCategories.removeIf(c -> c == null || !"active".equals(c.getStatus()));
+                            Log.d(TAG, "Parsed " + parsedCategories.size() + " categories as array");
+                        } else {
+                            Log.w(TAG, "Categories element is null or invalid format");
                         }
+                        
+                        if (parsedCategories.isEmpty()) {
+                            Toast.makeText(AdminAddBookActivity.this, "No categories available", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        
+                        categoryNames.clear();
+                        categoryIds.clear();
+                        for (Category c : parsedCategories) {
+                            if (c == null) continue;
+                            String name = c.getName();
+                            int id;
+                            try { 
+                                id = c.getId(); 
+                            } catch (Exception e) { 
+                                continue; 
+                            }
+                            if (name == null || name.trim().isEmpty()) continue;
+                            categoryNames.add(name);
+                            categoryIds.add(id);
+                        }
+                        
+                        // Update spinner adapter
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(AdminAddBookActivity.this, 
+                            android.R.layout.simple_spinner_dropdown_item, categoryNames);
+                        spCategory.setAdapter(adapter);
+                        
+                        if (!categoryIds.isEmpty()) {
+                            spCategory.setSelection(0);
+                        }
+                        
+                        // Update button state after categories loaded
+                        updateButtonState();
+                        Log.d(TAG, "Categories loaded: " + categoryIds.size() + " categories");
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error reading response body: " + e.getMessage(), e);
+                        Toast.makeText(AdminAddBookActivity.this, "Error reading response", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing response: " + e.getMessage(), e);
+                        Toast.makeText(AdminAddBookActivity.this, "Error parsing response: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
+                } else {
+                    Log.e(TAG, "Load categories failed - HTTP " + response.code());
+                    String errorMsg = "Failed to load categories (HTTP " + response.code() + ")";
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error body: " + errorBody);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing error response: " + e.getMessage());
+                    }
+                    Toast.makeText(AdminAddBookActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
                 }
-                
-                if (parsedCategories.isEmpty()) {
-                    Toast.makeText(AdminAddBookActivity.this, "No categories", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                
-                categoryNames.clear();
-                categoryIds.clear();
-                for (Category c : parsedCategories) {
-                    if (c == null) continue;
-                    String name = c.getName();
-                    int id;
-                    try { id = c.getId(); } catch (Exception e) { continue; }
-                    if (name == null || name.trim().isEmpty()) continue;
-                    categoryNames.add(name);
-                    categoryIds.add(id);
-                }
-                
-                // Update spinner adapter
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(AdminAddBookActivity.this, 
-                    android.R.layout.simple_spinner_dropdown_item, categoryNames);
-                spCategory.setAdapter(adapter);
-                
-                if (!categoryIds.isEmpty()) {
-                    spCategory.setSelection(0);
-                }
-                
-                // Update button state after categories loaded
-                updateButtonState();
-                Log.d(TAG, "Categories loaded: " + categoryIds.size() + " categories");
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<CategoriesResponse>> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(AdminAddBookActivity.this, "Failed to load categories: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Load categories network error: " + t.getMessage(), t);
+                String errorMsg = "Network error";
+                if (t.getMessage() != null) {
+                    errorMsg += ": " + t.getMessage();
+                }
+                Toast.makeText(AdminAddBookActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }
