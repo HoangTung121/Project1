@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for readingbook-api-cold-hill-3738 on 2025-10-30T23:17:07+07:00
+# fly.toml app configuration file generated for fliply-book on 2025-11-03T23:02:49+07:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'fliply'
+app = 'fliply-book'
 primary_region = 'sin'
 
 [build]
@@ -11,6 +11,7 @@ primary_region = 'sin'
 [env]
   NODE_ENV = 'production'
   PORT = '3000'
+  APP_HOST = '0.0.0.0'
 
 [http_service]
   internal_port = 3000
