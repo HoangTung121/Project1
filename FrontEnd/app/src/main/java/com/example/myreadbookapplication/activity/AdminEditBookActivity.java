@@ -37,6 +37,8 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import okhttp3.ResponseBody;
+import java.io.IOException;
 
 public class AdminEditBookActivity extends AppCompatActivity {
 
@@ -263,74 +265,88 @@ public class AdminEditBookActivity extends AppCompatActivity {
     }
 
     private void loadCategoriesAndSelect(final int currentCategoryId) {
-        apiService.getCategories("active").enqueue(new Callback<com.example.myreadbookapplication.model.ApiResponse<CategoriesResponse>>() {
+        apiService.getCategoriesRawBody("active").enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<com.example.myreadbookapplication.model.ApiResponse<CategoriesResponse>> call, Response<com.example.myreadbookapplication.model.ApiResponse<CategoriesResponse>> response) {
-                if (!response.isSuccessful() || response.body() == null || !response.body().isSuccess()) return;
-                // Try direct parse first (like CategoryActivity does)
-                CategoriesResponse data = response.body().getData();
-                List<Category> parsedCategories = new ArrayList<>();
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (!response.isSuccessful() || response.body() == null) return;
                 
-                if (data != null && data.getCategories() != null && !data.getCategories().isEmpty()) {
-                    parsedCategories = data.getCategories();
-                } else {
-                    // If direct parse fails, try parsing object format
-                    Object dataObj = response.body().getData();
+                try {
+                    String responseString = response.body().string();
+                    Gson gson = new Gson();
+                    JsonObject jsonResponse = JsonParser.parseString(responseString).getAsJsonObject();
                     
-                    if (dataObj != null) {
-                        try {
-                            Gson gson = new Gson();
-                            String dataJson = gson.toJson(dataObj);
-                            JsonObject jsonData = JsonParser.parseString(dataJson).getAsJsonObject();
-                            JsonElement categoriesElement = jsonData.get("categories");
-                            
-                            if (categoriesElement != null && categoriesElement.isJsonObject()) {
-                                // Parse Firebase object format: {"1": {...}, "2": {...}}
-                                JsonObject categoriesObj = categoriesElement.getAsJsonObject();
-                                for (String key : categoriesObj.keySet()) {
-                                    try {
-                                        JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
-                                        Category category = gson.fromJson(catJson, Category.class);
-                                        if (category != null) {
-                                            category.setId(Integer.parseInt(key)); // Set ID từ key
-                                            parsedCategories.add(category);
+                    if (!jsonResponse.has("success") || !jsonResponse.get("success").getAsBoolean()) return;
+                    
+                    JsonElement dataElement = jsonResponse.get("data");
+                    if (dataElement == null || !dataElement.isJsonObject()) return;
+                    
+                    JsonObject dataObj = dataElement.getAsJsonObject();
+                    JsonElement categoriesElement = dataObj.get("categories");
+                    
+                    List<Category> parsedCategories = new ArrayList<>();
+                    
+                    if (categoriesElement != null && categoriesElement.isJsonObject()) {
+                        JsonObject categoriesObj = categoriesElement.getAsJsonObject();
+                        for (String key : categoriesObj.keySet()) {
+                            try {
+                                JsonObject catJson = categoriesObj.get(key).getAsJsonObject();
+                                Category category = gson.fromJson(catJson, Category.class);
+                                if (category != null) {
+                                    if (category.getId() == 0) {
+                                        try {
+                                            category.setId(Integer.parseInt(key));
+                                        } catch (NumberFormatException e) {
+                                            continue;
                                         }
-                                    } catch (Exception e) {
-                                        // Ignore parse errors
+                                    }
+                                    if ("active".equals(category.getStatus())) {
+                                        parsedCategories.add(category);
                                     }
                                 }
-                            } else if (categoriesElement != null && categoriesElement.isJsonArray()) {
-                                // Parse as array
-                                parsedCategories = gson.fromJson(categoriesElement, new TypeToken<List<Category>>(){}.getType());
+                            } catch (Exception e) {
+                                // Ignore parse errors
                             }
-                        } catch (Exception e) {
-                            // Ignore parse errors
                         }
+                    } else if (categoriesElement != null && categoriesElement.isJsonArray()) {
+                        parsedCategories = gson.fromJson(categoriesElement, new TypeToken<List<Category>>(){}.getType());
+                        parsedCategories.removeIf(c -> c == null || !"active".equals(c.getStatus()));
                     }
+                    
+                    categoryNames.clear();
+                    categoryIds.clear();
+                    for (Category c : parsedCategories) {
+                        if (c == null) continue;
+                        String name = c.getName();
+                        int id;
+                        try { 
+                            id = c.getId(); 
+                        } catch (Exception e) { 
+                            continue; 
+                        }
+                        if (name == null || name.trim().isEmpty()) continue;
+                        categoryNames.add(name);
+                        categoryIds.add(id);
+                    }
+                    
+                    ArrayAdapter<String> adapter = (ArrayAdapter<String>) spCategory.getAdapter();
+                    if (adapter != null) {
+                        adapter.notifyDataSetChanged();
+                    }
+                    int index = categoryIds.indexOf(currentCategoryId);
+                    if (index >= 0) {
+                        spCategory.setSelection(index);
+                    } else if (!categoryIds.isEmpty()) {
+                        spCategory.setSelection(0);
+                    }
+                    
+                    updateButtonState();
+                } catch (Exception e) {
+                    // Ignore parse errors silently
                 }
-                
-                categoryNames.clear();
-                categoryIds.clear();
-                for (Category c : parsedCategories) {
-                    if (c == null) continue;
-                    String name = c.getName();
-                    int id;
-                    try { id = c.getId(); } catch (Exception e) { continue; }
-                    if (name == null || name.trim().isEmpty()) continue;
-                    categoryNames.add(name);
-                    categoryIds.add(id);
-                }
-                ArrayAdapter<String> adapter = (ArrayAdapter<String>) spCategory.getAdapter();
-                adapter.notifyDataSetChanged();
-                int index = categoryIds.indexOf(currentCategoryId);
-                if (index >= 0) spCategory.setSelection(index); else if (!categoryIds.isEmpty()) spCategory.setSelection(0);
-                
-                // Update button state after categories are loaded
-                updateButtonState();
             }
 
             @Override
-            public void onFailure(Call<com.example.myreadbookapplication.model.ApiResponse<CategoriesResponse>> call, Throwable t) { }
+            public void onFailure(Call<ResponseBody> call, Throwable t) { }
         });
     }
 }

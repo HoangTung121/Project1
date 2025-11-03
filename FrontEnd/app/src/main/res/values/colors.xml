@@ -5,6 +5,7 @@
     <color name="gray_light">#FF999999</color>
     <color name="gray_blur">#4B999999</color>
     <color name="red_title">#FFE65C4B</color>
+    <color name="ping_blur">#CDE65C4B</color>
     <color name="ping">#FFE65C4B</color>
     
     <!-- Pagination Colors -->

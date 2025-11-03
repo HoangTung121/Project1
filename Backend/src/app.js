@@ -93,7 +93,7 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       api: '/api',
-      docs: 'https://github.com/your-repo/docs'
+      docs: 'https://github.com/HoangTung121/Project1'
     },
     timestamp: new Date().toISOString()
   })
