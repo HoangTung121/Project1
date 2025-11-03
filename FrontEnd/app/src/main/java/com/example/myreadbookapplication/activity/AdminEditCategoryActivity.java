@@ -62,30 +62,11 @@ public class AdminEditCategoryActivity extends AppCompatActivity {
             return;
         }
 
-        try {
-            currentCategory = (Category) intent.getSerializableExtra(EXTRA_CATEGORY);
-            if (currentCategory == null) {
-                Toast.makeText(this, "Invalid category data", Toast.LENGTH_SHORT).show();
-                finish();
-                return;
-            }
-            
-            // Validate category has valid ID
-            if (currentCategory.getId() <= 0) {
-                Toast.makeText(this, "Invalid category ID", Toast.LENGTH_SHORT).show();
-                finish();
-                return;
-            }
-            
-            btnUpdate.setText("UPDATE");
-            if (tvTitle != null) tvTitle.setText("Edit category");
-            populateFields();
-            updateButtonState();
-        } catch (Exception e) {
-            android.util.Log.e("AdminEditCategory", "Error loading category: " + e.getMessage(), e);
-            Toast.makeText(this, "Error loading category: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            finish();
-        }
+        currentCategory = (Category) intent.getSerializableExtra(EXTRA_CATEGORY);
+        btnUpdate.setText("UPDATE");
+        if (tvTitle != null) tvTitle.setText("Edit category");
+        populateFields();
+        updateButtonState();
     }
 
     private void initViews() {
@@ -156,12 +137,6 @@ public class AdminEditCategoryActivity extends AppCompatActivity {
             return;
         }
 
-        int categoryId = currentCategory.getId();
-        if (categoryId <= 0) {
-            Toast.makeText(this, "Invalid category ID", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         progressBar.setVisibility(View.VISIBLE);
         btnUpdate.setEnabled(false);
 
@@ -172,31 +147,48 @@ public class AdminEditCategoryActivity extends AppCompatActivity {
         req.name = name;
         req.image_url = imageUrl.isEmpty() ? "" : imageUrl;
 
-        android.util.Log.d("AdminEditCategory", "Updating category ID: " + categoryId);
+        int categoryId = currentCategory.getId();
+        android.util.Log.d("AdminEditCategory", "Updating category - ID: " + categoryId + ", Name: " + name);
+        
         apiService.updateCategory(categoryId, req, "Bearer " + token).enqueue(new Callback<ApiResponse<Category>>() {
             @Override
             public void onResponse(Call<ApiResponse<Category>> call, Response<ApiResponse<Category>> response) {
                 progressBar.setVisibility(View.GONE);
                 btnUpdate.setEnabled(true);
                 
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                    Toast.makeText(AdminEditCategoryActivity.this, "Category updated!", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_CATEGORY_UPDATED);
-                    finish();
+                if (response.isSuccessful()) {
+                    if (response.body() != null && response.body().isSuccess()) {
+                        Toast.makeText(AdminEditCategoryActivity.this, "Category updated successfully!", Toast.LENGTH_SHORT).show();
+                        setResult(RESULT_CATEGORY_UPDATED);
+                        finish();
+                    } else {
+                        String msg = "Update failed";
+                        if (response.body() != null && response.body().getMessage() != null) {
+                            msg = response.body().getMessage();
+                        }
+                        Toast.makeText(AdminEditCategoryActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    }
                 } else {
-                    String msg = "Update failed";
+                    String msg = "Update failed (HTTP " + response.code() + ")";
                     try {
                         if (response.errorBody() != null) {
                             String errorBody = response.errorBody().string();
-                            msg += ": " + errorBody;
-                            android.util.Log.e("AdminEditCategory", "Update error: " + errorBody);
-                        } else if (response.body() != null) {
-                            msg += ": " + response.body().getMessage();
-                            android.util.Log.e("AdminEditCategory", "Update failed: " + response.body().getMessage());
+                            android.util.Log.e("AdminEditCategory", "Error response: " + errorBody);
+                            // Try to extract message from JSON error
+                            if (errorBody.contains("message")) {
+                                int msgStart = errorBody.indexOf("\"message\"");
+                                if (msgStart > 0) {
+                                    int colonIdx = errorBody.indexOf(":", msgStart);
+                                    int quoteStart = errorBody.indexOf("\"", colonIdx);
+                                    int quoteEnd = errorBody.indexOf("\"", quoteStart + 1);
+                                    if (quoteStart > 0 && quoteEnd > quoteStart) {
+                                        msg = errorBody.substring(quoteStart + 1, quoteEnd);
+                                    }
+                                }
+                            }
                         }
-                        android.util.Log.e("AdminEditCategory", "Response code: " + response.code());
                     } catch (Exception e) {
-                        android.util.Log.e("AdminEditCategory", "Error parsing error body", e);
+                        android.util.Log.e("AdminEditCategory", "Error parsing: " + e.getMessage());
                     }
                     Toast.makeText(AdminEditCategoryActivity.this, msg, Toast.LENGTH_SHORT).show();
                 }
@@ -206,8 +198,12 @@ public class AdminEditCategoryActivity extends AppCompatActivity {
             public void onFailure(Call<ApiResponse<Category>> call, Throwable t) {
                 progressBar.setVisibility(View.GONE);
                 btnUpdate.setEnabled(true);
-                android.util.Log.e("AdminEditCategory", "Network error", t);
-                Toast.makeText(AdminEditCategoryActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                android.util.Log.e("AdminEditCategory", "Network error: " + t.getMessage(), t);
+                String errorMsg = "Network error";
+                if (t.getMessage() != null) {
+                    errorMsg += ": " + t.getMessage();
+                }
+                Toast.makeText(AdminEditCategoryActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }

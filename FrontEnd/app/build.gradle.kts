@@ -15,7 +15,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "BASE_URL", "\"http://192.168.1.232:9000/\"")
+        buildConfigField("String", "BASE_URL", "\"https://readingbook-api-cold-hill-3738.fly.dev/\"")
     }
 
     buildTypes {

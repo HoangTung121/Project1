@@ -6,7 +6,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -20,6 +19,7 @@ public class AdminAccountActivity extends AppCompatActivity {
 
     private static final String TAG = "AdminAccountActivity";
     private TextView tvEmail;
+    private TextView tvAvatarInitial;
     private LinearLayout tvChangePassword;
     private LinearLayout tvSignOut;
     private LinearLayout navCategory;
@@ -46,6 +46,7 @@ public class AdminAccountActivity extends AppCompatActivity {
 
     private void initViews() {
         tvEmail = findViewById(R.id.tv_email);
+        tvAvatarInitial = findViewById(R.id.tv_avatar_initial);
         tvChangePassword = findViewById(R.id.tv_change_password);
         tvSignOut = findViewById(R.id.tv_sign_out);
         
@@ -95,8 +96,16 @@ public class AdminAccountActivity extends AppCompatActivity {
         String email = authManager.getUserEmail();
         if (email != null && !email.isEmpty()) {
             tvEmail.setText(email);
+            // Set avatar initial from first letter of email
+            String initial = email.substring(0, 1).toUpperCase();
+            if (tvAvatarInitial != null) {
+                tvAvatarInitial.setText(initial);
+            }
         } else {
-            tvEmail.setText("Admin");
+            tvEmail.setText("admin@example.com");
+            if (tvAvatarInitial != null) {
+                tvAvatarInitial.setText("A");
+            }
         }
     }
 }

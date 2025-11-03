@@ -34,6 +34,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Path;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
+import okhttp3.ResponseBody;
 
 // EPUB models
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubUrlRequest;
@@ -79,11 +80,19 @@ public interface ApiService {
 
     //category
     @GET("api/categories")
-    Call<ApiResponse<CategoriesResponse>> getCategories(@Query("status") String status); //status=active or inactive ?
+    Call<ApiResponse<CategoriesResponse>> getCategories(@Query("status") String status); //status=active or inactive, pass null to get all
+    
+    //category - Admin: Get all categories (no status filter)
+    @GET("api/categories")
+    Call<ResponseBody> getAllCategoriesRaw();
     
     //category - raw response for manual parsing
     @GET("api/categories")
     Call<ApiResponse<Object>> getCategoriesRaw(@Query("status") String status);
+    
+    //category - raw ResponseBody for manual parsing (to avoid Gson parse error)
+    @GET("api/categories")
+    Call<ResponseBody> getCategoriesRawBody(@Query("status") String status);
 
     //book
     @GET("api/books")

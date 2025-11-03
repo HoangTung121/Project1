@@ -129,20 +129,42 @@ public class AdminAddCategoryActivity extends AppCompatActivity {
             public void onResponse(Call<ApiResponse<Category>> call, Response<ApiResponse<Category>> response) {
                 progressBar.setVisibility(View.GONE);
                 btnAdd.setEnabled(true);
-                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                    Toast.makeText(AdminAddCategoryActivity.this, "Category added successfully!", Toast.LENGTH_SHORT).show();
-                    Intent resultIntent = new Intent();
-                    setResult(RESULT_CATEGORY_ADDED, resultIntent);
-                    finish();
+                
+                if (response.isSuccessful()) {
+                    if (response.body() != null && response.body().isSuccess()) {
+                        Toast.makeText(AdminAddCategoryActivity.this, "Category added successfully!", Toast.LENGTH_SHORT).show();
+                        Intent resultIntent = new Intent();
+                        setResult(RESULT_CATEGORY_ADDED, resultIntent);
+                        finish();
+                    } else {
+                        String msg = "Add failed";
+                        if (response.body() != null && response.body().getMessage() != null) {
+                            msg = response.body().getMessage();
+                        }
+                        Toast.makeText(AdminAddCategoryActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    }
                 } else {
-                    String msg = "Add failed !";
+                    String msg = "Add failed (HTTP " + response.code() + ")";
                     try {
                         if (response.errorBody() != null) {
-                            msg += ": " + response.errorBody().string();
-                        } else if (response.body() != null) {
-                            msg += ": " + response.body().getMessage();
+                            String errorBody = response.errorBody().string();
+                            android.util.Log.e("AdminAddCategory", "Error response: " + errorBody);
+                            // Try to extract message from JSON error
+                            if (errorBody.contains("message")) {
+                                int msgStart = errorBody.indexOf("\"message\"");
+                                if (msgStart > 0) {
+                                    int colonIdx = errorBody.indexOf(":", msgStart);
+                                    int quoteStart = errorBody.indexOf("\"", colonIdx);
+                                    int quoteEnd = errorBody.indexOf("\"", quoteStart + 1);
+                                    if (quoteStart > 0 && quoteEnd > quoteStart) {
+                                        msg = errorBody.substring(quoteStart + 1, quoteEnd);
+                                    }
+                                }
+                            }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        android.util.Log.e("AdminAddCategory", "Error parsing: " + e.getMessage());
+                    }
                     Toast.makeText(AdminAddCategoryActivity.this, msg, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -151,7 +173,12 @@ public class AdminAddCategoryActivity extends AppCompatActivity {
             public void onFailure(Call<ApiResponse<Category>> call, Throwable t) {
                 progressBar.setVisibility(View.GONE);
                 btnAdd.setEnabled(true);
-                Toast.makeText(AdminAddCategoryActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                android.util.Log.e("AdminAddCategory", "Network error: " + t.getMessage(), t);
+                String errorMsg = "Network error";
+                if (t.getMessage() != null) {
+                    errorMsg += ": " + t.getMessage();
+                }
+                Toast.makeText(AdminAddCategoryActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }
