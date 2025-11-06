@@ -62,19 +62,6 @@ app.use(
   })
 )
 
-// RATE LIMITING
-const limiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
-  message: {
-    success: false,
-    message: 'Too many requests from this IP, please try again later'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-})
-app.use(limiter)
-
 // REQUEST LOGGING
 app.use(successHandler)
 app.use(errorHandler)
@@ -99,7 +86,7 @@ app.get('/', (req, res) => {
   })
 })
 
-// HEALTH CHECK
+// HEALTH CHECK (before rate limiting to ensure availability)
 app.get('/health', (req, res) => {
   try {
     res.status(200).json({
@@ -136,6 +123,21 @@ app.get('/api/health', (req, res) => {
     })
   }
 })
+
+// RATE LIMITING (applied after health checks)
+const limiter = rateLimit({
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again later'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Skip rate limiting for health checks
+  skip: (req) => req.path === '/health' || req.path === '/api/health'
+})
+app.use(limiter)
 
 // API ROUTES
 app.use('/api/auth', authRoute)
