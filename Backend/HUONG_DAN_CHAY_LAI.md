@@ -283,6 +283,7 @@ flyctl tokens create deploy -x 999999h
 git add .
 git commit -m "Initial setup"
 git push origin main
+
 ```
 
 Pipeline sẽ tự động deploy!
