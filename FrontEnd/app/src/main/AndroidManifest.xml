@@ -16,43 +16,43 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".activity.FavoriteActivity"
+            android:name=".activity.User.FavoriteActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.HistoryActivity"
+            android:name=".activity.User.HistoryActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.BookActivity"
+            android:name=".activity.User.BookActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.CategoryActivity"
+            android:name=".activity.User.CategoryActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.NewPasswordActivity"
+            android:name=".activity.User.NewPasswordActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.ForgotPasswordActivity"
+            android:name=".activity.User.ForgotPasswordActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.HomeActivity"
+            android:name=".activity.User.HomeActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.SearchActivity"
+            android:name=".activity.User.SearchActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.VerificationActivity"
+            android:name=".activity.User.VerificationActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.SignUpActivity"
+            android:name=".activity.User.SignUpActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.SignInActivity"
+            android:name=".activity.User.SignInActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.ReadBookActivity"
+            android:name=".activity.User.ReadBookActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.IntroActivity"
+            android:name=".activity.User.IntroActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -61,46 +61,34 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activity.ProfileActivity"
+            android:name=".activity.User.ProfileActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.EditProfileActivity"
+            android:name=".activity.User.EditProfileActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.FeedbackActivity"
+            android:name=".activity.User.FeedbackActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.ContactActivity"
+            android:name=".activity.User.ContactActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.ChangePasswordActivity"
+            android:name=".activity.User.ChangePasswordActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.AdminMainActivity"
+            android:name=".activity.Admin.AdminMainActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.AdminCategoryActivity"
+            android:name=".activity.Admin.AdminAddCategoryActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.AdminAddCategoryActivity"
+            android:name=".activity.Admin.AdminEditCategoryActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.AdminEditCategoryActivity"
+            android:name=".activity.Admin.AdminAddBookActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.AdminBookActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activity.AdminAddBookActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activity.AdminEditBookActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activity.AdminFeedbackActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activity.AdminAccountActivity"
+            android:name=".activity.Admin.AdminEditBookActivity"
             android:exported="false" />
     </application>
 

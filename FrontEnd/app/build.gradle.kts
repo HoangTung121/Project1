@@ -15,22 +15,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "BASE_URL", "\"https://readingbook-api-cold-hill-3738.fly.dev/\"")
+        // Production URL (sẽ được override bởi buildTypes nếu cần)
+        buildConfigField("String", "BASE_URL", "\"https://fliply.fly.dev/\"")
     }
 
-    buildTypes {
-        debug {
-            isDebuggable = true
-            isMinifyEnabled = false
-        }
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

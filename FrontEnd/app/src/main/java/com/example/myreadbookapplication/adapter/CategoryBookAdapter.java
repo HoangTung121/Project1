@@ -16,7 +16,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.myreadbookapplication.R;
-import com.example.myreadbookapplication.activity.ReadBookActivity;
+import com.example.myreadbookapplication.activity.User.ReadBookActivity;
+import com.example.myreadbookapplication.activity.User.HistoryActivity;
 import com.example.myreadbookapplication.model.Book;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -198,8 +199,8 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
             try {
                 int bookId = Integer.parseInt(book.getId());
                 // Gọi HistoryActivity để xóa bookmark
-                if (context instanceof com.example.myreadbookapplication.activity.HistoryActivity) {
-                    ((com.example.myreadbookapplication.activity.HistoryActivity) context).deleteBookmark(bookId);
+                if (context instanceof HistoryActivity) {
+                    ((HistoryActivity) context).deleteBookmark(bookId);
                 }
             } catch (NumberFormatException e) {
                 Log.e("CategoryBookAdapter", "Invalid book ID: " + book.getId());
