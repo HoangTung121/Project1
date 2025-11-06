@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for fliply-book on 2025-11-03T23:02:49+07:00
+# fly.toml app configuration file generated for fliply-book on 2025-11-05T12:34:33+07:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -9,9 +9,9 @@ primary_region = 'sin'
 [build]
 
 [env]
+  APP_HOST = '0.0.0.0'
   NODE_ENV = 'production'
   PORT = '3000'
-  APP_HOST = '0.0.0.0'
 
 [http_service]
   internal_port = 3000
@@ -21,36 +21,12 @@ primary_region = 'sin'
   min_machines_running = 0
   processes = ['app']
 
-[[services]]
-  protocol = 'tcp'
-  internal_port = 3000
-  processes = ['app']
-
-  [[services.ports]]
-    port = 80
-    handlers = ['http']
-
-  [[services.ports]]
-    port = 443
-    handlers = ['tls', 'http']
-
-  [services.concurrency]
-    type = 'connections'
-    hard_limit = 200
-    soft_limit = 150
-
-  [[services.tcp_checks]]
-    interval = '15s'
-    timeout = '2s'
-    grace_period = '15s'
-
-  [[services.http_checks]]
+  [[http_service.checks]]
     interval = '30s'
-    timeout = '2s'
-    grace_period = '10s'
-    method = 'get'
+    timeout = '5s'
+    grace_period = '30s'
+    method = 'GET'
     path = '/health'
-    protocol = 'http'
 
 [[vm]]
   memory = '1gb'

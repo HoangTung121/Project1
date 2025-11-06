@@ -13,7 +13,6 @@
         android:layout_height="wrap_content"
         android:background="@color/white"
         android:paddingTop="60dp"
-        android:paddingBottom="20dp"
         android:orientation="vertical">
 
         <!-- Header content với layout cân đối -->
