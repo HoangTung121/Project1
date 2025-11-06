@@ -170,7 +170,11 @@ public class AuthManager {
         editor.putBoolean(KEY_IS_LOGGED_IN, false);
         editor.apply();
         
-        Log.d("AuthManager", "User logged out, all data cleared");
+        // Clear favorite_books trong app_prefs để tránh hiển thị sai icon yêu thích cho user mới
+        SharedPreferences appPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE);
+        appPrefs.edit().remove("favorite_books").apply();
+        
+        Log.d("AuthManager", "User logged out, all data cleared including favorites");
     }
     
     /**

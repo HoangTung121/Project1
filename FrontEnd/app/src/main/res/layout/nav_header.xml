@@ -117,9 +117,10 @@
             android:gravity="center">
 
             <TextView
+                android:id="@+id/tv_books_read_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="24"
+                android:text="0"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -150,9 +151,10 @@
             android:gravity="center">
 
             <TextView
+                android:id="@+id/tv_reading_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="156h"
+                android:text="0h"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -183,9 +185,10 @@
             android:gravity="center">
 
             <TextView
+                android:id="@+id/tv_favorites_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="8"
+                android:text="0"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold" />
