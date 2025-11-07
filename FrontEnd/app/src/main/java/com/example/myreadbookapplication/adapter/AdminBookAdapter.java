@@ -99,14 +99,9 @@ public class AdminBookAdapter extends RecyclerView.Adapter<AdminBookAdapter.Book
             }
             tvBookAuthor.setText("Author: " + author);
 
-            // Set category with format "Category: [name]"
-            String categoryName = book.getCategoryName();
-            if (categoryName == null || categoryName.isEmpty()) {
-                // Fallback to category ID if name not available
-                int categoryId = book.getCategory();
-                categoryName = categoryId > 0 ? "ID " + categoryId : "No Category";
-            }
-            tvBookCategory.setText("Category: " + categoryName);
+            // Set category with format "Category: [ID]" - hiển thị ID thay vì name
+            int categoryId = book.getCategory();
+            tvBookCategory.setText("Category: " + (categoryId > 0 ? String.valueOf(categoryId) : "N/A"));
 
             // Set up click listeners
             ivEdit.setOnClickListener(v -> {

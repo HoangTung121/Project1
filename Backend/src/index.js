@@ -1,19 +1,36 @@
+const http = require('http')
 const app = require('./app')
 const config = require('./config/config')
 const logger = require('./config/logger')
 
-// SERVER CONFIGURATION
-const host = config.app.host || '0.0.0.0'
+
 const port = process.env.PORT || config.app.port || 3000
 const prefix = config.app.prefix || ''
+// Always use 0.0.0.0 to bind to all interfaces
+const host = '0.0.0.0'
 
 let server = null
 
-// START SERVER
 const startServer = () => {
   try {
-    server = app.listen(port, host, () => {
-      logger.info(`🚀 Server running at http://${host}:${port}${prefix}`)
+    // Log configuration before starting
+    logger.info(`🔧 Server configuration: host=${host}, port=${port}, env=${process.env.NODE_ENV || config.env}`)
+    logger.info(`🔧 Environment variables: APP_HOST=${process.env.APP_HOST}, HOST=${process.env.HOST}, NODE_ENV=${process.env.NODE_ENV}`)
+
+    server = http.createServer(app)
+
+    server.listen(port, host, () => {
+      const address = server.address()
+      let actualHost = address.address
+      if (address.address === '::' || address.address === '0.0.0.0') {
+        actualHost = '0.0.0.0'
+      } else if (address.address === '127.0.0.1' || address.address === '::1') {
+        actualHost = '127.0.0.1'
+        logger.error(`❌ ERROR: Server bound to ${address.address} instead of 0.0.0.0! This will cause connectivity issues.`)
+        logger.error(`❌ Attempted to bind to: ${host}:${port}`)
+      }
+
+      logger.info(`🚀 Server running at http://${actualHost}:${address.port}${prefix}`)
       logger.info(`📦 Environment: ${config.env}`)
       logger.info(`⏰ Started at: ${new Date().toISOString()}`)
     })

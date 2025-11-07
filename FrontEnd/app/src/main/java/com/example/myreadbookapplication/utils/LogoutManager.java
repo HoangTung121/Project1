@@ -1,12 +1,12 @@
 package com.example.myreadbookapplication.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.example.myreadbookapplication.activity.IntroActivity;
-import com.example.myreadbookapplication.activity.SignInActivity;
+import com.example.myreadbookapplication.activity.User.SignInActivity;
 import com.example.myreadbookapplication.model.LogoutRequest;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
@@ -101,11 +101,20 @@ public class LogoutManager {
      */
     private void navigateToSignIn() {
         Log.d(TAG, "Navigating to SignInActivity");
-        Toast.makeText(context, "Chuyển về màn hình đăng nhập...", Toast.LENGTH_SHORT).show();
         
         Intent intent = new Intent(context, SignInActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // Sử dụng FLAG_ACTIVITY_NEW_TASK và FLAG_ACTIVITY_CLEAR_TOP để clear stack
+        // FLAG_ACTIVITY_NEW_TASK: Tạo task mới hoặc sử dụng task hiện có
+        // FLAG_ACTIVITY_CLEAR_TOP: Nếu SignInActivity đã tồn tại trong stack, clear tất cả activities phía trên nó
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(intent);
+        
+        // Finish activity hiện tại nếu context là Activity
+        // Điều này đảm bảo activity hiện tại được đóng ngay lập tức
+        if (context instanceof Activity) {
+            ((Activity) context).finish();
+            Log.d(TAG, "Current activity finished");
+        }
         
         Log.d(TAG, "SignInActivity started");
     }

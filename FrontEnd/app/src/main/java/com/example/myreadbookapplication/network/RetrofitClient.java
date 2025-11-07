@@ -22,13 +22,18 @@ public class RetrofitClient {
 
     public static ApiService getApiService() {
         if (retrofit == null) {
-            // Tạo OkHttpClient với logging
+            // Tạo OkHttpClient với logging và timeout
             OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+            
+            // Cấu hình timeout để tránh request quá lâu
+            httpClient.connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS);
+            httpClient.readTimeout(30, java.util.concurrent.TimeUnit.SECONDS);
+            httpClient.writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS);
 
-            // Thêm logging interceptor cho debug
+            // Thêm logging interceptor cho debug (chỉ log headers, không log body để tránh log sensitive data)
             if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-                logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+                logging.setLevel(HttpLoggingInterceptor.Level.HEADERS); // Chỉ log headers, không log body
                 httpClient.addInterceptor(logging);
             }
 
