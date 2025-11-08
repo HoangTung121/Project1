@@ -68,40 +68,39 @@
             android:orientation="vertical" />
     </LinearLayout>
 
-    <!-- ScrollView chỉ cho content (ProgressBar + RecyclerView) -->
-    <ScrollView
-        android:id="@+id/scroll_view"
+    <!-- Content and Pagination -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:gravity="center_horizontal"
+        android:orientation="vertical"
         android:background="#FFFFFF">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- ProgressBar cho loading -->
+        <ProgressBar
+            android:id="@+id/progressBar_category"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_gravity="center"
+            android:visibility="gone" />
 
-            <!-- ProgressBar cho loading (center trong ScrollView) -->
-            <ProgressBar
-                android:id="@+id/progressBar_category"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:visibility="gone" />
+        <!-- RecyclerView hiển thị category hoặc sách -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_category_books"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="5dp"
+            android:clipToPadding="false"
+            tools:listitem="@layout/item_category" />
 
-            <!-- RecyclerView books (scroll bên trong ScrollView) -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_category_books"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="5dp"
-                android:clipToPadding="false"
-                tools:listitem="@layout/item_category"
-                android:nestedScrollingEnabled="false" />  <!-- Tắt nested scroll để tránh conflict với ScrollView cha -->
+    </LinearLayout>
 
-        </LinearLayout>
-
-    </ScrollView>
+    <!-- Pagination Footer Container -->
+    <FrameLayout
+        android:id="@+id/pagination_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
 
 </LinearLayout>
