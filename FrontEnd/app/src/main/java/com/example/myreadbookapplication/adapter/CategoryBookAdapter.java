@@ -192,10 +192,10 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
      */
     private void showDeleteBookmarkDialog(Book book) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Xóa Bookmark");
-        builder.setMessage("Bạn có chắc muốn xóa bookmark của cuốn sách \"" + book.getTitle() + "\"?");
+        builder.setTitle("Remove Bookmark");
+        builder.setMessage("Are you sure you want to remove the bookmark for \"" + book.getTitle() + "\"?");
         
-        builder.setPositiveButton("Xóa", (dialog, which) -> {
+        builder.setPositiveButton("Remove", (dialog, which) -> {
             try {
                 int bookId = Integer.parseInt(book.getId());
                 // Gọi HistoryActivity để xóa bookmark
@@ -204,11 +204,11 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
                 }
             } catch (NumberFormatException e) {
                 Log.e("CategoryBookAdapter", "Invalid book ID: " + book.getId());
-                Toast.makeText(context, "Lỗi: ID sách không hợp lệ", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "Error: Book ID is invalid", Toast.LENGTH_SHORT).show();
             }
         });
         
-        builder.setNegativeButton("Hủy", (dialog, which) -> {
+        builder.setNegativeButton("Cancel", (dialog, which) -> {
             dialog.dismiss();
         });
         

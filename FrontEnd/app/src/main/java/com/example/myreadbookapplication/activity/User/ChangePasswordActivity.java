@@ -189,7 +189,7 @@ public class ChangePasswordActivity extends AppCompatActivity {
         String token = authManager.getAccessToken();
 
         if (token == null || token.isEmpty()) {
-            Toast.makeText(this, "Bạn cần đăng nhập để đổi mật khẩu", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "You are not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -211,12 +211,12 @@ public class ChangePasswordActivity extends AppCompatActivity {
 
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     Toast.makeText(ChangePasswordActivity.this, 
-                        response.body().getMessage() != null ? response.body().getMessage() : "Đổi mật khẩu thành công!", 
+                        response.body().getMessage() != null ? response.body().getMessage() : "Password changed successfully!",
                         Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
-                    Log.e(TAG, "Failed to change password: " + response.code());
-                    String errorMessage = "Không thể đổi mật khẩu";
+                    Log.e(TAG, "Old password is incorrect with code: " + response.code());
+                    String errorMessage = "Old password is incorrect";
                     
                     if (response.errorBody() != null) {
                         try {
@@ -238,7 +238,7 @@ public class ChangePasswordActivity extends AppCompatActivity {
                 }
                 btnChangePassword.setEnabled(true);
                 Log.e(TAG, "Error changing password: " + t.getMessage());
-                Toast.makeText(ChangePasswordActivity.this, "Lỗi mạng", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ChangePasswordActivity.this, "Network error", Toast.LENGTH_SHORT).show();
             }
         });
     }

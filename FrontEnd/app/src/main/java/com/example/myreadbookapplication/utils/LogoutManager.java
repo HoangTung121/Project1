@@ -3,9 +3,16 @@ package com.example.myreadbookapplication.utils;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
+
+import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.activity.User.SignInActivity;
 import com.example.myreadbookapplication.model.LogoutRequest;
 import com.example.myreadbookapplication.network.ApiService;
@@ -27,6 +34,51 @@ public class LogoutManager {
         this.apiService = RetrofitClient.getApiService();
         this.authManager = AuthManager.getInstance(context);
     }
+
+    /**
+     * Hiển thị dialog xác nhận và đăng xuất nếu người dùng chọn "Đăng xuất"
+     */
+    public void confirmLogout() {
+        confirmLogout(null);
+    }
+
+    /**
+     * Hiển thị dialog xác nhận và đăng xuất nếu người dùng chọn "Đăng xuất" với callback
+     */
+    public void confirmLogout(LogoutCallback callback) {
+        Activity activity = context instanceof Activity ? (Activity) context : null;
+        if (activity == null || activity.isFinishing()) {
+            logout(callback);
+            return;
+        }
+
+        View dialogView = LayoutInflater.from(activity).inflate(R.layout.dialog_confirm_logout, null);
+        TextView btnStay = dialogView.findViewById(R.id.btn_logout_cancel);
+        TextView btnLogout = dialogView.findViewById(R.id.btn_logout_confirm);
+
+        AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        btnStay.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (callback != null) {
+                callback.onLogoutCancelled();
+            }
+        });
+
+        btnLogout.setOnClickListener(v -> {
+            dialog.dismiss();
+            logout(callback);
+        });
+
+        dialog.show();
+    }
     
     /**
      * Thực hiện đăng xuất
@@ -37,13 +89,13 @@ public class LogoutManager {
         
         if (userEmail == null || userEmail.isEmpty()) {
             Log.w(TAG, "No user email found, performing local logout only");
-            Toast.makeText(context, "Không tìm thấy email, thực hiện đăng xuất local", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "No account information found. Signing out locally.", Toast.LENGTH_SHORT).show();
             performLocalLogout();
             return;
         }
         
         Log.d(TAG, "Starting logout process for user: " + userEmail);
-        Toast.makeText(context, "Đang đăng xuất user: " + userEmail, Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Signing out " + userEmail + "...", Toast.LENGTH_SHORT).show();
         
         // Tạo request logout
         LogoutRequest logoutRequest = new LogoutRequest(userEmail);
@@ -84,13 +136,13 @@ public class LogoutManager {
      */
     private void performLocalLogout() {
         Log.d(TAG, "Performing local logout");
-        Toast.makeText(context, "Thực hiện đăng xuất local...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Signing out locally...", Toast.LENGTH_SHORT).show();
         
         // Xóa tất cả dữ liệu authentication
         authManager.logout();
         
         // Hiển thị thông báo
-        Toast.makeText(context, "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "You have signed out successfully.", Toast.LENGTH_SHORT).show();
         
         // Chuyển về màn hình đăng nhập
         navigateToSignIn();
@@ -169,13 +221,13 @@ public class LogoutManager {
      */
     private void performLocalLogoutWithCallback(LogoutCallback callback) {
         Log.d(TAG, "Performing local logout with callback");
-        Toast.makeText(context, "Thực hiện đăng xuất local...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Signing out locally...", Toast.LENGTH_SHORT).show();
         
         // Xóa tất cả dữ liệu authentication
         authManager.logout();
         
         // Hiển thị thông báo
-        Toast.makeText(context, "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "You have signed out successfully.", Toast.LENGTH_SHORT).show();
         
         // Chuyển về màn hình đăng nhập
         navigateToSignIn();
@@ -190,5 +242,7 @@ public class LogoutManager {
      */
     public interface LogoutCallback {
         void onLogoutSuccess();
+
+        default void onLogoutCancelled() {}
     }
 }
