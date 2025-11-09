@@ -16,10 +16,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Production URL (sẽ được override bởi buildTypes nếu cần)
-        buildConfigField("String", "BASE_URL", "\"https://fliply.fly.dev/\"")
+        //http://192.168.1.205:9000/
+        //https://fliply.fly.dev/
+        buildConfigField("String", "BASE_URL", "\"http://192.168.1.205:9000/\"")
     }
-
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

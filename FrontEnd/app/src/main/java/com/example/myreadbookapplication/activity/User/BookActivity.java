@@ -43,7 +43,7 @@ public class BookActivity extends AppCompatActivity {
     private java.util.List<Book> allBooks = new java.util.ArrayList<>();
     private int currentPage = 1;
     private int totalPages = Integer.MAX_VALUE;
-    private int pageSize = 12; // default, will be updated from response
+    private int pageSize = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
     private boolean isLoading = false;
     private GridLayoutManager gridLayoutManager;
     private boolean isLastPage = false; // Để biết hết data chưa
@@ -114,6 +114,7 @@ public class BookActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         Log.d(TAG, "Loading books page=" + currentPage + ", size=" + pageSize);
 
+        pageSize = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
         Call<ApiResponse<BooksResponse>> call = apiService.getBooks(null, "active", pageSize, currentPage);
         call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
             @Override
@@ -124,33 +125,56 @@ public class BookActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                     BooksResponse bookResp = response.body().getData();
                     List<Book> booksList = (bookResp != null) ? bookResp.getBooks() : null;
+                    int totalItems = booksList != null ? booksList.size() : 0;
 
                     // Cập nhật pagination từ response
                     if (bookResp != null && bookResp.getPagination() != null) {
                         try {
-                            pageSize = bookResp.getPagination().getLimit();
+                            pageSize = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
                             totalPages = bookResp.getPagination().getTotalPages();
-                            int totalItems = bookResp.getPagination().getTotal();
+                            totalItems = bookResp.getPagination().getTotal();
                             
                             // Update pagination UI
                             paginationManager.setPaginationData(currentPage, totalPages, totalItems, pageSize);
                             paginationManager.setVisible(totalPages > 1);
+                            paginationContainer.setVisibility(totalPages > 1 ? View.VISIBLE : View.GONE);
                         } catch (Exception ignored) {}
+                    } else {
+                        totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PaginationManager.DEFAULT_ITEMS_PER_PAGE));
+                        paginationManager.setPaginationData(currentPage, totalPages, totalItems, PaginationManager.DEFAULT_ITEMS_PER_PAGE);
+                        paginationManager.setVisible(totalPages > 1);
+                        paginationContainer.setVisibility(totalPages > 1 ? View.VISIBLE : View.GONE);
                     }
 
                     Log.d(TAG, "Loaded page=" + currentPage + ", count=" + (booksList != null ? booksList.size() : 0) + "/ totalPages=" + totalPages);
                     if (booksList != null && !booksList.isEmpty()) {
-                        // Clear existing books for new page
+                        int totalAvailable = booksList.size();
+                        int perPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
+                        int startIndex = Math.max(0, (currentPage - 1) * perPage);
+                        if (totalAvailable <= perPage) {
+                            startIndex = 0;
+                        } else if (startIndex > totalAvailable - 1) {
+                            startIndex = Math.max(0, totalAvailable - perPage);
+                        }
+                        int endIndex = Math.min(startIndex + perPage, totalAvailable);
+                        if (endIndex <= startIndex) {
+                            startIndex = Math.max(0, totalAvailable - perPage);
+                            endIndex = Math.min(startIndex + perPage, totalAvailable);
+                        }
+                        List<Book> pageBooks = booksList.subList(startIndex, endIndex);
+
                         allBooks.clear();
-                        allBooks.addAll(booksList);
+                        allBooks.addAll(pageBooks);
                         
                         if (bookAdapter == null) {
                             bookAdapter = new AllBooksAdapter(allBooks, BookActivity.this, categoryIdToName);
-                            gridLayoutManager = new GridLayoutManager(BookActivity.this, 3);
+                            gridLayoutManager = new GridLayoutManager(BookActivity.this, 2);
                             rvBooks.setLayoutManager(gridLayoutManager);
                             rvBooks.setAdapter(bookAdapter);
+                            rvBooks.scrollToPosition(0);
                         } else {
                             bookAdapter.notifyDataSetChanged();
+                            rvBooks.scrollToPosition(0);
                         }
                         rvBooks.invalidate();
                     } else {
@@ -158,10 +182,12 @@ public class BookActivity extends AppCompatActivity {
                             Toast.makeText(BookActivity.this, "No books found", Toast.LENGTH_SHORT).show();
                         }
                         paginationManager.setVisible(false);
+                        paginationContainer.setVisibility(View.GONE);
                     }
                 } else {
                     Toast.makeText(BookActivity.this, "Load books failed: " + response.message(), Toast.LENGTH_SHORT).show();
                     paginationManager.setVisible(false);
+                    paginationContainer.setVisibility(View.GONE);
                 }
             }
 

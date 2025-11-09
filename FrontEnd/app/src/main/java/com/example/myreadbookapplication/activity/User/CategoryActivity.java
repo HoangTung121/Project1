@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -18,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.adapter.CategoryAdapter;
 import com.example.myreadbookapplication.adapter.CategoryBookAdapter;
+import com.example.myreadbookapplication.utils.GridSpacingItemDecoration;
 import com.example.myreadbookapplication.model.Book;
 import com.example.myreadbookapplication.model.Category;
 import com.example.myreadbookapplication.model.ApiResponse;
@@ -53,7 +53,7 @@ public class CategoryActivity extends AppCompatActivity {
     private int currentPage = 1;
     private int totalPages = 1;
     private int totalItems = 0;
-    private int itemsPerPage = 12;
+    private int itemsPerPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
     private int currentCategoryId = -1;
     private String currentCategoryName = "";
     private final List<Book> categoryBooks = new ArrayList<>();
@@ -70,6 +70,14 @@ public class CategoryActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar_category);
         apiService = RetrofitClient.getApiService();
         paginationContainer = findViewById(R.id.pagination_container);
+        int edgeSpacing = dpToPx(12);
+        int innerSpacing = dpToPx(12);
+        int verticalSpacing = dpToPx(16);
+        rvCategoriesContent.setClipToPadding(false);
+        rvCategoriesContent.setPadding(0, verticalSpacing / 2, 0, verticalSpacing);
+        if (rvCategoriesContent.getItemDecorationCount() == 0) {
+            rvCategoriesContent.addItemDecoration(new GridSpacingItemDecoration(2, innerSpacing, edgeSpacing, verticalSpacing));
+        }
 
         initPagination();
 
@@ -108,6 +116,10 @@ public class CategoryActivity extends AppCompatActivity {
             currentPage = page;
             fetchBooksForCategoryPage();
         });
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void loadFullCategories() {
@@ -186,7 +198,7 @@ public class CategoryActivity extends AppCompatActivity {
         currentPage = 1;
         totalPages = 1;
         totalItems = 0;
-        itemsPerPage = 12;
+        itemsPerPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
         categoryBooks.clear();
         paginationManager.setVisible(false);
 
@@ -205,7 +217,7 @@ public class CategoryActivity extends AppCompatActivity {
 
         progressBar.setVisibility(View.VISIBLE);
         Log.d(TAG, "Loading books for category ID: " + currentCategoryId + " page " + currentPage);
-        Call<ApiResponse<BooksResponse>> call = apiService.getBooks(String.valueOf(currentCategoryId), "active", itemsPerPage, currentPage);
+        Call<ApiResponse<BooksResponse>> call = apiService.getBooks(String.valueOf(currentCategoryId), "active", PaginationManager.DEFAULT_ITEMS_PER_PAGE, currentPage);
         call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
             @Override
             public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
@@ -216,12 +228,17 @@ public class CategoryActivity extends AppCompatActivity {
                     List<Book> booksList = (bookResp != null) ? bookResp.getBooks() : null;
                     Log.d(TAG, "Books data size: " + (booksList != null ? booksList.size() : 0));
 
+                    int backendTotalPages = 1;
+                    int backendTotalItems = booksList != null ? booksList.size() : 0;
+
                     if (bookResp != null && bookResp.getPagination() != null) {
                         try {
-                            itemsPerPage = bookResp.getPagination().getLimit() > 0 ? bookResp.getPagination().getLimit() : itemsPerPage;
-                            totalPages = bookResp.getPagination().getTotalPages() > 0 ? bookResp.getPagination().getTotalPages() : totalPages;
-                            totalItems = bookResp.getPagination().getTotal();
-                            paginationManager.setPaginationData(currentPage, totalPages, totalItems, itemsPerPage);
+                            backendTotalPages = bookResp.getPagination().getTotalPages() > 0 ? bookResp.getPagination().getTotalPages() : 1;
+                            backendTotalItems = bookResp.getPagination().getTotal();
+                            itemsPerPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
+                            totalPages = backendTotalPages;
+                            totalItems = backendTotalItems;
+                            paginationManager.setPaginationData(currentPage, totalPages, totalItems, PaginationManager.DEFAULT_ITEMS_PER_PAGE);
                             paginationManager.setVisible(totalPages > 1);
                             paginationContainer.setVisibility(totalPages > 1 ? View.VISIBLE : View.GONE);
                         } catch (Exception e) {
@@ -230,8 +247,12 @@ public class CategoryActivity extends AppCompatActivity {
                             paginationContainer.setVisibility(View.GONE);
                         }
                     } else {
-                        paginationManager.setVisible(false);
-                        paginationContainer.setVisibility(View.GONE);
+                        itemsPerPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
+                        totalItems = backendTotalItems;
+                        totalPages = (int) Math.ceil((double) totalItems / PaginationManager.DEFAULT_ITEMS_PER_PAGE);
+                        paginationManager.setPaginationData(currentPage, totalPages, totalItems, PaginationManager.DEFAULT_ITEMS_PER_PAGE);
+                        paginationManager.setVisible(totalPages > 1);
+                        paginationContainer.setVisibility(totalPages > 1 ? View.VISIBLE : View.GONE);
                     }
 
                     if (booksList != null && !booksList.isEmpty()) {
@@ -240,28 +261,36 @@ public class CategoryActivity extends AppCompatActivity {
                                 .filter(book -> book != null && "active".equals(book.getStatus()))
                                 .collect(Collectors.toList());
 
-                        categoryBooks.clear();
-                        categoryBooks.addAll(booksList);
-
-                        if (categoryBookAdapter == null) {
-                            categoryBookAdapter = new CategoryBookAdapter(categoryBooks, CategoryActivity.this, currentCategoryName);
-                            rvCategoriesContent.setLayoutManager(new GridLayoutManager(CategoryActivity.this, 3));
-                            rvCategoriesContent.setAdapter(categoryBookAdapter);
-                        } else {
-                            if (!(rvCategoriesContent.getLayoutManager() instanceof GridLayoutManager) ||
-                                    ((GridLayoutManager) rvCategoriesContent.getLayoutManager()).getSpanCount() != 3) {
-                                rvCategoriesContent.setLayoutManager(new GridLayoutManager(CategoryActivity.this, 3));
-                            }
-                            categoryBookAdapter.notifyDataSetChanged();
+                        int totalAvailable = booksList.size();
+                        int perPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
+                        int startIndex = Math.max(0, (currentPage - 1) * perPage);
+                        if (totalAvailable <= perPage) {
+                            startIndex = 0;
+                        } else if (startIndex > totalAvailable - 1) {
+                            startIndex = Math.max(0, totalAvailable - perPage);
                         }
+                        int endIndex = Math.min(startIndex + perPage, totalAvailable);
+                        if (endIndex <= startIndex) {
+                            startIndex = Math.max(0, totalAvailable - perPage);
+                            endIndex = Math.min(startIndex + perPage, totalAvailable);
+                        }
+                        List<Book> pageBooks = new ArrayList<>(booksList.subList(startIndex, endIndex));
+
+                        categoryBooks.clear();
+                        categoryBooks.addAll(pageBooks);
+
+                        rvCategoriesContent.setLayoutManager(new GridLayoutManager(CategoryActivity.this, 2));
+                        categoryBookAdapter = new CategoryBookAdapter(new ArrayList<>(categoryBooks), CategoryActivity.this, currentCategoryName);
+                        rvCategoriesContent.setAdapter(categoryBookAdapter);
+                        rvCategoriesContent.scrollToPosition(0);
                         rvCategoriesContent.invalidate();  // Force refresh
-                        Log.d(TAG, "Books adapter set: " + booksList.size() + " items (page " + currentPage + ")");
+                        Log.d(TAG, "Books adapter set: " + categoryBooks.size() + " items (page " + currentPage + ")");
                     } else {
                         Log.w(TAG, "No books data for " + currentCategoryName);
                         categoryBooks.clear();
-                        if (categoryBookAdapter != null) {
-                            categoryBookAdapter.notifyDataSetChanged();
-                        }
+                        categoryBookAdapter = new CategoryBookAdapter(new ArrayList<>(), CategoryActivity.this, currentCategoryName);
+                        rvCategoriesContent.setLayoutManager(new GridLayoutManager(CategoryActivity.this, 2));
+                        rvCategoriesContent.setAdapter(categoryBookAdapter);
                         paginationManager.setVisible(false);
                         paginationContainer.setVisibility(View.GONE);
                         Toast.makeText(CategoryActivity.this, "No books in " + currentCategoryName + " yet", Toast.LENGTH_SHORT).show();

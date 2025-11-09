@@ -5,10 +5,12 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -18,26 +20,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PaginationManager {
+    public static final int DEFAULT_ITEMS_PER_PAGE = 12;
     private static final String TAG = "PaginationManager";
     
     // UI Components
     private View paginationView;
-    private TextView tvPageInfo;
-    private TextView tvTotalItems;
-    private Button btnFirstPage;
-    private Button btnPrevPage;
-    private Button btnNextPage;
-    private Button btnLastPage;
-    private Button btnToggleQuickJump;
+    private View btnFirstPage;
+    private View btnPrevPage;
+    private View btnNextPage;
+    private View btnLastPage;
     private LinearLayout containerPageNumbers;
-    private LinearLayout quickJumpContainer;
     
     // Pagination State
     private int currentPage = 1;
     private int totalPages = 1;
     private int totalItems = 0;
     private int itemsPerPage = 10;
-    private int maxVisiblePages = 5;
+    private int maxVisiblePages = 7;
     
     // Callbacks
     private OnPageChangeListener pageChangeListener;
@@ -64,8 +63,6 @@ public class PaginationManager {
         paginationView = inflater.inflate(R.layout.pagination_footer, parent, false);
         
         // Initialize UI components
-        tvPageInfo = paginationView.findViewById(R.id.tv_page_info);
-        tvTotalItems = paginationView.findViewById(R.id.tv_total_items);
         btnFirstPage = paginationView.findViewById(R.id.btn_first_page);
         btnPrevPage = paginationView.findViewById(R.id.btn_prev_page);
         btnNextPage = paginationView.findViewById(R.id.btn_next_page);
@@ -101,20 +98,13 @@ public class PaginationManager {
     }
     
     private void updateUI() {
-        updatePageInfo();
         updateNavigationButtons();
         updatePageNumbers();
-        updateTotalItems();
     }
-    
-    private void updatePageInfo() {
-        tvPageInfo.setText(String.format("Trang %d / %d", currentPage, totalPages));
-    }
-    
-    private void updateTotalItems() {
-        int startItem = (currentPage - 1) * itemsPerPage + 1;
-        int endItem = Math.min(currentPage * itemsPerPage, totalItems);
-        tvTotalItems.setText(String.format("%d-%d / %d mục", startItem, endItem, totalItems));
+
+    public void setMaxVisiblePages(int maxVisiblePages) {
+        this.maxVisiblePages = Math.max(1, maxVisiblePages);
+        updatePageNumbers();
     }
     
     private void updateNavigationButtons() {
@@ -134,89 +124,45 @@ public class PaginationManager {
         }
         
         // Calculate visible page range
-        int startPage = Math.max(1, currentPage - maxVisiblePages / 2);
+        int halfWindow = maxVisiblePages / 2;
+        int startPage = currentPage - halfWindow;
+        if (startPage < 1) {
+            startPage = 1;
+        }
+        if (startPage + maxVisiblePages - 1 > totalPages) {
+            startPage = Math.max(1, totalPages - maxVisiblePages + 1);
+        }
         int endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-        
-        // Adjust start page if we're near the end
-        if (endPage - startPage < maxVisiblePages - 1) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1);
-        }
-        
-        // Add first page and ellipsis if needed
-        if (startPage > 1) {
-            addPageButton(1);
-            if (startPage > 2) {
-                addEllipsisButton();
-            }
-        }
-        
-        // Add visible page numbers
+
         for (int i = startPage; i <= endPage; i++) {
             addPageButton(i);
-        }
-        
-        // Add ellipsis and last page if needed
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                addEllipsisButton();
-            }
-            addPageButton(totalPages);
         }
     }
     
     private void addPageButton(int pageNumber) {
-        Button button = new Button(paginationView.getContext());
+        Button button = new Button(paginationView.getContext(), null, android.R.attr.buttonStyleSmall);
         button.setText(String.valueOf(pageNumber));
-        button.setLayoutParams(new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ));
-        
-        // Apply style
-        button.setBackgroundResource(R.drawable.pagination_button_background);
-        button.setTextSize(10);
-        button.setPadding(8, 4, 8, 4);
-        button.setMinWidth(32);
-        button.setMinHeight(32);
-        
-        // Set state
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.setMargins(dpToPx(2), 0, dpToPx(2), 0);
+        button.setLayoutParams(params);
+        button.setBackgroundResource(R.drawable.pagination_cell_background);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        button.setMinWidth(dpToPx(32));
+        button.setMinHeight(dpToPx(28));
+        button.setPadding(dpToPx(10), dpToPx(4), dpToPx(10), dpToPx(4));
         if (pageNumber == currentPage) {
             button.setSelected(true);
-            button.setTextColor(paginationView.getContext().getColor(R.color.surface_color));
+            button.setTextColor(paginationView.getContext().getColor(R.color.pagination_active_text));
         } else {
             button.setSelected(false);
-            button.setTextColor(paginationView.getContext().getColor(R.color.primary_text));
+            button.setTextColor(paginationView.getContext().getColor(R.color.secondary_text));
         }
-        
-        // Set click listener
+        button.setAllCaps(false);
         button.setOnClickListener(v -> goToPage(pageNumber));
-        
-        // Add margin
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) button.getLayoutParams();
-        params.setMargins(4, 0, 4, 0);
-        button.setLayoutParams(params);
-        
         containerPageNumbers.addView(button);
         pageButtons.add(button);
-    }
-    
-    private void addEllipsisButton() {
-        Button ellipsisButton = new Button(paginationView.getContext());
-        ellipsisButton.setText("...");
-        ellipsisButton.setEnabled(false);
-        ellipsisButton.setBackgroundColor(paginationView.getContext().getColor(R.color.surface_color));
-        ellipsisButton.setTextColor(paginationView.getContext().getColor(R.color.secondary_text));
-        ellipsisButton.setMinWidth(40);
-        ellipsisButton.setMinHeight(40);
-        
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        params.setMargins(4, 0, 4, 0);
-        ellipsisButton.setLayoutParams(params);
-        
-        containerPageNumbers.addView(ellipsisButton);
     }
     
     private void goToFirstPage() {
@@ -258,6 +204,10 @@ public class PaginationManager {
             }
         });
     }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * paginationView.getResources().getDisplayMetrics().density);
+    }
     
     private void jumpToPage(int page) {
         if (page < 1 || page > totalPages) {
@@ -275,8 +225,7 @@ public class PaginationManager {
         });
         
         // Hide quick jump and reset toggle button
-        quickJumpContainer.setVisibility(View.GONE);
-        btnToggleQuickJump.setText("...");
+        // no-op
     }
     
     private void animatePageChange(Runnable onComplete) {
