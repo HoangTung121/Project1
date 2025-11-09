@@ -14,7 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="50dp"
+        android:paddingTop="@dimen/Padding_header"
         android:gravity="center_vertical">
 
         <!-- Profile Image with Circle Background -->

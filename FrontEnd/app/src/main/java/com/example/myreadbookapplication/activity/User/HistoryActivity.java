@@ -25,7 +25,10 @@ import com.example.myreadbookapplication.utils.AuthManager;
 import com.example.myreadbookapplication.utils.PaginationManager;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -47,7 +50,7 @@ public class HistoryActivity extends AppCompatActivity {
     private int currentPage = 1;
     private int totalPages = 1;
     private int totalItems = 0;
-    private int itemsPerPage = 20; // Tăng từ 50 lên 20 để có nhiều trang hơn
+    private int itemsPerPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +113,7 @@ public class HistoryActivity extends AppCompatActivity {
 
         Log.d(TAG, "Loading history for user: " + userId);
 
+        itemsPerPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
         Call<ApiResponse<ReadingHistoryResponse>> call = apiService.getReadingHistory(
                 userId,
                 authHeader,
@@ -154,56 +158,99 @@ public class HistoryActivity extends AppCompatActivity {
                     if (data != null && data.getPagination() != null) {
                         totalPages = data.getPagination().getTotalPages();
                         totalItems = data.getPagination().getTotal();
+                        itemsPerPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
                         Log.d(TAG, "Pagination: page=" + currentPage + ", totalPages=" + totalPages + ", totalItems=" + totalItems);
                         paginationManager.setPaginationData(currentPage, totalPages, totalItems, itemsPerPage);
                         paginationManager.setVisible(totalPages > 1);
+                        paginationContainer.setVisibility(totalPages > 1 ? View.VISIBLE : View.GONE);
+                    } else {
+                        totalItems = items != null ? items.size() : 0;
+                        totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PaginationManager.DEFAULT_ITEMS_PER_PAGE));
+                        paginationManager.setPaginationData(currentPage, totalPages, totalItems, PaginationManager.DEFAULT_ITEMS_PER_PAGE);
+                        paginationManager.setVisible(totalPages > 1);
+                        paginationContainer.setVisibility(totalPages > 1 ? View.VISIBLE : View.GONE);
                     }
                     
-                    List<Book> books = new ArrayList<>();
-                    List<String> missingIds = new ArrayList<>();
+                    List<Book> fallbackBooks = new ArrayList<>();
+                    LinkedHashSet<String> bookIds = new LinkedHashSet<>();
+                    Map<String, String> progressById = new HashMap<>();
                     if (items != null) {
                         for (HistoryItem item : items) {
                             if (item == null) continue;
-                            if (item.getBook() != null) {
-                                Book book = item.getBook();
-                                // Add reading progress info to book title
+                            String idStr = String.valueOf(item.getBookId());
+                            if (idStr != null && !idStr.isEmpty()) {
+                                bookIds.add(idStr);
                                 String progressInfo = getReadingProgressInfo(item);
                                 if (progressInfo != null && !progressInfo.isEmpty()) {
-                                    book.setTitle(book.getTitle() + " - " + progressInfo);
+                                    progressById.put(idStr, progressInfo);
                                 }
-                                books.add(book);
-                            } else {
-                                // fall back to later fetch by ids
-                                if (String.valueOf(item.getBookId()) != null) {
-                                    missingIds.add(String.valueOf(item.getBookId()));
-                                }
+                            }
+                            if (item.getBook() != null) {
+                                fallbackBooks.add(item.getBook());
                             }
                         }
                     }
 
-                    // If some items lack embedded book, fetch them by ids
-                    if (!missingIds.isEmpty()) {
-                        String idsQuery = String.join(",", missingIds);
+                    if (!bookIds.isEmpty()) {
+                        String idsQuery = String.join(",", bookIds);
                         RetrofitClient.getApiService().getBooksByIds(idsQuery, "active", null, 1)
                                 .enqueue(new Callback<ApiResponse<BooksResponse>>() {
                                     @Override
                                     public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response2) {
+                                        List<Book> booksToDisplay = new ArrayList<>();
                                         if (response2.isSuccessful() && response2.body() != null && response2.body().isSuccess()) {
                                             BooksResponse br = response2.body().getData();
-                                            if (br != null && br.getBooks() != null) {
-                                                books.addAll(br.getBooks());
+                                            if (br != null && br.getBooks() != null && !br.getBooks().isEmpty()) {
+                                                for (Book book : br.getBooks()) {
+                                                    if (book == null) continue;
+                                                    String progress = progressById.get(book.getId());
+                                                    if (progress != null && !progress.isEmpty()) {
+                                                        book.setTitle(book.getTitle() + " - " + progress);
+                                                    }
+                                                    booksToDisplay.add(book);
+                                                }
                                             }
                                         }
-                                        renderBooks(books);
+
+                                        if (booksToDisplay.isEmpty() && !fallbackBooks.isEmpty()) {
+                                            for (Book book : fallbackBooks) {
+                                                if (book == null) continue;
+                                                String progress = progressById.get(book.getId());
+                                                if (progress != null && !progress.isEmpty()) {
+                                                    book.setTitle(book.getTitle() + " - " + progress);
+                                                }
+                                                booksToDisplay.add(book);
+                                            }
+                                        }
+
+                                        renderBooks(booksToDisplay);
                                     }
 
                                     @Override
                                     public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
-                                        renderBooks(books);
+                                        List<Book> booksToDisplay = new ArrayList<>();
+                                        for (Book book : fallbackBooks) {
+                                            if (book == null) continue;
+                                            String progress = progressById.get(book.getId());
+                                            if (progress != null && !progress.isEmpty()) {
+                                                book.setTitle(book.getTitle() + " - " + progress);
+                                            }
+                                            booksToDisplay.add(book);
+                                        }
+                                        renderBooks(booksToDisplay);
                                     }
                                 });
                     } else {
-                        renderBooks(books);
+                        List<Book> booksToDisplay = new ArrayList<>();
+                        for (Book book : fallbackBooks) {
+                            if (book == null) continue;
+                            String progress = progressById.get(book.getId());
+                            if (progress != null && !progress.isEmpty()) {
+                                book.setTitle(book.getTitle() + " - " + progress);
+                            }
+                            booksToDisplay.add(book);
+                        }
+                        renderBooks(booksToDisplay);
                     }
                 } else {
                     Log.e(TAG, "History API failed: " + (response.code()));
@@ -229,6 +276,7 @@ public class HistoryActivity extends AppCompatActivity {
                     
                     Toast.makeText(HistoryActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                     paginationManager.setVisible(false);
+                    paginationContainer.setVisibility(View.GONE);
                 }
             }
 
@@ -238,6 +286,7 @@ public class HistoryActivity extends AppCompatActivity {
                 Log.e(TAG, "History API error: " + t.getMessage());
                 Toast.makeText(HistoryActivity.this, "Lỗi mạng", Toast.LENGTH_SHORT).show();
                 paginationManager.setVisible(false);
+                paginationContainer.setVisibility(View.GONE);
             }
         });
     }
@@ -248,8 +297,10 @@ public class HistoryActivity extends AppCompatActivity {
         Log.d(TAG, "Books size: " + (books != null ? books.size() : 0));
         
         if (books != null && !books.isEmpty()) {
-            Log.d(TAG, "Creating adapter with " + books.size() + " books");
-            historyBookAdapter = new CategoryBookAdapter(books, HistoryActivity.this, "History");
+            int endIndex = Math.min(books.size(), PaginationManager.DEFAULT_ITEMS_PER_PAGE);
+            List<Book> displayBooks = new ArrayList<>(books.subList(0, endIndex));
+            Log.d(TAG, "Creating adapter with " + displayBooks.size() + " books");
+            historyBookAdapter = new CategoryBookAdapter(displayBooks, HistoryActivity.this, "History");
             rvHistoryBooks.setLayoutManager(new GridLayoutManager(HistoryActivity.this, 3));
             rvHistoryBooks.setAdapter(historyBookAdapter);
             Log.d(TAG, "Adapter set successfully");
