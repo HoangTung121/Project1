@@ -49,7 +49,7 @@ public class FavoriteActivity extends AppCompatActivity {
     private int currentPage = 1;
     private int totalPages = 1;
     private int totalItems = 0;
-    private int itemsPerPage = 20;
+    private int itemsPerPage = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
     
     // Frontend pagination data
     private List<Book> allFavorites = new ArrayList<>();
@@ -124,6 +124,7 @@ public class FavoriteActivity extends AppCompatActivity {
                         } else {
                             Toast.makeText(FavoriteActivity.this, "No favorite books", Toast.LENGTH_SHORT).show();
                             paginationManager.setVisible(false);
+                            paginationContainer.setVisibility(View.GONE);
                         }
                         // Sync local cache of ids
                         if (data != null && data.getFavoriteBookIds() != null) {
@@ -134,6 +135,7 @@ public class FavoriteActivity extends AppCompatActivity {
                     } else {
                         Toast.makeText(FavoriteActivity.this, "Load favorites failed", Toast.LENGTH_SHORT).show();
                         paginationManager.setVisible(false);
+                        paginationContainer.setVisibility(View.GONE);
                         loadFavoritesFromLocal();
                     }
                 }
@@ -143,12 +145,14 @@ public class FavoriteActivity extends AppCompatActivity {
                     progressBarFavoriteBooks.setVisibility(View.GONE);
                     Log.e(TAG, "Favorites failure: " + t.getMessage());
                     paginationManager.setVisible(false);
+                    paginationContainer.setVisibility(View.GONE);
                     loadFavoritesFromLocal();
                 }
             });
         } else {
             Log.d(TAG, "No token/userId, fallback to local cache");
             paginationManager.setVisible(false);
+            paginationContainer.setVisibility(View.GONE);
             loadFavoritesFromLocal();
         }
     }
@@ -161,12 +165,18 @@ public class FavoriteActivity extends AppCompatActivity {
         // Update pagination UI
         paginationManager.setPaginationData(currentPage, totalPages, totalItems, itemsPerPage);
         paginationManager.setVisible(totalPages > 1);
+        paginationContainer.setVisibility(totalPages > 1 ? View.VISIBLE : View.GONE);
         
         // Lấy items cho trang hiện tại
         int startIndex = (currentPage - 1) * itemsPerPage;
+        if (startIndex >= totalItems) {
+            currentPage = 1;
+            startIndex = 0;
+            paginationManager.setPaginationData(currentPage, totalPages, totalItems, itemsPerPage);
+        }
         int endIndex = Math.min(startIndex + itemsPerPage, totalItems);
         
-        List<Book> pageFavorites = allFavorites.subList(startIndex, endIndex);
+        List<Book> pageFavorites = new ArrayList<>(allFavorites.subList(startIndex, endIndex));
         
         // Hiển thị favorites cho trang hiện tại
         favoriteBookAdapter = new CategoryBookAdapter(pageFavorites, FavoriteActivity.this, "Favorites");
@@ -183,6 +193,7 @@ public class FavoriteActivity extends AppCompatActivity {
         if (favoriteBookIds == null || favoriteBookIds.isEmpty()) {
             Toast.makeText(this, "No favorite books yet", Toast.LENGTH_SHORT).show();
             paginationManager.setVisible(false);
+            paginationContainer.setVisibility(View.GONE);
             return;
         }
         String idsQuery = String.join(",", favoriteBookIds);
@@ -209,6 +220,7 @@ public class FavoriteActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(FavoriteActivity.this, "Load favorites failed", Toast.LENGTH_SHORT).show();
                     paginationManager.setVisible(false);
+                    paginationContainer.setVisibility(View.GONE);
                 }
             }
 
@@ -217,6 +229,7 @@ public class FavoriteActivity extends AppCompatActivity {
                 progressBarFavoriteBooks.setVisibility(View.GONE);
                 Toast.makeText(FavoriteActivity.this, "Network error", Toast.LENGTH_SHORT).show();
                 paginationManager.setVisible(false);
+                paginationContainer.setVisibility(View.GONE);
             }
         });
     }

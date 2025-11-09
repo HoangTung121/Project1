@@ -178,15 +178,13 @@ public class HomeActivity extends AppCompatActivity {
                     return true;
                 } else if (id == R.id.nav_sign_out) {
                     Log.d("HomeActivity", "Sign out clicked - Starting logout process");
-                    Toast.makeText(HomeActivity.this, "Đang đăng xuất...", Toast.LENGTH_SHORT).show();
-                    
                     if (logoutManager == null) {
                         Log.e("HomeActivity", "LogoutManager is null!");
                         Toast.makeText(HomeActivity.this, "Lỗi: LogoutManager không được khởi tạo", Toast.LENGTH_LONG).show();
                         return true;
                     }
                     
-                    logoutManager.logout(new LogoutManager.LogoutCallback() {
+                    logoutManager.confirmLogout(new LogoutManager.LogoutCallback() {
                         @Override
                         public void onLogoutSuccess() {
                             // Logout thành công, LogoutManager đã tự động chuyển về SignInActivity
@@ -368,7 +366,7 @@ public class HomeActivity extends AppCompatActivity {
                         categoriesList = categoriesList.stream()
                                 .filter(cat -> cat != null && "active".equals(cat.getStatus()))
                                 .collect(Collectors.toList());
-                        Log.d("HomeActivity", "Filtered categories size: " + categoriesList.size());  // Nên =12
+                        Log.d("HomeActivity", "Filtered categories size: " + categoriesList.size());  // Nên =11
                     }
                     if (categoriesList != null && !categoriesList.isEmpty()) {
                         // Lưu categoriesList để sử dụng trong setupNewBooks

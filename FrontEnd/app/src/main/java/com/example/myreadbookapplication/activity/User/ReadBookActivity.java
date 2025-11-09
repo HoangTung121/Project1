@@ -17,15 +17,23 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
+import android.text.TextUtils;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
 import com.bumptech.glide.Glide;
 import com.example.myreadbookapplication.BuildConfig;
 import com.example.myreadbookapplication.R;
+import com.example.myreadbookapplication.adapter.ChapterListAdapter;
 import com.example.myreadbookapplication.model.ApiResponse;
+import com.example.myreadbookapplication.model.epub.EpubModels;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubUrlRequest;
+import com.example.myreadbookapplication.model.epub.EpubModels.EpubMetadataData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChaptersData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentData;
 import com.example.myreadbookapplication.model.epub.EpubModels.EpubChapterContentRequest;
@@ -35,8 +43,13 @@ import com.example.myreadbookapplication.utils.AuthManager;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -63,13 +76,28 @@ public class ReadBookActivity extends AppCompatActivity {
     // New UI elements
     private TextView tvBookTitle;
     private TextView tvAuthor;
-    private TextView tvCategory;
     private ProgressBar progressBar;
     private ImageView btnFontDecrease;
     private ImageView btnFontIncrease;
+    private MaterialButton btnPrevChapter;
+    private MaterialButton btnNextChapter;
+    private MaterialButton btnShowChapters;
+    private View chapterNavigationContainer;
+    private TextView tvCurrentChapter;
     
     // Font size management
     private int currentFontSize = 30; // Default font size
+    private final List<com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem> chapterItems = new ArrayList<>();
+    private final Map<String, Integer> chapterIndexMap = new HashMap<>();
+    private final Map<String, String> chapterTitleHints = new HashMap<>();
+    private String defaultChapterKey;
+    private String pendingChapterId;
+    private BottomSheetDialog chapterSheetDialog;
+    private ChapterListAdapter chapterListAdapter;
+    private RecyclerView chapterRecycler;
+    private TextView sheetTitleView;
+    private TextView sheetCountView;
+    private View sheetEmptyView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,10 +114,32 @@ public class ReadBookActivity extends AppCompatActivity {
         // Initialize new UI elements
         tvBookTitle = findViewById(R.id.tv_book_title);
         tvAuthor = findViewById(R.id.tv_author);
-        tvCategory = findViewById(R.id.tv_category);
         progressBar = findViewById(R.id.progress_bar);
         btnFontDecrease = findViewById(R.id.btn_font_decrease);
         btnFontIncrease = findViewById(R.id.btn_font_increase);
+        btnPrevChapter = findViewById(R.id.btn_prev_chapter);
+        btnNextChapter = findViewById(R.id.btn_next_chapter);
+        btnShowChapters = findViewById(R.id.btn_show_chapters);
+        chapterNavigationContainer = findViewById(R.id.chapter_navigation_container);
+        if (chapterNavigationContainer != null) {
+            chapterNavigationContainer.setVisibility(View.GONE);
+        }
+        if (tvCurrentChapter != null) {
+            tvCurrentChapter.setText(getString(R.string.chapter_current_placeholder));
+        }
+        if (btnShowChapters != null) {
+            btnShowChapters.setEnabled(false);
+            btnShowChapters.setAlpha(0.5f);
+        }
+        if (btnPrevChapter != null) {
+            btnPrevChapter.setOnClickListener(v -> openAdjacentChapter(-1));
+        }
+        if (btnNextChapter != null) {
+            btnNextChapter.setOnClickListener(v -> openAdjacentChapter(1));
+        }
+        if (btnShowChapters != null) {
+            btnShowChapters.setOnClickListener(v -> showChapterSheet());
+        }
         
         // Load saved states
         loadSavedStates();
@@ -108,7 +158,6 @@ public class ReadBookActivity extends AppCompatActivity {
         String bookUrl = getIntent().getStringExtra("book_url");
         String epubUrl = getIntent().getStringExtra("epub_url");
         String author = getIntent().getStringExtra("author");
-        String category = getIntent().getStringExtra("category");
         this.currentBookId = getIntent().getStringExtra("book_id");
 
         // Setup header title
@@ -116,7 +165,7 @@ public class ReadBookActivity extends AppCompatActivity {
         setupTitleScrolling(tvTitle, title);
         
         // Setup book info
-        setupBookInfo(title, author, category, coverUrl);
+        setupBookInfo(title, author, coverUrl);
         
         // Setup font controls
         setupFontControls();
@@ -151,6 +200,9 @@ public class ReadBookActivity extends AppCompatActivity {
                 startAutoSaveScrollPosition();
                 // Apply initial font size
                 updateWebViewFontSize();
+                if (currentEpubUrl != null && !currentEpubUrl.isEmpty()) {
+                    view.clearHistory();
+                }
             }
         });
 
@@ -186,41 +238,249 @@ public class ReadBookActivity extends AppCompatActivity {
     }
 
     private void fetchChaptersAndOpenFirst(ApiService api, String epubUrl, WebView webView, TextView tvTitle) {
-        // Chapters
+        chapterTitleHints.clear();
+        defaultChapterKey = null;
+        prepareChapterTitles(api, epubUrl, () -> requestChapters(api, epubUrl, webView, tvTitle));
+    }
+
+    private void prepareChapterTitles(ApiService api, String epubUrl, Runnable onComplete) {
+        api.getEpubMetadata(new EpubUrlRequest(epubUrl)).enqueue(new Callback<ApiResponse<EpubMetadataData>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<EpubMetadataData>> call, Response<ApiResponse<EpubMetadataData>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()
+                        && response.body().getData() != null && response.body().getData().toc != null) {
+                    for (EpubModels.TocItem item : response.body().getData().toc) {
+                        if (item == null) continue;
+                        String cleanTitle = sanitizeTitle(item.title);
+                        if (TextUtils.isEmpty(cleanTitle)) continue;
+                        storeChapterTitleHint(item.id, cleanTitle);
+                        storeChapterTitleHint(item.href, cleanTitle);
+                        if (defaultChapterKey == null && isLikelyContentTitle(cleanTitle)) {
+                            defaultChapterKey = !TextUtils.isEmpty(item.id) ? item.id : item.href;
+                        }
+                    }
+                }
+                if (onComplete != null) onComplete.run();
+            }
+            @Override
+            public void onFailure(Call<ApiResponse<EpubMetadataData>> call, Throwable t) {
+                if (onComplete != null) onComplete.run();
+            }
+        });
+    }
+
+    private void requestChapters(ApiService api, String epubUrl, WebView webView, TextView tvTitle) {
         api.getEpubChapters(new EpubUrlRequest(epubUrl)).enqueue(new Callback<ApiResponse<EpubChaptersData>>() {
             @Override
             public void onResponse(Call<ApiResponse<EpubChaptersData>> call, Response<ApiResponse<EpubChaptersData>> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().isSuccess() &&
                         response.body().getData() != null && response.body().getData().chapters != null && !response.body().getData().chapters.isEmpty()) {
-                    // Build href->id map for link interception
                     hrefToId.clear();
-                    for (com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem c : response.body().getData().chapters) {
-                        if (c != null && c.href != null && c.id != null) {
+                    chapterItems.clear();
+                    chapterIndexMap.clear();
+                    if (chapterNavigationContainer != null) {
+                        chapterNavigationContainer.setVisibility(View.GONE);
+                    }
+
+                    List<com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem> chapters = response.body().getData().chapters;
+                    Set<String> seenChapterKeys = new HashSet<>();
+                    for (int i = 0; i < chapters.size(); i++) {
+                        com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem c = chapters.get(i);
+                        if (c == null) continue;
+                        if (c.href != null && c.id != null) {
                             hrefToId.put(c.href, c.id);
                         }
+                        applyTitleHint(c);
+                        if (!shouldDisplayChapter(c)) {
+                            continue;
+                        }
+                        String uniqueKey = getChapterUniqueKey(c);
+                        if (!TextUtils.isEmpty(uniqueKey) && !seenChapterKeys.add(uniqueKey)) {
+                            continue;
+                        }
+                        int positionIndex = chapterItems.size();
+                        chapterItems.add(c);
+                        indexChapter(c.id, positionIndex);
+                        indexChapter(c.href, positionIndex);
                     }
-                    // Pick first readable chapter, skip cover/wrapper
-                    String chosenId = null;
-                    for (com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem c : response.body().getData().chapters) {
-                        if (c == null || c.id == null) continue;
-                        String id = c.id;
-                        String href = c.href != null ? c.href.toLowerCase() : "";
-                        boolean isCover = id.equalsIgnoreCase("coverpage-wrapper") || href.contains("wrap0000");
-                        if (!isCover) { chosenId = id; break; }
+                    updateChapterSheet();
+                    if (btnShowChapters != null) {
+                        boolean hasChapters = !chapterItems.isEmpty();
+                        btnShowChapters.setVisibility(hasChapters ? View.VISIBLE : View.GONE);
+                        btnShowChapters.setEnabled(hasChapters);
+                        btnShowChapters.setAlpha(hasChapters ? 1f : 0.5f);
                     }
-                    if (chosenId == null) {
-                        chosenId = response.body().getData().chapters.get(0).id;
+
+                    boolean hasReadable = false;
+                    for (com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem c : chapterItems) {
+                        if (isNavigableChapter(c)) {
+                            hasReadable = true;
+                            break;
+                        }
                     }
-                    openChapter(api, epubUrl, chosenId, webView, tvTitle);
+                    if (chapterNavigationContainer != null) {
+                        chapterNavigationContainer.setVisibility(hasReadable ? View.VISIBLE : View.GONE);
+                    }
+
+                    String chosenId = selectInitialChapterId();
+                    if (!TextUtils.isEmpty(chosenId)) {
+                        openChapter(api, epubUrl, chosenId, webView, tvTitle);
+                        if (!TextUtils.isEmpty(pendingChapterId) && pendingChapterId.equals(chosenId)) {
+                            pendingChapterId = null;
+                        }
+                    }
                 } else {
                     Toast.makeText(ReadBookActivity.this, "No chapters found", Toast.LENGTH_SHORT).show();
+                    if (btnShowChapters != null) {
+                        btnShowChapters.setVisibility(View.GONE);
+                    }
                 }
             }
             @Override
             public void onFailure(Call<ApiResponse<EpubChaptersData>> call, Throwable t) {
                 Toast.makeText(ReadBookActivity.this, "Failed to load chapters", Toast.LENGTH_SHORT).show();
+                if (btnShowChapters != null) {
+                    btnShowChapters.setVisibility(View.GONE);
+                }
             }
         });
+    }
+
+    private void storeChapterTitleHint(String rawKey, String rawTitle) {
+        String cleanTitle = sanitizeTitle(rawTitle);
+        if (TextUtils.isEmpty(cleanTitle)) return;
+        String normalized = normalizeChapterKey(rawKey);
+        putChapterTitleHint(normalized, cleanTitle);
+        String base = stripExtension(normalized);
+        putChapterTitleHint(base, cleanTitle);
+    }
+
+    private void putChapterTitleHint(String key, String title) {
+        if (TextUtils.isEmpty(key) || TextUtils.isEmpty(title)) return;
+        chapterTitleHints.put(key, title);
+    }
+
+    private void applyTitleHint(com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem chapter) {
+        if (chapter == null) return;
+        String hint = getChapterTitleHint(chapter);
+        if (!TextUtils.isEmpty(hint)) {
+            chapter.title = hint;
+        }
+    }
+
+    private String getChapterTitleHint(com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem chapter) {
+        if (chapter == null) return null;
+        String directTitle = sanitizeTitle(chapter.title);
+        if (!TextUtils.isEmpty(directTitle)) return directTitle;
+
+        String normalizedId = normalizeChapterKey(chapter.id);
+        String normalizedHref = normalizeChapterKey(chapter.href);
+        String baseId = stripExtension(normalizedId);
+        String baseHref = stripExtension(normalizedHref);
+
+        return firstNonEmpty(
+                sanitizeTitle(chapterTitleHints.get(normalizedId)),
+                sanitizeTitle(chapterTitleHints.get(baseId)),
+                sanitizeTitle(chapterTitleHints.get(normalizedHref)),
+                sanitizeTitle(chapterTitleHints.get(baseHref))
+        );
+    }
+
+    private String fetchStoredTitleHint(String rawKey) {
+        String normalized = normalizeChapterKey(rawKey);
+        String base = stripExtension(normalized);
+        return firstNonEmpty(chapterTitleHints.get(normalized), chapterTitleHints.get(base));
+    }
+
+    private String sanitizeTitle(String raw) {
+        if (TextUtils.isEmpty(raw)) return null;
+        String cleaned = raw.replace('_', ' ')
+                .replace('-', ' ')
+                .replaceAll("\\s+", " ")
+                .trim();
+        if (cleaned.length() == 0) return null;
+        if (!containsLetters(cleaned)) return null;
+        return cleaned.substring(0, 1).toUpperCase(Locale.getDefault()) + cleaned.substring(1);
+    }
+
+    private String firstNonEmpty(String... values) {
+        if (values == null) return null;
+        for (String value : values) {
+            if (!TextUtils.isEmpty(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private boolean isLikelyContentTitle(String title) {
+        if (TextUtils.isEmpty(title)) return false;
+        String lower = title.toLowerCase(Locale.getDefault());
+        if (lower.contains("cover") || lower.contains("project gutenberg") || lower.contains("license")) return false;
+        if (lower.contains("table of contents") || lower.equals("contents") || lower.equals("toc")) return false;
+        return true;
+    }
+
+    private String selectInitialChapterId() {
+        String chosenId = null;
+        if (!TextUtils.isEmpty(pendingChapterId) && getChapterIndex(pendingChapterId) != null) {
+            return pendingChapterId;
+        }
+
+        if (!TextUtils.isEmpty(defaultChapterKey)) {
+            chosenId = findChapterIdByKey(defaultChapterKey);
+            if (!TextUtils.isEmpty(chosenId)) {
+                return chosenId;
+            }
+        }
+
+        for (com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem item : chapterItems) {
+            if (item == null) continue;
+            String title = sanitizeTitle(item.title);
+            if (!TextUtils.isEmpty(title) && isLikelyContentTitle(title)) {
+                chosenId = toChapterId(item);
+                if (!TextUtils.isEmpty(chosenId)) {
+                    return chosenId;
+                }
+            }
+        }
+
+        for (com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem c : chapterItems) {
+            if (c == null) continue;
+            if (isNavigableChapter(c)) {
+                chosenId = toChapterId(c);
+                if (!TextUtils.isEmpty(chosenId)) {
+                    return chosenId;
+                }
+            }
+        }
+
+        if (!chapterItems.isEmpty()) {
+            com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem first = chapterItems.get(0);
+            if (first != null) {
+                chosenId = toChapterId(first);
+            }
+        }
+        return chosenId;
+    }
+
+    private String findChapterIdByKey(String key) {
+        if (TextUtils.isEmpty(key)) return null;
+        Integer idx = getChapterIndex(key);
+        if (idx != null && idx >= 0 && idx < chapterItems.size()) {
+            com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem item = chapterItems.get(idx);
+            if (item != null) {
+                return toChapterId(item);
+            }
+        }
+        return null;
+    }
+
+    private String toChapterId(com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem item) {
+        if (item == null) return null;
+        if (!TextUtils.isEmpty(item.id)) return item.id;
+        if (!TextUtils.isEmpty(item.href)) return item.href;
+        return null;
     }
 
     private void openChapter(ApiService api, String epubUrl, String chapterId, WebView webView, TextView tvTitle) {
@@ -230,6 +490,21 @@ public class ReadBookActivity extends AppCompatActivity {
         }
         
         this.currentChapterId = chapterId;
+        Integer knownIndex = getChapterIndex(chapterId);
+        if (chapterId != null && knownIndex == null && !chapterItems.isEmpty()) {
+            for (int i = 0; i < chapterItems.size(); i++) {
+                com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem item = chapterItems.get(i);
+                if (item == null) continue;
+                if (matchesChapterKey(item, chapterId)) {
+                    indexChapter(item.id, i);
+                    indexChapter(item.href, i);
+                    indexChapter(chapterId, i);
+                    knownIndex = i;
+                    break;
+                }
+            }
+        }
+        updateChapterNavigationButtons();
         // Load saved scroll position for the new chapter
         loadSavedScrollPosition();
         
@@ -240,7 +515,9 @@ public class ReadBookActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null && response.body().isSuccess() && response.body().getData() != null) {
                             EpubChapterContentData data = response.body().getData();
                             if (data.title != null && !data.title.isEmpty()) {
-                                tvTitle.setText(data.title);
+                                updateCurrentChapterLabel(data.title);
+                            } else {
+                                updateCurrentChapterLabel(chapterId);
                             }
                             // Render HTML string; no external URL loaded
                             String html = data.content != null ? data.content : "";
@@ -259,6 +536,306 @@ public class ReadBookActivity extends AppCompatActivity {
                         Toast.makeText(ReadBookActivity.this, "Failed to load chapter", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void openAdjacentChapter(int direction) {
+        if (direction == 0) return;
+        if (apiRef == null || currentEpubUrl == null || webViewRef == null || chapterItems.isEmpty()) return;
+
+        Integer currentIndex = getChapterIndex(currentChapterId);
+        int referenceIndex = currentIndex != null ? currentIndex : (direction > 0 ? -1 : chapterItems.size());
+        Integer targetIndex = findNavigableIndex(referenceIndex, direction);
+        if (targetIndex == null) {
+            return;
+        }
+        com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem target = chapterItems.get(targetIndex);
+        if (target == null || target.id == null || target.id.isEmpty()) {
+            return;
+        }
+        TextView titleView = findViewById(R.id.tv_title);
+        openChapter(apiRef, currentEpubUrl, target.id, webViewRef, titleView);
+    }
+
+    private Integer findNavigableIndex(int startIndex, int direction) {
+        if (direction == 0 || chapterItems.isEmpty()) return null;
+        int i = startIndex + direction;
+        while (i >= 0 && i < chapterItems.size()) {
+            com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem candidate = chapterItems.get(i);
+            if (isNavigableChapter(candidate)) {
+                return i;
+            }
+            i += direction;
+        }
+        return null;
+    }
+
+    private boolean isNavigableChapter(com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem chapter) {
+        if (!shouldDisplayChapter(chapter)) return false;
+        String idLower = chapter != null && chapter.id != null ? chapter.id.toLowerCase() : "";
+        String hrefLower = chapter != null && chapter.href != null ? chapter.href.toLowerCase() : "";
+        if (idLower.contains("cover") || hrefLower.contains("wrap0000")) return false;
+        if (idLower.startsWith("toc") || hrefLower.contains("toc")) return false;
+        if (idLower.contains("pg-header") || idLower.contains("pg-footer")) return false;
+        return true;
+    }
+
+    private boolean shouldDisplayChapter(com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem chapter) {
+        if (chapter == null) return false;
+        String normalizedId = normalizeChapterKey(chapter.id);
+        String normalizedHref = normalizeChapterKey(chapter.href);
+        String title = chapter.title != null ? chapter.title.trim() : "";
+
+        if (TextUtils.isEmpty(normalizedId) && TextUtils.isEmpty(normalizedHref) && TextUtils.isEmpty(title)) {
+            return false;
+        }
+
+        String lowerTitle = title.toLowerCase(Locale.getDefault());
+        if (lowerTitle.startsWith("cover") || lowerTitle.contains("project gutenberg")) {
+            return false;
+        }
+        if (lowerTitle.startsWith("table of contents") || lowerTitle.equals("toc")) {
+            return false;
+        }
+
+        String hrefLower = chapter.href != null ? chapter.href.toLowerCase() : "";
+        if (hrefLower.contains("pg-header") || hrefLower.contains("pg-footer")) return false;
+        if (hrefLower.contains("coverpage") || hrefLower.contains("/images/") || hrefLower.endsWith(".css")) return false;
+        if (hrefLower.contains("wrap0000")) return false;
+
+        return true;
+    }
+
+    private String getChapterUniqueKey(com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem chapter) {
+        if (chapter == null) return null;
+        String key = normalizeChapterKey(chapter.id);
+        if (!TextUtils.isEmpty(key)) return key;
+        key = normalizeChapterKey(chapter.href);
+        if (!TextUtils.isEmpty(key)) return key;
+        if (!TextUtils.isEmpty(chapter.title)) {
+            return chapter.title.trim().toLowerCase(Locale.getDefault());
+        }
+        return null;
+    }
+
+    private boolean containsLetters(String text) {
+        if (TextUtils.isEmpty(text)) return false;
+        for (int i = 0; i < text.length(); i++) {
+            if (Character.isLetter(text.charAt(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void updateChapterNavigationButtons() {
+        if (btnPrevChapter == null || btnNextChapter == null) return;
+
+        boolean hasPrev = false;
+        boolean hasNext = false;
+
+        Integer index = getChapterIndex(currentChapterId);
+        if (index != null) {
+            hasPrev = findNavigableIndex(index, -1) != null;
+            hasNext = findNavigableIndex(index, 1) != null;
+        } else if (!chapterItems.isEmpty()) {
+            hasPrev = false;
+            hasNext = findNavigableIndex(-1, 1) != null;
+        }
+
+        applyButtonState(btnPrevChapter, hasPrev);
+        applyButtonState(btnNextChapter, hasNext);
+    }
+
+    private void applyButtonState(MaterialButton button, boolean enabled) {
+        if (button == null) return;
+        button.setEnabled(enabled);
+        button.setAlpha(enabled ? 1f : 0.5f);
+    }
+
+    private void showChapterSheet() {
+        if (chapterItems.isEmpty()) {
+            Toast.makeText(this, getString(R.string.chapter_sheet_empty), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ensureChapterSheet();
+        updateChapterSheet();
+        if (chapterSheetDialog != null && !chapterSheetDialog.isShowing()) {
+            chapterSheetDialog.show();
+        }
+    }
+
+    private void ensureChapterSheet() {
+        if (chapterSheetDialog != null) return;
+        chapterSheetDialog = new BottomSheetDialog(this);
+        View sheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_chapter_list, null);
+        chapterSheetDialog.setContentView(sheetView);
+
+        chapterRecycler = sheetView.findViewById(R.id.recycler_chapters);
+        sheetTitleView = sheetView.findViewById(R.id.tv_sheet_title);
+        sheetCountView = sheetView.findViewById(R.id.tv_chapter_count);
+        sheetEmptyView = sheetView.findViewById(R.id.tv_empty_chapters);
+        View closeBtn = sheetView.findViewById(R.id.btn_close_sheet);
+        if (closeBtn != null) {
+            closeBtn.setOnClickListener(v -> chapterSheetDialog.dismiss());
+        }
+
+        chapterListAdapter = new ChapterListAdapter(this, (chapter, position) -> {
+            if (chapter == null) return;
+            String jumpId = !TextUtils.isEmpty(chapter.id) ? chapter.id : chapter.href;
+            openChapterFromList(jumpId);
+        });
+        if (chapterRecycler != null) {
+            chapterRecycler.setLayoutManager(new LinearLayoutManager(this));
+            chapterRecycler.setAdapter(chapterListAdapter);
+        }
+    }
+
+    private void updateChapterSheet() {
+        ensureChapterSheet();
+        if (chapterListAdapter != null) {
+            chapterListAdapter.submitList(new ArrayList<>(chapterItems));
+            chapterListAdapter.setCurrentChapterKey(currentChapterId);
+        }
+        if (sheetTitleView != null) {
+            sheetTitleView.setText(tvBookTitle != null ? tvBookTitle.getText() : getString(R.string.chapter_sheet_title));
+        }
+        if (sheetCountView != null) {
+            sheetCountView.setText(getString(R.string.chapter_sheet_count, chapterItems.size()));
+        }
+        if (sheetEmptyView != null) {
+            sheetEmptyView.setVisibility(chapterItems.isEmpty() ? View.VISIBLE : View.GONE);
+        }
+        if (chapterRecycler != null && chapterListAdapter != null) {
+            int currentPos = chapterListAdapter.getCurrentPosition();
+            if (currentPos >= 0) {
+                chapterRecycler.post(() -> chapterRecycler.smoothScrollToPosition(currentPos));
+            }
+        }
+    }
+
+    private void openChapterFromList(String chapterKey) {
+        if (TextUtils.isEmpty(chapterKey)) {
+            Toast.makeText(this, getString(R.string.chapter_current_unknown), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        pendingChapterId = chapterKey;
+        if (apiRef != null && currentEpubUrl != null && webViewRef != null) {
+            openChapter(apiRef, currentEpubUrl, chapterKey, webViewRef, (TextView) findViewById(R.id.tv_title));
+            pendingChapterId = null;
+        }
+        if (chapterSheetDialog != null && chapterSheetDialog.isShowing()) {
+            chapterSheetDialog.dismiss();
+        }
+    }
+
+    private void updateCurrentChapterLabel(String source) {
+        if (tvCurrentChapter == null) return;
+        String display = resolveChapterTitle(source);
+        if (TextUtils.isEmpty(display) && !TextUtils.isEmpty(currentChapterId)) {
+            display = resolveChapterTitle(currentChapterId);
+        }
+        if (TextUtils.isEmpty(display)) {
+            display = getString(R.string.chapter_current_unknown);
+        }
+        tvCurrentChapter.setText(getString(R.string.chapter_current_format, display));
+    }
+
+    private String resolveChapterTitle(String rawKeyOrTitle) {
+        if (TextUtils.isEmpty(rawKeyOrTitle)) return null;
+        String hint = fetchStoredTitleHint(rawKeyOrTitle);
+        if (!TextUtils.isEmpty(hint)) return hint;
+        return sanitizeTitle(rawKeyOrTitle);
+    }
+
+    private void indexChapter(String key, int index) {
+        if (index < 0) return;
+        String normalized = normalizeChapterKey(key);
+        if (normalized == null || normalized.isEmpty()) return;
+        chapterIndexMap.put(normalized, index);
+
+        String fileName = extractFileName(normalized);
+        if (fileName != null && !fileName.isEmpty()) {
+            chapterIndexMap.putIfAbsent(fileName, index);
+            String baseName = stripExtension(fileName);
+            if (baseName != null && !baseName.isEmpty()) {
+                chapterIndexMap.putIfAbsent(baseName, index);
+            }
+        }
+    }
+
+    private Integer getChapterIndex(String key) {
+        if (TextUtils.isEmpty(key)) return null;
+        String normalized = normalizeChapterKey(key);
+        if (normalized == null) return null;
+
+        Integer index = chapterIndexMap.get(normalized);
+        if (index != null) return index;
+
+        String fileName = extractFileName(normalized);
+        if (fileName != null && !fileName.isEmpty()) {
+            index = chapterIndexMap.get(fileName);
+            if (index != null) return index;
+            String baseName = stripExtension(fileName);
+            if (baseName != null && !baseName.isEmpty()) {
+                index = chapterIndexMap.get(baseName);
+                if (index != null) return index;
+            }
+        }
+        return null;
+    }
+
+    private boolean matchesChapterKey(com.example.myreadbookapplication.model.epub.EpubModels.ChapterItem item, String key) {
+        if (item == null || TextUtils.isEmpty(key)) return false;
+        String normalizedKey = normalizeChapterKey(key);
+        if (normalizedKey == null) return false;
+        if (normalizedKey.equals(normalizeChapterKey(item.id))) return true;
+        if (normalizedKey.equals(normalizeChapterKey(item.href))) return true;
+        String fileName = extractFileName(normalizedKey);
+        if (fileName != null && fileName.equals(extractFileName(normalizeChapterKey(item.href)))) return true;
+        String baseKey = stripExtension(fileName);
+        if (baseKey != null) {
+            String itemFile = extractFileName(normalizeChapterKey(item.href));
+            if (baseKey.equals(stripExtension(itemFile))) return true;
+            if (baseKey.equals(stripExtension(normalizeChapterKey(item.id)))) return true;
+        }
+        return false;
+    }
+
+    private String normalizeChapterKey(String key) {
+        if (key == null) return null;
+        String normalized = key.trim().toLowerCase().replace("\\", "/");
+        int hashIndex = normalized.indexOf('#');
+        if (hashIndex >= 0) {
+            normalized = normalized.substring(0, hashIndex);
+        }
+        if (normalized.startsWith("./")) {
+            normalized = normalized.substring(2);
+        }
+        if (normalized.startsWith("oebps/")) {
+            normalized = normalized.substring("oebps/".length());
+        }
+        if (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        return normalized;
+    }
+
+    private String extractFileName(String path) {
+        if (path == null) return null;
+        int slashIndex = path.lastIndexOf('/');
+        if (slashIndex >= 0 && slashIndex < path.length() - 1) {
+            return path.substring(slashIndex + 1);
+        }
+        return path;
+    }
+
+    private String stripExtension(String fileName) {
+        if (fileName == null) return null;
+        int dot = fileName.lastIndexOf('.');
+        if (dot > 0) {
+            return fileName.substring(0, dot);
+        }
+        return fileName;
     }
 
     private boolean handleWebLink(String url, WebView view, TextView tvTitle) {
@@ -334,8 +911,10 @@ public class ReadBookActivity extends AppCompatActivity {
         if (loadUrl != null) {
             webView.setVisibility(View.VISIBLE);
             webView.loadUrl(loadUrl);
+            updateCurrentChapterLabel(getString(R.string.chapter_current_full_book));
         } else {
             webView.setVisibility(View.GONE);
+            updateCurrentChapterLabel(null);
         }
     }
 
@@ -391,11 +970,11 @@ public class ReadBookActivity extends AppCompatActivity {
                         currentPage = item.getPage();
                         currentChapterId = item.getChapterId();
                         
-                        // Load saved scroll position from local storage
-                        loadSavedScrollPosition();
-                        
-                        if (currentChapterId != null && apiRef != null && currentEpubUrl != null && webViewRef != null) {
-                            openChapter(apiRef, currentEpubUrl, currentChapterId, webViewRef, (TextView) findViewById(R.id.tv_title));
+                        pendingChapterId = currentChapterId;
+                        if (!TextUtils.isEmpty(pendingChapterId) && !chapterItems.isEmpty() && getChapterIndex(pendingChapterId) != null
+                                && apiRef != null && currentEpubUrl != null && webViewRef != null) {
+                            openChapter(apiRef, currentEpubUrl, pendingChapterId, webViewRef, (TextView) findViewById(R.id.tv_title));
+                            pendingChapterId = null;
                         }
                     }
                 }
@@ -683,19 +1262,18 @@ public class ReadBookActivity extends AppCompatActivity {
     /**
      * Setup book information display
      */
-    private void setupBookInfo(String title, String author, String category, String coverUrl) {
-        // Set book title
-        tvBookTitle.setText(title != null ? title : "Unknown Title");
-        
+    private void setupBookInfo(String title, String author, String coverUrl) {
+        // Set book title (card) if present, otherwise keep header title only
+        if (tvBookTitle != null) {
+            tvBookTitle.setText(title != null ? title : getString(R.string.chapter_current_unknown));
+        }
+
         // Set author
-        tvAuthor.setText(author != null ? author : "Unknown Author");
-        
-        // Set category
-        if (category != null && !category.isEmpty()) {
-            tvCategory.setText(category);
-            tvCategory.setVisibility(View.VISIBLE);
-        } else {
-            tvCategory.setVisibility(View.GONE);
+        if (tvAuthor != null) {
+            String authorDisplay = (author != null && !author.isEmpty())
+                    ? author
+                    : getString(R.string.author_unknown);
+            tvAuthor.setText(getString(R.string.author_label, authorDisplay));
         }
         
         // Load cover image
