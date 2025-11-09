@@ -18,7 +18,7 @@ android {
         // Production URL (sẽ được override bởi buildTypes nếu cần)
         //http://192.168.1.205:9000/
         //https://fliply.fly.dev/
-        buildConfigField("String", "BASE_URL", "\"http://192.168.1.205:9000/\"")
+        buildConfigField("String", "BASE_URL", "\"https://fliply.fly.dev/\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
