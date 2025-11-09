@@ -64,4 +64,10 @@
     <!-- Admin -->
     <color name="admin_footer">#3F2A24</color>
     <color name="admin_footer_text_color">#B7AD30</color>
+
+    <!-- Pagination tokens -->
+    <color name="pagination_icon_background">#F1EDFE</color>
+    <color name="pagination_icon_tint">#5E4AE3</color>
+    <color name="pagination_active_background">#5E4AE3</color>
+    <color name="pagination_active_text">#FFFFFF</color>
 </resources>

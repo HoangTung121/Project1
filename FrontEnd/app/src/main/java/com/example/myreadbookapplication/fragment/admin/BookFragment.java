@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -36,6 +38,7 @@ import com.example.myreadbookapplication.model.BooksResponse;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
 import com.example.myreadbookapplication.utils.AuthManager;
+import com.example.myreadbookapplication.utils.PaginationManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -67,14 +70,22 @@ public class BookFragment extends Fragment {
 
     private ApiService apiService;
     private AuthManager authManager;
+    private static final int ADMIN_ITEMS_PER_PAGE = PaginationManager.DEFAULT_ITEMS_PER_PAGE;
     private List<Book> bookList = new ArrayList<>();
-    private List<Book> allBooksList = new ArrayList<>();
     private AdminBookAdapter bookAdapter;
     private Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
     private Map<Integer, String> categoryMap = new HashMap<>();
     private boolean categoriesLoaded = false;
     private boolean isDataLoaded = false;
+    private PaginationManager paginationManager;
+    private FrameLayout paginationContainer;
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private int itemsPerPage = ADMIN_ITEMS_PER_PAGE;
+    private int totalItems = 0;
+    private boolean isSearching = false;
+    private String currentQuery = "";
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,6 +103,7 @@ public class BookFragment extends Fragment {
         setupRecyclerView();
         setupClickListeners();
         setupSearchListener();
+        setupPagination();
         
         return view;
     }
@@ -110,6 +122,7 @@ public class BookFragment extends Fragment {
         progressBar = view.findViewById(R.id.progress_bar);
         fabAddBook = view.findViewById(R.id.fab_add_book);
         etSearch = view.findViewById(R.id.et_search);
+        paginationContainer = view.findViewById(R.id.pagination_container);
     }
 
     private void setupRecyclerView() {
@@ -206,10 +219,9 @@ public class BookFragment extends Fragment {
                     Toast.makeText(requireContext(), "Book deleted successfully!", Toast.LENGTH_SHORT).show();
 
                     bookList.remove(book);
-                    allBooksList.remove(book);
                     bookAdapter.updateBookList(bookList);
                     if (bookList.isEmpty()) {
-                        showEmptyState();
+                        fetchBooks();
                     }
                 } else {
                     Toast.makeText(requireContext(), "Delete failed", Toast.LENGTH_SHORT).show();
@@ -253,71 +265,38 @@ public class BookFragment extends Fragment {
         });
     }
 
+    private void setupPagination() {
+        if (paginationContainer == null) return;
+        paginationManager = new PaginationManager(requireContext(), paginationContainer);
+        paginationManager.setVisible(false);
+        paginationContainer.setVisibility(View.GONE);
+        paginationManager.setMaxVisiblePages(5);
+        paginationManager.setOnPageChangeListener(page -> {
+            if (page == currentPage) return;
+            currentPage = page;
+            fetchBooks();
+        });
+        paginationManager.setOnPageJumpListener(page -> {
+            if (page == currentPage) return;
+            currentPage = page;
+            fetchBooks();
+        });
+    }
+
     private void performSearch() {
         if (etSearch == null) return;
 
         String query = etSearch.getText().toString().trim();
         
+        currentPage = 1;
         if (query.isEmpty()) {
-            bookList = new ArrayList<>(allBooksList);
-            bookAdapter.updateBookList(bookList);
-            updateListView();
-            return;
+            isSearching = false;
+            currentQuery = "";
+        } else {
+            isSearching = true;
+            currentQuery = query;
         }
-
-        searchBooks(query);
-    }
-
-    private void searchBooks(String query) {
-        if (progressBar != null) {
-            progressBar.setVisibility(View.VISIBLE);
-        }
-        if (layoutEmpty != null) {
-            layoutEmpty.setVisibility(View.GONE);
-        }
-
-        apiService.searchBooks(query, 1, 100).enqueue(new Callback<ApiResponse<BooksResponse>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
-                if (progressBar != null) {
-                    progressBar.setVisibility(View.GONE);
-                }
-                
-                if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<BooksResponse> apiResponse = response.body();
-                    if (apiResponse.isSuccess()) {
-                        try {
-                            BooksResponse booksResponse = apiResponse.getData();
-                            if (booksResponse != null && booksResponse.getBooks() != null) {
-                                bookList = booksResponse.getBooks();
-                                bookAdapter.updateBookList(bookList);
-                                updateListView();
-                            } else {
-                                showEmptyState();
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error parsing search results: " + e.getMessage());
-                            showEmptyState();
-                        }
-                    } else {
-                        showEmptyState();
-                    }
-                } else {
-                    Log.e(TAG, "Search failed: " + response.code());
-                    showEmptyState();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
-                if (progressBar != null) {
-                    progressBar.setVisibility(View.GONE);
-                }
-                Log.e(TAG, "Search error: " + t.getMessage());
-                Toast.makeText(requireContext(), "Search failed", Toast.LENGTH_SHORT).show();
-                showEmptyState();
-            }
-        });
+        fetchBooks();
     }
 
     private void updateListView() {
@@ -334,11 +313,14 @@ public class BookFragment extends Fragment {
     public void reloadData() {
         Log.d(TAG, "Reloading books data...");
         // Clear data và load lại
-        allBooksList.clear();
-        bookList.clear();
-        categoryMap.clear();
-        categoriesLoaded = false;
-        isDataLoaded = false;
+        currentPage = 1;
+        totalPages = 1;
+        totalItems = 0;
+        currentQuery = "";
+        isSearching = false;
+        if (paginationManager != null) {
+            paginationManager.setVisible(false);
+        }
         loadCategories();
     }
 
@@ -420,33 +402,24 @@ public class BookFragment extends Fragment {
                             categoriesLoaded = true;
                         }
                         
-                        if (!allBooksList.isEmpty()) {
-                            mapCategoryNamesToBooks(allBooksList);
-                            bookList = new ArrayList<>(allBooksList);
-                            if (bookAdapter != null) {
-                                bookAdapter.updateBookList(bookList);
-                                updateListView();
-                            }
-                        } else {
-                            loadBooks();
-                        }
+                        fetchBooks();
                     } catch (IOException e) {
                         Log.e(TAG, "Error reading response body: " + e.getMessage());
-                        loadBooks();
+                        fetchBooks();
                     } catch (Exception e) {
                         Log.e(TAG, "Error parsing categories: " + e.getMessage());
-                        loadBooks();
+                        fetchBooks();
                     }
                 } else {
                     Log.e(TAG, "Failed to load categories - HTTP " + response.code());
-                    loadBooks();
+                    fetchBooks();
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.e(TAG, "Failed to load categories: " + t.getMessage());
-                loadBooks();
+                fetchBooks();
             }
         });
     }
@@ -476,100 +449,7 @@ public class BookFragment extends Fragment {
             }
         }
     }
-
-    private void loadAllBooks(String accessToken, int startPage) {
-        Call<ApiResponse<BooksResponse>> call = apiService.getAllBooks("Bearer " + accessToken, startPage, 100);
-        
-        call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
-                if (!response.isSuccessful() || response.body() == null || !response.body().isSuccess()) {
-                    if (progressBar != null) {
-                        progressBar.setVisibility(View.GONE);
-                    }
-                    if (allBooksList.isEmpty()) {
-                        showEmptyState();
-                    } else {
-                        bookList = new ArrayList<>(allBooksList);
-                        bookAdapter.updateBookList(bookList);
-                        updateListView();
-                    }
-                    return;
-                }
-
-                try {
-                    BooksResponse booksResponse = response.body().getData();
-                    if (booksResponse != null && booksResponse.getBooks() != null) {
-                        allBooksList.addAll(booksResponse.getBooks());
-                        
-                        BooksResponse.Pagination pagination = booksResponse.getPagination();
-                        if (pagination != null) {
-                            int currentPage = pagination.getPage();
-                            int totalPages = pagination.getTotalPages();
-                            
-                            Log.d(TAG, "Loaded page " + currentPage + "/" + totalPages + " (" + allBooksList.size() + " books)");
-                            
-                            if (currentPage < totalPages) {
-                                loadAllBooks(accessToken, currentPage + 1);
-                                return;
-                            }
-                        }
-                        
-                        mapCategoryNamesToBooks(allBooksList);
-                        
-                        bookList = new ArrayList<>(allBooksList);
-                        bookAdapter.updateBookList(bookList);
-                        updateListView();
-                        if (progressBar != null) {
-                            progressBar.setVisibility(View.GONE);
-                        }
-                        isDataLoaded = true;
-                    } else {
-                        if (progressBar != null) {
-                            progressBar.setVisibility(View.GONE);
-                        }
-                        if (allBooksList.isEmpty()) {
-                            showEmptyState();
-                        } else {
-                            bookList = new ArrayList<>(allBooksList);
-                            bookAdapter.updateBookList(bookList);
-                            updateListView();
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Error parsing books: " + e.getMessage());
-                    if (progressBar != null) {
-                        progressBar.setVisibility(View.GONE);
-                    }
-                    if (allBooksList.isEmpty()) {
-                        showEmptyState();
-                    } else {
-                        bookList = new ArrayList<>(allBooksList);
-                        bookAdapter.updateBookList(bookList);
-                        updateListView();
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
-                if (progressBar != null) {
-                    progressBar.setVisibility(View.GONE);
-                }
-                Log.e(TAG, "Error loading books: " + t.getMessage());
-                
-                if (allBooksList.isEmpty()) {
-                    Toast.makeText(requireContext(), "Failed to load books", Toast.LENGTH_SHORT).show();
-                    showEmptyState();
-                } else {
-                    Toast.makeText(requireContext(), "Loaded " + allBooksList.size() + " books (some may be missing)", Toast.LENGTH_LONG).show();
-                    bookList = new ArrayList<>(allBooksList);
-                    bookAdapter.updateBookList(bookList);
-                    updateListView();
-                }
-            }
-        });
-    }
+    
 
     private void loadBooks() {
         String accessToken = authManager.getAccessToken();
@@ -585,11 +465,97 @@ public class BookFragment extends Fragment {
         if (layoutEmpty != null) {
             layoutEmpty.setVisibility(View.GONE);
         }
-        
-        allBooksList.clear();
-        bookList.clear();
 
-        loadAllBooks(accessToken, 1);
+        fetchBooks();
+    }
+
+    private void fetchBooks() {
+        String accessToken = authManager.getAccessToken();
+        if (TextUtils.isEmpty(accessToken)) {
+            Toast.makeText(requireContext(), "Please login as admin", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (progressBar != null) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
+        if (layoutEmpty != null) {
+            layoutEmpty.setVisibility(View.GONE);
+        }
+
+        Call<ApiResponse<BooksResponse>> call;
+        if (isSearching && !TextUtils.isEmpty(currentQuery)) {
+            call = apiService.searchBooks(currentQuery, currentPage, itemsPerPage);
+        } else {
+            call = apiService.getAllBooks("Bearer " + accessToken, currentPage, itemsPerPage);
+        }
+
+        call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+
+                if (!response.isSuccessful() || response.body() == null || !response.body().isSuccess()) {
+                    Log.e(TAG, "Failed to load books. Code: " + response.code());
+                    if (bookList.isEmpty()) {
+                        showEmptyState();
+                    }
+                    return;
+                }
+
+                BooksResponse booksResponse = response.body().getData();
+                List<Book> books = booksResponse != null && booksResponse.getBooks() != null
+                        ? booksResponse.getBooks()
+                        : new ArrayList<>();
+                if (books.size() > ADMIN_ITEMS_PER_PAGE) {
+                    books = new ArrayList<>(books.subList(0, ADMIN_ITEMS_PER_PAGE));
+                }
+
+                if (categoriesLoaded) {
+                    mapCategoryNamesToBooks(books);
+                }
+
+                bookList = new ArrayList<>(books);
+                bookAdapter.updateBookList(bookList);
+                updateListView();
+
+                BooksResponse.Pagination pagination = booksResponse != null ? booksResponse.getPagination() : null;
+                if (pagination != null) {
+                    currentPage = pagination.getPage();
+                    totalPages = Math.max(pagination.getTotalPages(), 1);
+                    totalItems = pagination.getTotal();
+                    itemsPerPage = ADMIN_ITEMS_PER_PAGE;
+                } else {
+                    totalPages = (int) Math.ceil((double) totalItems / ADMIN_ITEMS_PER_PAGE);
+                    totalItems = Math.max(totalItems, bookList.size());
+                    itemsPerPage = ADMIN_ITEMS_PER_PAGE;
+                }
+
+                if (paginationManager != null) {
+                    paginationManager.setPaginationData(currentPage, totalPages, totalItems, ADMIN_ITEMS_PER_PAGE);
+                    boolean showPager = totalPages > 1;
+                    paginationManager.setVisible(showPager);
+                    if (paginationContainer != null) {
+                        paginationContainer.setVisibility(showPager ? View.VISIBLE : View.GONE);
+                    }
+                }
+
+                isDataLoaded = true;
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                Log.e(TAG, "Error loading books: " + t.getMessage());
+                if (bookList.isEmpty()) {
+                    showEmptyState();
+                }
+            }
+        });
     }
 
     private void showEmptyState() {

@@ -62,13 +62,16 @@
     
     <!-- Pagination Button Style -->
     <style name="PaginationButtonStyle" parent="Widget.AppCompat.Button">
-        <item name="android:textSize">14sp</item>
-        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/primary_text</item>
         <item name="android:background">@drawable/pagination_button_background</item>
-        <item name="android:paddingHorizontal">12dp</item>
-        <item name="android:paddingVertical">8dp</item>
-        <item name="android:minWidth">40dp</item>
-        <item name="android:minHeight">40dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:padding">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
     </style>
     
 </resources>

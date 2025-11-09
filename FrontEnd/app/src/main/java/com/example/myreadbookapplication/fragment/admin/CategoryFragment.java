@@ -44,6 +44,8 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
 
 import okhttp3.ResponseBody;
@@ -350,7 +352,7 @@ public class CategoryFragment extends Fragment {
 
     private void loadCategories() {
         if (progressBar == null) return;
-        
+
         progressBar.setVisibility(View.VISIBLE);
         if (layoutEmpty != null) {
             layoutEmpty.setVisibility(View.GONE);
@@ -369,20 +371,20 @@ public class CategoryFragment extends Fragment {
                     try {
                         String responseString = response.body().string();
                         Log.d(TAG, "Response string length: " + responseString.length());
-                        
+
                         Gson gson = new Gson();
                         JsonObject jsonResponse = JsonParser.parseString(responseString).getAsJsonObject();
-                        
+
                         // Check success
                         if (!jsonResponse.has("success") || !jsonResponse.get("success").getAsBoolean()) {
-                            String errorMsg = jsonResponse.has("message") ? 
+                            String errorMsg = jsonResponse.has("message") ?
                                 jsonResponse.get("message").getAsString() : "Failed to load categories";
                             Log.e(TAG, errorMsg);
                             Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show();
                             showEmptyState();
                             return;
                         }
-                        
+
                         // Get data object
                         JsonElement dataElement = jsonResponse.get("data");
                         if (dataElement == null || !dataElement.isJsonObject()) {
@@ -390,12 +392,12 @@ public class CategoryFragment extends Fragment {
                             showEmptyState();
                             return;
                         }
-                        
+
                         JsonObject dataObj = dataElement.getAsJsonObject();
                         JsonElement categoriesElement = dataObj.get("categories");
-                        
+
                         List<Category> parsedCategories = new ArrayList<>();
-                        
+
                         if (categoriesElement != null && categoriesElement.isJsonObject()) {
                             // Parse Firebase object format: {"2": {...}, "3": {...}}
                             Log.d(TAG, "Parsing categories as object format");
@@ -428,17 +430,30 @@ public class CategoryFragment extends Fragment {
                         } else {
                             Log.w(TAG, "Categories element is null or invalid format");
                         }
-                        
+
                         if (!parsedCategories.isEmpty()) {
+                            LinkedHashMap<Integer, Category> uniqueMap = new LinkedHashMap<>();
+                            for (Category category : parsedCategories) {
+                                if (category != null) {
+                                    uniqueMap.put(category.getId(), category);
+                                }
+                            }
+                            parsedCategories = new ArrayList<>(uniqueMap.values());
+
+                            Collections.sort(parsedCategories, (c1, c2) -> {
+                                if (c1 == null || c2 == null) return 0;
+                                return c1.getName().compareToIgnoreCase(c2.getName());
+                            });
+
                             allCategoriesList.clear();
                             allCategoriesList.addAll(parsedCategories);
-                            
+
                             categoryList.clear();
                             categoryList.addAll(allCategoriesList);
-                            
+
                             categoryAdapter.updateCategoryList(categoryList);
                             updateListView();
-                            
+
                             isDataLoaded = true;
                             Log.d(TAG, "Loaded " + categoryList.size() + " categories successfully");
                         } else {

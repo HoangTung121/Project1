@@ -73,7 +73,7 @@ public class AccountFragment extends Fragment {
 
         tvSignOut.setOnClickListener(v -> {
             // Sử dụng callback để finish activity sau khi logout hoàn thành
-            logoutManager.logout(new LogoutManager.LogoutCallback() {
+            logoutManager.confirmLogout(new LogoutManager.LogoutCallback() {
                 @Override
                 public void onLogoutSuccess() {
                     // Logout thành công, LogoutManager đã start SignInActivity
