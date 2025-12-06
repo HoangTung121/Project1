@@ -9,6 +9,9 @@ public class BooksResponse {
     private List<Book> books;
     private BooksResponse.Pagination pagination;
 
+    private Book book;
+    public Book getBook(){ return book;}
+
     // Getters/Setters
     public List<Book> getBooks() { return books; }
     public void setBooks(List<Book> books) { this.books = books; }

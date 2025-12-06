@@ -15,6 +15,7 @@ import com.example.myreadbookapplication.adapter.CategoryBookAdapter;
 import com.example.myreadbookapplication.model.ApiResponse;
 import com.example.myreadbookapplication.model.Book;
 import com.example.myreadbookapplication.model.BooksResponse;
+import com.example.myreadbookapplication.model.FavoritesResponse;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -59,7 +60,7 @@ public class FavoriteActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_favorite);
 
-        // Ánh xạ
+        // Ánh xạ cac thanh phan
         backIconFavoriteBook = findViewById(R.id.back_favorite_book_icon);
         rvFavoriteBooks = findViewById(R.id.rv_favorite_books);
         progressBarFavoriteBooks = findViewById(R.id.progressBar_favorite_books);
@@ -103,15 +104,14 @@ public class FavoriteActivity extends AppCompatActivity {
 
         if (userId != null && token != null && !token.isEmpty()) {
             Log.d(TAG, "Fetching favorites from backend for user: " + userId);
-            Call<ApiResponse<com.example.myreadbookapplication.model.FavoritesResponse>> call =
-                    apiService.getFavorites(userId, "Bearer " + token);
+            Call<ApiResponse<FavoritesResponse>> call = apiService.getFavorites(userId, "Bearer " + token);
             call.enqueue(new Callback<ApiResponse<com.example.myreadbookapplication.model.FavoritesResponse>>() {
                 @Override
-                public void onResponse(Call<ApiResponse<com.example.myreadbookapplication.model.FavoritesResponse>> call, Response<ApiResponse<com.example.myreadbookapplication.model.FavoritesResponse>> response) {
+                public void onResponse(Call<ApiResponse<FavoritesResponse>> call, Response<ApiResponse<FavoritesResponse>> response) {
                     progressBarFavoriteBooks.setVisibility(View.GONE);
                     
                     if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                        com.example.myreadbookapplication.model.FavoritesResponse data = response.body().getData();
+                        FavoritesResponse data = response.body().getData();
                         List<Book> allFavorites = (data != null) ? data.getFavoriteBooks() : null;
                         
                         if (allFavorites != null && !allFavorites.isEmpty()) {
@@ -157,6 +157,7 @@ public class FavoriteActivity extends AppCompatActivity {
         }
     }
 
+    //Pagination
     private void setupFrontendPagination(List<Book> allFavorites) {
         // Tính toán pagination cho frontend
         totalItems = allFavorites.size();
@@ -180,7 +181,7 @@ public class FavoriteActivity extends AppCompatActivity {
         
         // Hiển thị favorites cho trang hiện tại
         favoriteBookAdapter = new CategoryBookAdapter(pageFavorites, FavoriteActivity.this, "Favorites");
-        rvFavoriteBooks.setLayoutManager(new GridLayoutManager(FavoriteActivity.this, 3));
+        rvFavoriteBooks.setLayoutManager(new GridLayoutManager(FavoriteActivity.this, 2));
         rvFavoriteBooks.setAdapter(favoriteBookAdapter);
     }
 

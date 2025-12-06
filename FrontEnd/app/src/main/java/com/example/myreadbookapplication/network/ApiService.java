@@ -301,7 +301,7 @@ public interface ApiService {
 
     // Public book details
     @GET("api/books/{id}")
-    Call<ApiResponse<Book>> getBookById(
+    Call<ApiResponse<BooksResponse>> getBookById(
             @Path("id") String id
     );
 
