@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
@@ -437,6 +438,7 @@ public class HomeActivity extends AppCompatActivity {
                         NewBookAdapter row1Adapter = new NewBookAdapter(row1Books, HomeActivity.this, categoriesList);
                         RecyclerView rvRow1 = findViewById(R.id.rv_new_books_row1);  // ID mới trong XML
                         rvRow1.setLayoutManager(new LinearLayoutManager(HomeActivity.this, LinearLayoutManager.HORIZONTAL, false));
+                        //rvRow1.setLayoutManager(new GridLayoutManager(HomeActivity.this, 5));
                         rvRow1.setAdapter(row1Adapter);
 
                         // Hàng 2
