@@ -174,5 +174,12 @@
             android:gravity="center" />
 
     </LinearLayout>
+    <!--layout Pagination-->
+    <FrameLayout
+        android:id="@+id/pagination_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone">
+    </FrameLayout>
 
 </LinearLayout>

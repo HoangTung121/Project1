@@ -29,16 +29,6 @@ public class PaginationHelper {
      * @param onPageChangeListener Callback khi page thay đổi
      * @return PaginationManager instance
      */
-    public static PaginationManager createPaginationFooter(
-            Context context, 
-            ViewGroup parent, 
-            PaginationManager.OnPageChangeListener onPageChangeListener) {
-        
-        PaginationManager paginationManager = new PaginationManager(context, parent);
-        paginationManager.setOnPageChangeListener(onPageChangeListener);
-        
-        return paginationManager;
-    }
     
     /**
      * Tạo pagination footer với cả page jump listener
@@ -88,53 +78,5 @@ public class PaginationHelper {
             paginationManager.setVisible(false);
         }
     }
-    
-    /**
-     * Ví dụ cách sử dụng trong SearchActivity:
-     * 
-     * // Trong onCreate()
-     * paginationContainer = findViewById(R.id.pagination_container);
-     * paginationManager = PaginationHelper.createPaginationFooter(
-     *     this, 
-     *     paginationContainer, 
-     *     page -> {
-     *         currentPage = page;
-     *         performSearch(searchQuery);
-     *     }
-     * );
-     * 
-     * // Trong performSearch()
-     * Call<ApiResponse<BooksResponse>> call = apiService.searchBooks(
-     *     searchQuery, 
-     *     currentPage, 
-     *     itemsPerPage
-     * );
-     * 
-     * call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
-     *     @Override
-     *     public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
-     *         PaginationHelper.showPaginationLoading(paginationManager, false);
-     *         
-     *         if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-     *             BooksResponse data = response.body().getData();
-     *             
-     *             // Update pagination
-     *             if (data != null && data.getPagination() != null) {
-     *                 PaginationHelper.updatePaginationData(
-     *                     paginationManager,
-     *                     currentPage,
-     *                     data.getPagination().getTotalPages(),
-     *                     data.getPagination().getTotal(),
-     *                     itemsPerPage
-     *                 );
-     *             }
-     *             
-     *             // Update RecyclerView
-     *             updateSearchResults(data.getBooks());
-     *         } else {
-     *             PaginationHelper.hidePagination(paginationManager);
-     *         }
-     *     }
-     * });
-     */
+
 }

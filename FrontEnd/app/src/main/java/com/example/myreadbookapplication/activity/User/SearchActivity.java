@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ import com.example.myreadbookapplication.model.BooksResponse;
 import com.example.myreadbookapplication.model.Category;
 import com.example.myreadbookapplication.network.ApiService;
 import com.example.myreadbookapplication.network.RetrofitClient;
+import com.example.myreadbookapplication.utils.PaginationManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,12 +44,17 @@ public class SearchActivity extends AppCompatActivity {
     private ImageView btnBack;
     private RecyclerView rvSearchResults;
     private ProgressBar progressBar;
+    private FrameLayout paginationContainer;
     private LinearLayout layoutEmpty;
     private AllBooksAdapter searchAdapter;
     private ApiService apiService;
     private Map<Integer, String> categoryIdToName;
     private List<Book> searchResults;
     private String currentQuery = "";
+    private int currentPage = 1;
+    private final int pageSize = 10;
+    private PaginationManager paginationManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +84,9 @@ public class SearchActivity extends AppCompatActivity {
         
         // Setup listeners
         setupListeners();
+
+        // Setup pagination
+        setupPagination();
     }
 
     private void initViews() {
@@ -86,11 +96,28 @@ public class SearchActivity extends AppCompatActivity {
         rvSearchResults = findViewById(R.id.rv_search_results);
         progressBar = findViewById(R.id.progress_bar);
         layoutEmpty = findViewById(R.id.layout_empty);
+        paginationContainer = findViewById(R.id.pagination_container);
+    }
+    private void setupPagination() {
+        if(paginationContainer == null ) return;
+
+        //create pagination and add to container
+        paginationManager = new PaginationManager(this, paginationContainer);
+
+        //set clistener: when user click , search new page with current query
+        paginationManager.setOnPageChangeListener(newPage -> {
+            currentPage = newPage;
+            if(!currentQuery.isEmpty()){
+                searchBooks(currentQuery, currentPage); //reload api wich new page
+            }
+        });
+
+        paginationManager.setVisible(false);
     }
 
     private void setupRecyclerView() {
         // Sử dụng GridLayoutManager với 2 cột như trong ảnh demo
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
         rvSearchResults.setLayoutManager(gridLayoutManager);
         
         searchAdapter = new AllBooksAdapter(searchResults, this, categoryIdToName);
@@ -117,6 +144,8 @@ public class SearchActivity extends AppCompatActivity {
                 String query = s.toString().trim();
                 if (!query.equals(currentQuery)) {
                     currentQuery = query;
+                    currentPage = 1;
+                    if(paginationManager != null) paginationManager.setVisible(false);
                     if (query.length() >= 2) {
                         // Delay search để tránh gọi API quá nhiều
                         rvSearchResults.removeCallbacks(searchRunnable);
@@ -154,16 +183,18 @@ public class SearchActivity extends AppCompatActivity {
         }
 
         currentQuery = query;
-        searchBooks(query);
+        currentPage = 1;
+        searchBooks(query, currentPage);
     }
 
-    private void searchBooks(String query) {
+    private void searchBooks(String query, int page) {
         progressBar.setVisibility(View.VISIBLE);
         layoutEmpty.setVisibility(View.GONE);
+        if(paginationManager != null) paginationManager.setVisible(false);
 
-        Log.d("SearchActivity", "Searching for: " + query);
+        Log.d("SearchActivity", "Searching for: " + query + "on page: " + page);
 
-        Call<ApiResponse<BooksResponse>> call = apiService.searchBooks(query, 1, 20);
+        Call<ApiResponse<BooksResponse>> call = apiService.searchBooks(query, page, pageSize);
         call.enqueue(new Callback<ApiResponse<BooksResponse>>() {
             @Override
             public void onResponse(@NonNull Call<ApiResponse<BooksResponse>> call, 
@@ -176,6 +207,14 @@ public class SearchActivity extends AppCompatActivity {
                         searchResults.clear();
                         searchResults.addAll(booksResponse.getBooks());
                         searchAdapter.notifyDataSetChanged();
+
+                        // Thêm log để check pagination data
+                        if (booksResponse.getPagination() != null) {
+                            Log.d("SearchActivity", "API returned: page=" + booksResponse.getPagination().getPage()
+                                    + ", totalPages=" + booksResponse.getPagination().getTotalPages());
+                        }
+
+                        updatePagination(booksResponse);
                         
                         if (searchResults.isEmpty()) {
                             showEmptyState();
@@ -186,11 +225,13 @@ public class SearchActivity extends AppCompatActivity {
                         Log.d("SearchActivity", "Found " + searchResults.size() + " books");
                     } else {
                         showEmptyState();
+                        updatePagination(null); //hiden pagination if no data
                     }
                 } else {
                     Log.e("SearchActivity", "Search API failed: " + response.code());
                     Toast.makeText(SearchActivity.this, "Search failed", Toast.LENGTH_SHORT).show();
                     showEmptyState();
+                    if (paginationManager != null) paginationManager.setVisible(false);
                 }
             }
 
@@ -200,8 +241,34 @@ public class SearchActivity extends AppCompatActivity {
                 Log.e("SearchActivity", "Search failure: " + t.getMessage());
                 Toast.makeText(SearchActivity.this, "Network error", Toast.LENGTH_SHORT).show();
                 showEmptyState();
+                if(paginationManager != null) paginationManager.setVisible(false);
             }
         });
+    }
+
+    private void updatePagination(BooksResponse booksResponse) {
+        if (paginationManager == null || booksResponse == null || booksResponse.getPagination() == null) {
+            if (paginationManager != null) {
+                paginationManager.setVisible(false);
+            }
+            if (paginationContainer != null) paginationContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        // Giả sử Pagination có getTotalPages(), getTotal(), getPage()
+        int totalPages = booksResponse.getPagination().getTotalPages();
+        int totalItems = booksResponse.getPagination().getTotal();
+        currentPage = booksResponse.getPagination().getPage();  // Sync từ API
+
+        // Update state và UI
+        paginationManager.setPaginationData(currentPage, totalPages, totalItems, pageSize);
+
+        // Hiển thị nếu >1 trang
+        boolean visible = totalPages > 1;
+        paginationManager.setVisible(visible);
+        if (paginationContainer != null) {
+            paginationContainer.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void loadCategories() {
@@ -234,12 +301,15 @@ public class SearchActivity extends AppCompatActivity {
     private void clearResults() {
         searchResults.clear();
         searchAdapter.notifyDataSetChanged();
+        currentPage =1;
+        if(paginationManager != null) paginationManager.setVisible(false);
         hideEmptyState();
     }
 
     private void showEmptyState() {
         layoutEmpty.setVisibility(View.VISIBLE);
         rvSearchResults.setVisibility(View.GONE);
+        if (paginationManager != null ) paginationManager.setVisible(false);
     }
 
     private void hideEmptyState() {
