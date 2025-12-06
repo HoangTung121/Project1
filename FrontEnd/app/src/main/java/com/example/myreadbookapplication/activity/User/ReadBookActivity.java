@@ -152,7 +152,7 @@ public class ReadBookActivity extends AppCompatActivity {
         menuInBook.setOnClickListener(v -> showMenuDropdown(menuInBook));
         this.webViewRef = webView;
 
-        String title = getIntent().getStringExtra("title");
+        String title = getIntent().getStringExtra("title"); // get intent from newBookAdapter
         String coverUrl = getIntent().getStringExtra("cover_url");
         String txtUrl = getIntent().getStringExtra("txt_url");
         String bookUrl = getIntent().getStringExtra("book_url");
@@ -206,6 +206,7 @@ public class ReadBookActivity extends AppCompatActivity {
             }
         });
 
+        //CORE
         if (epubUrl != null && !epubUrl.isEmpty()) {
             // New flow: use backend EPUB APIs
             ApiService api = RetrofitClient.getApiService();

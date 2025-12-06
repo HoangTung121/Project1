@@ -2,6 +2,7 @@ package com.example.myreadbookapplication.adapter;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +20,7 @@ import com.example.myreadbookapplication.R;
 import com.example.myreadbookapplication.activity.User.ReadBookActivity;
 import com.example.myreadbookapplication.activity.User.HistoryActivity;
 import com.example.myreadbookapplication.model.Book;
+import com.example.myreadbookapplication.model.BooksResponse;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -93,32 +95,50 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
             Log.w("CategoryBookAdapter", "iv_favorite ImageView not found in layout");
         }
 
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                android.content.Intent intent = new android.content.Intent(context, ReadBookActivity.class);
-                intent.putExtra("title", book.getTitle());
-                intent.putExtra("cover_url", book.getCoverUrl());
-                intent.putExtra("txt_url", book.getTxtUrl());
-                intent.putExtra("book_url", book.getBookUrl());
-                intent.putExtra("epub_url", book.getEpubUrl());
-                intent.putExtra("book_id", book.getId());
-                intent.putExtra("author", book.getAuthor());
-                intent.putExtra("category", categoryName != null ? categoryName : book.getCategoryName());
-                context.startActivity(intent);
+        holder.itemView.setOnClickListener(v -> {
+            if ("History".equals(categoryName) && isMissingContentUrl(book)) {
+                fetchBookAndOpen(book.getId());
+            } else {
+                openReader(book);
             }
         });
 
-        // Long click để xóa bookmark (chỉ trong History)
-        if ("History".equals(categoryName)) {
-            holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    showDeleteBookmarkDialog(book);
-                    return true;
+    }
+
+    private void fetchBookAndOpen(String bookId) {
+        RetrofitClient.getApiService().getBookById(bookId).enqueue(new Callback<ApiResponse<BooksResponse>>() {
+
+            @Override
+            public void onResponse(Call<ApiResponse<BooksResponse>> call, Response<ApiResponse<BooksResponse>> response) {
+                if(response.isSuccessful() && response.body() != null && response.body().isSuccess()){
+                    openReader(response.body().getData().getBook());
+                }else {
+                    Toast.makeText(context, "Unable to get book information", Toast.LENGTH_SHORT).show();
                 }
-            });
-        }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<BooksResponse>> call, Throwable t) {
+                Toast.makeText(context, "Network error " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private boolean isMissingContentUrl(Book book) {
+        return book.getEpubUrl() == null || book.getEpubUrl().isEmpty();
+    }
+
+    private void openReader(Book book) {
+        Intent intent = new Intent(context, ReadBookActivity.class);
+        intent.putExtra("title", book.getTitle());
+        intent.putExtra("cover_url", book.getCoverUrl());
+        intent.putExtra("txt_url", book.getTxtUrl());
+        intent.putExtra("book_url", book.getBookUrl());
+        intent.putExtra("epub_url", book.getEpubUrl());
+        intent.putExtra("book_id", book.getId());
+        intent.putExtra("author", book.getAuthor());
+        intent.putExtra("category", categoryName != null ? categoryName : book.getCategoryName());
+        context.startActivity(intent);
     }
 
     // toggleFavorite: Nhận String bookId, dùng List<String>
@@ -200,7 +220,7 @@ public class CategoryBookAdapter extends RecyclerView.Adapter<CategoryBookAdapte
                 int bookId = Integer.parseInt(book.getId());
                 // Gọi HistoryActivity để xóa bookmark
                 if (context instanceof HistoryActivity) {
-                    ((HistoryActivity) context).deleteBookmark(bookId);
+                    //((HistoryActivity) context).deleteBookmark(bookId);
                 }
             } catch (NumberFormatException e) {
                 Log.e("CategoryBookAdapter", "Invalid book ID: " + book.getId());
